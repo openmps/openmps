@@ -1,0 +1,17 @@
+bin/
+obj/
+Debug/
+Release/
+ipch/
+CodeAnalyst/
+Result/
+
+*.suo
+*.vcxproj.user
+*.csproj.user
+*.opensdf
+*.sdf
+*.xml
+*.psess
+*.vsp
+*.pdb
