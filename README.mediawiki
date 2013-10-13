@@ -12,3 +12,27 @@ You can select the license of your choice from as following:
 * [http://creativecommons.org/licenses/by-sa/3.0/ Creative Commons Attribution-ShareAlike 3.0 Unported]
 * [http://creativecommons.org/licenses/by-nc/3.0/ Creative Commons Attribution-Noncommercial 3.0 Unported]
 * [http://www.gnu.org/licenses/gpl.html GNU General Public License v3.0 or later]
+
+== Usage ==
+# Build codes with Boost. Depvelopers use Visual Studio 2012.
+# Run the program (Developers expect execution on Windows). Results will be output as CSV in "result" folder.
+# Visualize results by visualizer. If you use ParaView,
+## Open "particle_****.csv"s
+## Add "TablesToPoints" filter
+##* X Column = x
+##* Y Column = z
+##* Z Column = x
+##* 2D Points = ON
+## Create new Layout (3D View)
+## Make "TablesToPoints" visible
+## You can see the motion of particles! csv columns are:
+##* x : horizontal value of position vector
+##* z : vertical value of position vector
+##* u : horizontal value of velocity vector
+##* w : vertical value of velocity vector
+##* p : value of pressure
+##* n : value of particle number density
+
+== Desclaimer ==
+Anyone including me (author:aokomoriuta) is not responsible for any damages or corrupts by this project. Download and use this project at your own risk.
+Any questions or pull-resquests or other contribution are welcome. Although keeping trying to respond as soon as possible, but no one is responsible to respond it. Any responses are also not responsible by anyone including me.
