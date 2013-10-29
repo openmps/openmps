@@ -32,6 +32,7 @@ You can select the license of your choice from as following:
 ##* w : vertical value of velocity vector
 ##* p : value of pressure
 ##* n : value of particle number density
+## or you can load ParaView State File "resultViewer.pvsm" for instance.
 
 == Desclaimer ==
 Anyone including me (author:aokomoriuta) is not responsible for any damages or corrupts by this project. Download and use this project at your own risk.
