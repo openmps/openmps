@@ -7,18 +7,47 @@
 
 namespace OpenMps
 {
-	MpsComputer::MpsComputer(const double& maxDt, const double& g, const double& rho, const double& nu, const double& C, const double& l_0, const double& r_eByl_0, const double& surfaceRatio, const double& allowableResidual)
+
+	MpsComputer::MpsComputer(
+			const double& maxDt,
+			const double& g,
+			const double& rho,
+			const double& nu,
+			const double& C,
+			const double& r_eByl_0,
+			const double& surfaceRatio,
+#ifdef PRESSURE_EXPLICIT
+			const double& c,
+#else
+			const double& allowableResidual,
+#endif
+#ifdef MODIFY_TOO_NEAR
+			const double& tooNearRatio,
+			const double& tooNearCoefficient,
+#endif
+			const double& l_0)
 		: t(0), dt(0), g(), rho(rho), nu(nu), maxDx(C*l_0), r_e(r_eByl_0 * l_0), surfaceRatio(surfaceRatio),
-		
-		// dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
+#ifdef MODIFY_TOO_NEAR
+		tooNearLength(tooNearRatio*l_0), tooNearCoefficient(tooNearCoefficient),
+#endif
+#ifdef PRESSURE_EXPLICIT
+		c(c),
+
+		// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
+		maxDt(std::min(maxDt, maxDx/c))
+#else
+		// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
 		maxDt(std::min(maxDt, std::sqrt(2*maxDx/g)))
+#endif
 	{
 		// 重力加速度を設定
 		this->g[0] = 0;
 		this->g[1] = -g;
 
+#ifndef PRESSURE_EXPLICIT
 		// 圧力方程式の許容誤差を設定
 		ppe.allowableResidual = allowableResidual;
+#endif
 
 		// 基準粒子数密度とλの計算
 		int range = (int)std::ceil(r_eByl_0);
@@ -65,6 +94,11 @@ namespace OpenMps
 		// 第一段階の計算
 		ComputeExplicitForces();
 
+#ifdef MODIFY_TOO_NEAR
+		// 過剰接近粒子の補正
+		ModifyTooNear();
+#endif
+
 		// 粒子数密度を計算する
 		ComputeNeighborDensities();
 
@@ -110,14 +144,14 @@ namespace OpenMps
 		a.clear();
 
 		// 全粒子で
-		for(unsigned int i = 0; i < particles.size(); i++)
+		for(auto& particle : particles)
 		{
 			// 重力の計算
 			Vector d = g;
 
 			// 粘性項の計算
-			auto vis = particles[i]->GetViscosity(particles, n0, r_e, lambda, nu, dt);
-			//d += vis;
+			auto vis = particle->GetViscosity(particles, n0, r_e, lambda, nu, dt);
+			d += vis;
 			a.push_back(d);
 		}
 
@@ -133,6 +167,15 @@ namespace OpenMps
 
 	void MpsComputer::ComputeImplicitForces()
 	{
+#ifdef PRESSURE_EXPLICIT
+		// 得た圧力を計算する
+		for(unsigned int i = 0; i < particles.size(); i++)
+		{
+			auto& particle = particles[i];
+
+			particle->UpdatePressure(c, rho, n0);
+		}
+#else
 		// 圧力方程式を設定
 		SetPressurePoissonEquation();
 
@@ -144,11 +187,13 @@ namespace OpenMps
 		{
 			particles[i]->P(ppe.x(i), n0, surfaceRatio);
 		}
+#endif
 
 		// 圧力勾配項を計算する
 		ModifyByPressureGradient();
 	}
-	
+
+#ifndef PRESSURE_EXPLICIT
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
@@ -165,7 +210,6 @@ namespace OpenMps
 			ppe.cg.p = LongVector(n);
 			ppe.cg.Ap = LongVector(n);
 		}
-
 		// 全粒子で
 		for(unsigned int i = 0; i < n; i++)
 		{
@@ -178,6 +222,9 @@ namespace OpenMps
 			ppe.x(i) = x_i;
 		}
 		// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
+
+		// 係数行列初期化
+		ppe.A.clear();
 
 		// 全粒子で
 		for(unsigned int i = 0; i < n; i++)
@@ -194,10 +241,13 @@ namespace OpenMps
 				{
 					// 非対角項を計算
 					double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
-					ppe.A(i, j) = a_ij;
+					if(a_ij != 0)
+					{
+						ppe.A(i, j) = a_ij;
 
-					// 対角項
-					a_ii -= a_ij;
+						// 対角項も設定
+						a_ii -= a_ij;
+					}
 				}
 			}
 
@@ -205,6 +255,31 @@ namespace OpenMps
 			ppe.A(i, i) = a_ii;
 		}
 	}
+
+#ifdef MODIFY_TOO_NEAR
+	void MpsComputer::ModifyTooNear()
+	{
+		// 速度修正量を全初期化
+		du.clear();
+
+		// 全粒子で
+		for(auto& particle : particles)
+		{
+			// 過剰接近粒子からの速度修正量を計算する
+			Vector d = particle->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
+			du.push_back(d);
+		}
+
+		// 全粒子で
+		for(unsigned int i = 0; i < particles.size(); i++)
+		{
+			// 位置・速度を修正
+			Vector thisDu = du[i];
+			particles[i]->Accelerate(thisDu);
+			particles[i]->Move(thisDu * dt);
+		}
+	}
+#endif
 
 	void MpsComputer::SolvePressurePoissonEquation()
 	{
@@ -281,6 +356,7 @@ namespace OpenMps
 			throw exception;
 		}
 	};
+#endif
 
 	void MpsComputer::ModifyByPressureGradient()
 	{

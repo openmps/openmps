@@ -39,6 +39,11 @@ namespace OpenMps
 		// 動粘性係数
 		double nu;
 
+#ifdef PRESSURE_EXPLICIT
+		// 音速
+		double c;
+#endif
+
 		// 1ステップの最大移動距離
 		double maxDx;
 
@@ -54,7 +59,15 @@ namespace OpenMps
 		// 拡散モデル定数
 		double lambda;
 
+#ifdef MODIFY_TOO_NEAR
+		// 過剰接近粒子と判定される距離
+		double tooNearLength;
 
+		// 過剰接近粒子から受ける修正量の係数
+		double tooNearCoefficient;
+#endif
+
+#ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
 		{	
@@ -83,8 +96,9 @@ namespace OpenMps
 				LongVector Ap;
 			} cg;
 		} ppe;
+#endif
 
-		// 圧力勾配による速度修正量
+		// 速度修正量
 		std::vector<Vector> du;
 
 
@@ -100,11 +114,18 @@ namespace OpenMps
 		// 陰的にで解く部分（第ニ段階）を計算する
 		void ComputeImplicitForces();
 
+#ifdef MODIFY_TOO_NEAR
+		// 過剰接近粒子を補正する
+		void ModifyTooNear();
+#endif
+		
+#ifndef PRESSURE_EXPLICIT
 		// 圧力方程式を設定する
 		void SetPressurePoissonEquation();
 
 		// 圧力方程式をを解く
 		void SolvePressurePoissonEquation();
+#endif
 
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient();
@@ -114,17 +135,37 @@ namespace OpenMps
 		{
 			std::string Message;
 		};
-
+		
 		// @param maxDt 最大時間刻み（出力時間刻み以下など）
 		// @param g 重力加速度
+		// @param c 音速
 		// @param rho 密度
 		// @param nu 動粘性係数
 		// @param C クーラン数
-		// @param l_0 初期粒子間距離
 		// @param r_eByl_0 影響半径と初期粒子間距離の比
 		// @param surfaceRatio 自由表面判定の係数
 		// @param allowableResidual 圧力方程式の収束判定（許容誤差）
-		MpsComputer(const double& maxDt, const double& g, const double& rho, const double& nu, const double& C, const double& l_0, const double& r_eByl_0, const double& surfaceRatio, const double& allowableResidual);
+		// @param l_0 初期粒子間距離
+		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
+		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
+		MpsComputer(
+			const double& maxDt,
+			const double& g,
+			const double& rho,
+			const double& nu,
+			const double& C,
+			const double& r_eByl_0,
+			const double& surfaceRatio,
+#ifdef PRESSURE_EXPLICIT
+			const double& c,
+#else
+			const double& allowableResidual,
+#endif
+#ifdef MODIFY_TOO_NEAR
+			const double& tooNearRatio,
+			const double& tooNearCoefficient,
+#endif
+			const double& l_0);
 
 		// 時間を進める
 		void ForwardTime();

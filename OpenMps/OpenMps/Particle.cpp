@@ -1,5 +1,6 @@
 #include "Particle.hpp"
 #include <numeric>
+#include <boost/numeric/ublas/io.hpp>
 
 namespace OpenMps
 {
@@ -41,12 +42,23 @@ namespace OpenMps
 			});
 	}	
 
-	Vector Particle::GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0)
+	Vector Particle::GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0)  const
 	{
 		Vector zero;
 		zero(0) = 0;
 		zero(1) = 0;
 
+		Vector du;
+
+#ifdef PRESSURE_GRADIENT_MIDPOINT
+		// 速度修正量を計算
+		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+			[this, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle::Ptr& particle)
+			{
+				auto du = particle->PressureGradientTo(*this, r_e, dt, rho, n0);
+				return (Vector)(sum + du);
+			});
+#else
 		// 最小圧力を取得する
 		auto minPparticle = std::min_element(particles.cbegin(), particles.cend(),
 			[](const Particle::Ptr& base, const Particle::Ptr& target)
@@ -54,12 +66,62 @@ namespace OpenMps
 				return base->p < target->p;
 			});
 
-		// 速度修正量を計算して返す
-		return std::accumulate(particles.cbegin(), particles.cend(), zero,
+		// 速度修正量を計算
+		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
 			[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
 			{
 				auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
 				return (Vector)(sum + du);
 			});
-	}	
+#endif
+		return du;
+	}
+
+#ifdef MODIFY_TOO_NEAR
+	Vector Particle::GetCorrectionByTooNear(const Particle::List& particles, const double& r_e, const double& rho, const double& tooNearLength, const double& tooNearCoefficient) const
+	{
+		Vector zero;
+		zero(0) = 0;
+		zero(1) = 0;
+
+		// 運動量を計算
+		auto p_i = rho * this->u;
+
+		Vector du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle::Ptr& particle)
+			{
+				namespace ublas = boost::numeric::ublas;
+
+				// 相対距離を計算
+				auto x_ij = particle->x - this->x;
+				double r_ij = ublas::norm_2(x_ij);
+
+				// 相対距離が過剰接近なら
+				auto d = zero;
+				if((0 < r_ij) & (r_ij < tooNearLength))
+				{
+					// 合成運動量を計算
+					auto p = p_i + rho * particle->u;
+
+					// 運動量の変化量を計算
+					auto delta_p = p_i - p/2;
+					auto abs_delta_p = ublas::inner_prod(delta_p, x_ij) / r_ij;
+
+					// 運動量が増加する方向なら
+					if(abs_delta_p > 0)
+					{
+						// 反発率をかける
+						auto p_m = (tooNearCoefficient * abs_delta_p / r_ij) * x_ij;
+
+						// 速度の修正量を計算
+						d = p_m / rho;
+					}
+				}
+
+				return (Vector)(sum - d);
+			});
+
+		return du;
+	}
+#endif
 }
