@@ -55,7 +55,7 @@ int main()
 	const double surfaceRatio = 0.95;
 	const double eps = 1e-8;
 #ifdef PRESSURE_EXPLICIT
-	const double c = 1.5;
+	const double c = 15;
 #endif
 #ifdef MODIFY_TOO_NEAR
 	const double& tooNearRatio = 0.5;

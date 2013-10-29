@@ -193,6 +193,31 @@ namespace OpenMps
 		ModifyByPressureGradient();
 	}
 
+#ifdef MODIFY_TOO_NEAR
+	void MpsComputer::ModifyTooNear()
+	{
+		// 速度修正量を全初期化
+		du.clear();
+
+		// 全粒子で
+		for(auto& particle : particles)
+		{
+			// 過剰接近粒子からの速度修正量を計算する
+			Vector d = particle->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
+			du.push_back(d);
+		}
+
+		// 全粒子で
+		for(unsigned int i = 0; i < particles.size(); i++)
+		{
+			// 位置・速度を修正
+			Vector thisDu = du[i];
+			particles[i]->Accelerate(thisDu);
+			particles[i]->Move(thisDu * dt);
+		}
+	}
+#endif
+
 #ifndef PRESSURE_EXPLICIT
 	void MpsComputer::SetPressurePoissonEquation()
 	{
@@ -255,31 +280,6 @@ namespace OpenMps
 			ppe.A(i, i) = a_ii;
 		}
 	}
-
-#ifdef MODIFY_TOO_NEAR
-	void MpsComputer::ModifyTooNear()
-	{
-		// 速度修正量を全初期化
-		du.clear();
-
-		// 全粒子で
-		for(auto& particle : particles)
-		{
-			// 過剰接近粒子からの速度修正量を計算する
-			Vector d = particle->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
-			du.push_back(d);
-		}
-
-		// 全粒子で
-		for(unsigned int i = 0; i < particles.size(); i++)
-		{
-			// 位置・速度を修正
-			Vector thisDu = du[i];
-			particles[i]->Accelerate(thisDu);
-			particles[i]->Move(thisDu * dt);
-		}
-	}
-#endif
 
 	void MpsComputer::SolvePressurePoissonEquation()
 	{
