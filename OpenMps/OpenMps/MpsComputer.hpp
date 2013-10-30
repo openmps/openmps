@@ -103,32 +103,32 @@ namespace OpenMps
 
 
 		// 時間刻みを決定する
-		void DetermineDt();
+		inline void DetermineDt();
 
 		// 粒子数密度を計算する
-		void ComputeNeighborDensities();
+		inline void ComputeNeighborDensities();
 
 		// 陽的にで解く部分（第一段階）を計算する
-		void ComputeExplicitForces();
+		inline void ComputeExplicitForces();
 
 		// 陰的にで解く部分（第ニ段階）を計算する
-		void ComputeImplicitForces();
+		inline void ComputeImplicitForces();
 
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子を補正する
-		void ModifyTooNear();
+		inline void ModifyTooNear();
 #endif
 		
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式を設定する
-		void SetPressurePoissonEquation();
+		inline void SetPressurePoissonEquation();
 
 		// 圧力方程式をを解く
-		void SolvePressurePoissonEquation();
+		inline void SolvePressurePoissonEquation();
 #endif
 
 		// 圧力勾配によって速度と位置を修正する
-		void ModifyByPressureGradient();
+		inline void ModifyByPressureGradient();
 		
 	public:
 		struct Exception
@@ -175,13 +175,13 @@ namespace OpenMps
 		void AddParticle(const Particle::Ptr& particle);
 
 		// 粒子リストを取得する
-		const Particle::List Particles() const
+		inline const Particle::List Particles() const
 		{
 			return this->particles;
 		}
 
 		// 現在時刻を取得する
-		double T() const
+		inline double T() const
 		{
 			return t;
 		}

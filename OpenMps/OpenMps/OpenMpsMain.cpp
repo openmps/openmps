@@ -59,7 +59,7 @@ int main()
 #endif
 #ifdef MODIFY_TOO_NEAR
 	const double& tooNearRatio = 0.5;
-	const double& tooNearCoefficient = 1.5;
+	const double& tooNearCoefficient = 0.5;
 #endif
 
 	// 出力時間刻み
@@ -114,7 +114,7 @@ int main()
 		auto particle2 = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
 		//computer.AddParticle(particle2);
 
-		// 床を追加
+		// 床と天井を追加
 		for(int i = -1; i < L+1; i++)
 		{
 			double x = i*l_0;
@@ -150,6 +150,19 @@ int main()
 				computer.AddParticle(dummy2);
 				computer.AddParticle(dummy3);
 			}
+			
+			// 右壁
+			{
+				// 粒子を作成して追加
+				auto wall1 = std::shared_ptr<Particle>(new ParticleWall((L+0)*l_0, y, 0, 0));
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y));
+				computer.AddParticle(wall1);
+				computer.AddParticle(dummy1);
+				computer.AddParticle(dummy2);
+				computer.AddParticle(dummy3);
+			}
 		}
 
 		// 四隅
@@ -168,6 +181,17 @@ int main()
 				computer.AddParticle(dummy2);
 				computer.AddParticle(dummy3);
 			}
+			
+			// 右下
+			{
+				// 粒子を作成して追加
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y-4*l_0));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y-4*l_0));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y-4*l_0));
+				computer.AddParticle(dummy1);
+				computer.AddParticle(dummy2);
+				computer.AddParticle(dummy3);
+			}
 		}
 	}
 	
@@ -181,7 +205,7 @@ int main()
 	// 計算が終了するまで
 	double nextOutputT = 0;
 	int iteration = 0;
-	for(int outputCount = 1; outputCount <= 100 ; outputCount++)
+	for(int outputCount = 1; outputCount <= 500 ; outputCount++)
 	{
 		try
 		{

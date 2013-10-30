@@ -129,11 +129,13 @@ namespace OpenMps
 
 	void MpsComputer::ComputeNeighborDensities()
 	{
-		// 全粒子で
-		for(auto& particle : particles)
+#ifdef _OPENMP
+		#pragma omp parallel for
+#endif
+		for(int i = 0; i < (int)particles.size(); i++)
 		{
 			// 粒子数密度を計算する
-			particle->UpdateNeighborDensity(particles, r_e);
+			particles[i]->UpdateNeighborDensity(particles, r_e);
 		}
 	}
 
@@ -142,26 +144,36 @@ namespace OpenMps
 		// 加速度を全初期化
 		auto& a = du;
 		a.clear();
+		a.resize(particles.size());
 
-		// 全粒子で
-		for(auto& particle : particles)
+#ifdef _OPENMP
+		#pragma omp parallel
+#endif
 		{
-			// 重力の計算
-			Vector d = g;
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			// 全粒子で
+			for(int i = 0; i < (int)particles.size(); i++)
+			{
+				// 粘性項の計算
+				auto vis = particles[i]->GetViscosity(particles, n0, r_e, lambda, nu, dt);
 
-			// 粘性項の計算
-			auto vis = particle->GetViscosity(particles, n0, r_e, lambda, nu, dt);
-			d += vis;
-			a.push_back(d);
-		}
+				// 重力＋粘性項
+				a[i] = g + vis;
+			}
 
-		// 全粒子で
-		for(unsigned int i = 0; i < particles.size(); i++)
-		{
-			// 位置・速度を修正
-			Vector thisA = a[i];
-			particles[i]->Move(particles[i]->VectorU() * dt + a[i]*dt*dt/2);
-			particles[i]->Accelerate(a[i] * dt);
+			// 全粒子で
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			for(int i = 0; i < (int)particles.size(); i++)
+			{
+				// 位置・速度を修正
+				Vector thisA = a[i];
+				particles[i]->Move(particles[i]->VectorU() * dt + a[i]*dt*dt/2);
+				particles[i]->Accelerate(a[i] * dt);
+			}
 		}
 	}
 
@@ -169,11 +181,12 @@ namespace OpenMps
 	{
 #ifdef PRESSURE_EXPLICIT
 		// 得た圧力を計算する
-		for(unsigned int i = 0; i < particles.size(); i++)
+#ifdef _OPENMP
+		#pragma omp parallel for
+#endif
+		for(int i = 0; i < (int)particles.size(); i++)
 		{
-			auto& particle = particles[i];
-
-			particle->UpdatePressure(c, rho, n0);
+			particles[i]->UpdatePressure(c, rho, n0);
 		}
 #else
 		// 圧力方程式を設定
@@ -198,22 +211,34 @@ namespace OpenMps
 	{
 		// 速度修正量を全初期化
 		du.clear();
+		du.resize(particles.size());
 
-		// 全粒子で
-		for(auto& particle : particles)
+#ifdef _OPENMP
+		#pragma omp parallel
+#endif
 		{
-			// 過剰接近粒子からの速度修正量を計算する
-			Vector d = particle->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
-			du.push_back(d);
-		}
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			// 全粒子で
+			for(int i = 0; i < (int)particles.size(); i++)
+			{
+				// 過剰接近粒子からの速度修正量を計算する
+				Vector d = particles[i]->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
+				du[i] = d;
+			}
 
-		// 全粒子で
-		for(unsigned int i = 0; i < particles.size(); i++)
-		{
-			// 位置・速度を修正
-			Vector thisDu = du[i];
-			particles[i]->Accelerate(thisDu);
-			particles[i]->Move(thisDu * dt);
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			// 全粒子で
+			for(int i = 0; i < (int)particles.size(); i++)
+			{
+				// 位置・速度を修正
+				Vector thisDu = du[i];
+				particles[i]->Accelerate(thisDu);
+				particles[i]->Move(thisDu * dt);
+			}
 		}
 	}
 #endif
@@ -362,25 +387,36 @@ namespace OpenMps
 	{
 		// 速度修正量を全初期化
 		du.clear();
+		du.resize(particles.size());
 
-		// 全粒子で
-		for(auto& particle : particles)
+#ifdef _OPENMP
+		#pragma omp parallel
+#endif
 		{
-			// 圧力勾配を計算する
-			Vector d = particle->GetPressureGradient(particles, r_e, dt, rho, n0);
-			du.push_back(d);
-		}
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			// 全粒子で
+			for(int i = 0; i < (int)particles.size(); i++)
+			{
+				// 圧力勾配を計算する
+				Vector d = particles[i]->GetPressureGradient(particles, r_e, dt, rho, n0);
+				du[i] = d;
+			}
+#ifdef _OPENMP
+			#pragma omp for
+#endif
 
-		// 全粒子で
-		for(unsigned int i = 0; i < particles.size(); i++)
-		{
-			// 位置・速度を修正
-			Vector thisDu = du[i];
-			particles[i]->Accelerate(thisDu);
-			particles[i]->Move(thisDu * dt);
+			// 全粒子で
+			for(int i = 0; i < (int)particles.size(); i++)
+			{
+				// 位置・速度を修正
+				Vector thisDu = du[i];
+				particles[i]->Accelerate(thisDu);
+				particles[i]->Move(thisDu * dt);
+			}
 		}
 	}
-
 
 	void MpsComputer::AddParticle(const Particle::Ptr& particle)
 	{
