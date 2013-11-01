@@ -14,7 +14,14 @@ You can select the license of your choice from as following:
 * [http://www.gnu.org/licenses/gpl.html GNU General Public License v3.0 or later]
 
 == Usage ==
-# Build codes with Boost. Depvelopers use Visual Studio 2012.
+=== Initialization ===
+When you check out this project first, you need to
+* update submodule "boost" and build boost by execution "bootstrap" and "b2".
+
+=== Build ===
+# Build codes. It is recommended to use Visual Studio 2012.
+
+=== Execution ===
 # Run the program (Developers expect execution on Windows). Results will be output as CSV in "result" folder.
 # Visualize results by visualizer. If you use ParaView,
 ## Open "particle_****.csv"s
@@ -37,3 +44,6 @@ You can select the license of your choice from as following:
 == Desclaimer ==
 Anyone including me (author:aokomoriuta) is not responsible for any damages or corrupts by this project. Download and use this project at your own risk.
 Any questions or pull-resquests or other contribution are welcome. Although keeping trying to respond as soon as possible, but no one is responsible to respond it. Any responses are also not responsible by anyone including me.
+
+== Open sources ==
+* [http://www.boost.org/ Boost] - Powerfull C++ libraries @ Boost Software Licenses v 1.0

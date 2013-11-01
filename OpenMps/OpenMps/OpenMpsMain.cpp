@@ -92,8 +92,8 @@ int main()
 
 	// ダムブレーク環境を作成
 	{
-		const int L = 60;
-		const int H = 40;
+		const int L = 60*2;
+		const int H = 40*2;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)
@@ -193,14 +193,21 @@ int main()
 				computer.AddParticle(dummy3);
 			}
 		}
-	}
+	}	// 初期状態を出力
+	OutputToCsv(computer, 0);
+	
 	
 	// 開始時間を保存
 	boost::timer timer;
 	timer.restart();
+	auto timeFormat = boost::format("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
-	// 初期状態を出力
-	OutputToCsv(computer, 0);
+	// 開始時間を画面表示
+	auto t = std::time(nullptr);
+	auto tm = std::localtime(&t);
+	std::cout << timeFormat % computer.T() % 0 % 0
+				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
+				% timer.elapsed() << std::endl;
 
 	// 計算が終了するまで
 	double nextOutputT = 0;
@@ -222,9 +229,9 @@ int main()
 			OutputToCsv(computer, outputCount);
 
 			// 現在時刻を画面表示
-			auto t = std::time(nullptr);
-			auto tm = std::localtime(&t);
-			std::cout << boost::format("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)") % computer.T() % iteration % outputCount
+			t = std::time(nullptr);
+			tm = std::localtime(&t);
+			std::cout << timeFormat % computer.T() % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 				% timer.elapsed() << std::endl;
 		}
