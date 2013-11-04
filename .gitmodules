@@ -1,3 +1,6 @@
 [submodule "boost"]
 	path = boost
 	url = git://github.com/mirror/boost.git
+[submodule "viennacl"]
+	path = viennacl
+	url = git://github.com/viennacl/viennacl-dev.git

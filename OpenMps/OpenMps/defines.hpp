@@ -4,6 +4,9 @@
 // 次元数
 #define DIMENSTION 2;
 
+// 行列計算にViennaCLを使用する。並列化できる。オフの場合はboost uBLASとなる。
+#define USE_VIENNACL
+
 /////////////////////////////////////////////
 // 以下は計算手法についての選択肢          //
 // 何も指定しなければ標準MPS法が採用される //
@@ -22,6 +25,7 @@
 // 圧力の計算に陽解法を用いる場合に指定する
 // 　長所：1ステップの計算が陰解法に比べて非常に高速
 // 　短所：時間刻みが小さくなる・弱圧縮を許容する
-#define PRESSURE_EXPLICIT
+// #define PRESSURE_EXPLICIT
+
 
 #endif

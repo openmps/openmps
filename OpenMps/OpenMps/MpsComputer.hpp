@@ -1,9 +1,14 @@
 #ifndef MPSCOMPUTER_INCLUDED
 #define MPSCOMPUTER_INCLUDED
+#include "defines.hpp"
 
 #include <vector>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
+#ifdef USE_VIENNACL
+#include <viennacl/compressed_matrix.hpp>
+#include <viennacl/vector.hpp>
+#endif
 #include "Particle.hpp"
 
 namespace OpenMps
@@ -12,11 +17,22 @@ namespace OpenMps
 	class MpsComputer
 	{
 	private:
+#ifdef USE_VIENNACL
+		// 線形方程式用の疎行列
+		typedef viennacl::compressed_matrix<double> Matrix;
+
+		// 線形方程式用の多次元ベクトル
+		typedef viennacl::vector<double> LongVector;
+
+		// CPU用疎行列（係数行列の設定に使用）
+		typedef boost::numeric::ublas::compressed_matrix<double> TempMatrix;
+#else
 		// 線形方程式用の疎行列
 		typedef boost::numeric::ublas::compressed_matrix<double> Matrix;
 
 		// 線形方程式用の多次元ベクトル
 		typedef boost::numeric::ublas::vector<double> LongVector;
+#endif
 
 		// 粒子リスト
 		Particle::List particles;
@@ -70,9 +86,14 @@ namespace OpenMps
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
-		{	
+		{
 			// 係数行列
 			Matrix A;
+
+#ifdef USE_VIENNACL
+			// CPU用疎行列（係数行列の設定に使用）
+			TempMatrix tempA;
+#endif
 
 			// 圧力方程式の未知数
 			LongVector x;
@@ -95,6 +116,7 @@ namespace OpenMps
 				// 係数行列と探索方向ベクトルの積
 				LongVector Ap;
 			} cg;
+
 		} ppe;
 #endif
 

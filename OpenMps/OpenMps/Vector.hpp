@@ -1,8 +1,8 @@
 #ifndef VECTOR_INCLUDED
 #define VECTOR_INCLUDED
+#include "defines.hpp"
 
 #include <boost/numeric/ublas/vector.hpp>
-#include "defines.hpp"
 
 namespace OpenMps
 {

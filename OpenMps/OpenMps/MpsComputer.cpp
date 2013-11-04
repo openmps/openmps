@@ -1,9 +1,11 @@
 #include "MpsComputer.hpp"
 #include <algorithm>
 #include <cmath>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/lu.hpp>
-#include <boost/numeric/ublas/io.hpp>
+#ifdef USE_VIENNACL
+#include <viennacl/linalg/prod.hpp>
+#include <viennacl/linalg/inner_prod.hpp>
+#include <viennacl/linalg/norm_inf.hpp>
+#endif
 
 namespace OpenMps
 {
@@ -258,7 +260,10 @@ namespace OpenMps
 			ppe.b = LongVector(n);
 			ppe.cg.r = LongVector(n);
 			ppe.cg.p = LongVector(n);
-			ppe.cg.Ap = LongVector(n);
+			ppe.cg.Ap = LongVector(n);	
+#ifdef USE_VIENNACL
+			ppe.tempA = TempMatrix(n, n);
+#endif
 		}
 		// 全粒子で
 		for(unsigned int i = 0; i < n; i++)
@@ -274,7 +279,12 @@ namespace OpenMps
 		// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
 
 		// 係数行列初期化
-		ppe.A.clear();
+#ifdef USE_VIENNACL
+		auto& A = ppe.tempA;
+#else
+		auto& A = ppe.A;
+#endif
+		A.clear();
 
 		// 全粒子で
 		for(unsigned int i = 0; i < n; i++)
@@ -293,7 +303,7 @@ namespace OpenMps
 					double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
 					if(a_ij != 0)
 					{
-						ppe.A(i, j) = a_ij;
+						A(i, j) = a_ij;
 
 						// 対角項も設定
 						a_ii -= a_ij;
@@ -302,15 +312,19 @@ namespace OpenMps
 			}
 
 			// 対角項を設定
-			ppe.A(i, i) = a_ii;
+			A(i, i) = a_ii;
 		}
+		
+#ifdef USE_VIENNACL
+		// 作成した係数行列をデバイス側に複製
+		viennacl::copy(ppe.tempA, ppe.A);
+#endif
 	}
 
 	void MpsComputer::SolvePressurePoissonEquation()
 	{
 		// 共役勾配法で解く
 		// TODO: 前処理ぐらい入れようよ
-		namespace ublas = boost::numeric::ublas;
 
 		auto& A = ppe.A;
 		auto& x = ppe.x;
@@ -319,18 +333,25 @@ namespace OpenMps
 		auto& p = ppe.cg.p;
 		auto& Ap = ppe.cg.Ap;
 
+		// 使用する演算を選択
+#ifdef USE_VIENNACL
+		namespace blas = viennacl::linalg;
+#else
+		namespace blas = boost::numeric::ublas;
+#endif
+
 		// 初期値を設定
 		//  (Ap)_0 = A * x
 		//  r_0 = b - Ap
 		//  p_0 = r_0
 		//  rr = r・r
-		Ap = ublas::prod(A, x);
+		Ap = blas::prod(A, x);
 		r = b - Ap;
 		p = r;
-		double rr = ublas::inner_prod(r, r);
+		double rr = blas::inner_prod(r, r);
 
 		// 初期値でまだ収束していない場合
-		bool isConverged = (ublas::norm_inf(r)< ppe.allowableResidual);
+		bool isConverged = (blas::norm_inf(r)< ppe.allowableResidual);
 		if(!isConverged)
 		{
 			// 未知数分だけ繰り返す
@@ -341,13 +362,13 @@ namespace OpenMps
 				//  α = rr/(p・Ap)
 				//  x' += αp
 				//  r' -= αAp
-				Ap = ublas::prod(A, p);
-				double alpha = rr / ublas::inner_prod(p, Ap);
+				Ap = blas::prod(A, p);
+				double alpha = rr / blas::inner_prod(p, Ap);
 				x += alpha * p;
 				r -= alpha * Ap;
 
-				// 収束判定
-				double residual = ublas::norm_inf(r);
+				// 収束判定（残差＝残差ベクトルの最大要素値）
+				double residual = blas::norm_inf(r);
 				isConverged = (residual < ppe.allowableResidual);
 
 				// 収束していたら
@@ -364,7 +385,7 @@ namespace OpenMps
 					//  β= r'r'/rr
 					//  p = r' + βp
 					//  rr = r'r'
-					double rrNew = ublas::inner_prod(r, r);
+					double rrNew = blas::inner_prod(r, r);
 					double beta = rrNew / rr;
 					p = r + beta * p;
 					rr = rrNew;
