@@ -1,11 +1,12 @@
+#include "defines.hpp"
 #include <iostream>
 #include <fstream>
 #include <typeinfo>
 #include <ctime>
+#include <omp.h>
 #include <boost/format.hpp>
 #include <boost/random.hpp>
 #include <boost/timer.hpp>
-#include "defines.hpp"
 #include "Particle.hpp"
 #include "MpsComputer.hpp"
 
@@ -51,7 +52,7 @@ int main()
 	const double rho = 998.20;
 	const double nu = 1.004e-6;
 	const double C = 0.1;
-	const double r_eByl_0 = 2.4;
+	const double r_eByl_0 = 2.9;
 	const double surfaceRatio = 0.95;
 	const double eps = 1e-8;
 #ifdef PRESSURE_EXPLICIT
@@ -92,8 +93,8 @@ int main()
 
 	// ダムブレーク環境を作成
 	{
-		const int L = 60*2;
-		const int H = 40*2;
+		const int L = (int)(6e-2/l_0)*2;
+		const int H = (int)(4e-2/l_0)*2;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)
@@ -193,9 +194,23 @@ int main()
 				computer.AddParticle(dummy3);
 			}
 		}
-	}	// 初期状態を出力
-	OutputToCsv(computer, 0);
+	}
+
+	// 粒子数を表示
+	std::cout << computer.Particles().size() << " particles" << std::endl;
+
+#ifdef _OPENMP
+	#pragma omp parallel
+	{
+		#pragma omp master
+		{
+			std::cout << omp_get_num_threads() << " threads" << std::endl;
+		}
+	}
+#endif
 	
+	// 初期状態を出力
+	OutputToCsv(computer, 0);
 	
 	// 開始時間を保存
 	boost::timer timer;

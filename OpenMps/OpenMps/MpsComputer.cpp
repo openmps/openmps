@@ -1,6 +1,9 @@
 #include "MpsComputer.hpp"
 #include <algorithm>
 #include <cmath>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #ifdef USE_VIENNACL
 #include <viennacl/linalg/prod.hpp>
 #include <viennacl/linalg/inner_prod.hpp>
@@ -249,7 +252,7 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		unsigned int n = particles.size();
+		int n = (int)particles.size();
 
 		// 粒子に増減があれば
 		if(n != ppe.b.size())
@@ -265,18 +268,6 @@ namespace OpenMps
 			ppe.tempA = TempMatrix(n, n);
 #endif
 		}
-		// 全粒子で
-		for(unsigned int i = 0; i < n; i++)
-		{
-			// 生成項を計算する
-			double b_i = particles[i]->Source(n0, dt, surfaceRatio);
-			ppe.b(i) = b_i;
-
-			// 圧力を未知数ベクトルの初期値にする
-			double x_i = particles[i]->P();
-			ppe.x(i) = x_i;
-		}
-		// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
 
 		// 係数行列初期化
 #ifdef USE_VIENNACL
@@ -286,34 +277,83 @@ namespace OpenMps
 #endif
 		A.clear();
 
-		// 全粒子で
-		for(unsigned int i = 0; i < n; i++)
-		{
-			// 対角項を初期化
-			double a_ii = 0;
-			
-			// 他の粒子に対して
-			// TODO: 全粒子探索してるので遅い
-			for(unsigned int j = 0; j < particles.size(); j++)
-			{
-				// 自分以外
-				if(i != j)
-				{
-					// 非対角項を計算
-					double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
-					if(a_ij != 0)
-					{
-						A(i, j) = a_ij;
+#ifdef _OPENMP
+		// 係数行列Aのロックを生成
+		// TODO: ロックをなくす（Aのサイズを予約できればよい）
+		omp_lock_t lockA;
+		omp_init_lock(&lockA);
 
-						// 対角項も設定
-						a_ii -= a_ij;
+		#pragma omp parallel
+#endif
+		{
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			// 全粒子で
+			for(int i = 0; i < n; i++)
+			{
+				// 生成項を計算する
+				double b_i = particles[i]->Source(n0, dt, surfaceRatio);
+				ppe.b(i) = b_i;
+
+				// 圧力を未知数ベクトルの初期値にする
+				double x_i = particles[i]->P();
+				ppe.x(i) = x_i;
+			}
+			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
+			
+#ifdef _OPENMP
+			#pragma omp for
+#endif
+			// 全粒子で
+			for(int i = 0; i < n; i++)
+			{
+				// 対角項を初期化
+				double a_ii = 0;
+			
+				// 他の粒子に対して
+				// TODO: 全粒子探索してるので遅い
+				for(unsigned int j = 0; j < particles.size(); j++)
+				{
+					// 自分以外
+					if(i != j)
+					{
+						// 非対角項を計算
+						double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
+						if(a_ij != 0)
+						{
+#ifdef _OPENMP
+							// 係数行列Aをロック
+							omp_set_lock(&lockA);
+#endif
+							A(i, j) = a_ij;
+#ifdef _OPENMP
+							// 係数行列Aをロック解除
+							omp_unset_lock(&lockA);
+#endif
+
+							// 対角項も設定
+							a_ii -= a_ij;
+						}
 					}
 				}
+#ifdef _OPENMP
+				// 係数行列Aをロック
+				omp_set_lock(&lockA);
+#endif
+				// 対角項を設定
+				A(i, i) = a_ii;
+#ifdef _OPENMP
+				// 係数行列Aをロック解除
+				omp_unset_lock(&lockA);
+#endif
 			}
-
-			// 対角項を設定
-			A(i, i) = a_ii;
 		}
+		
+#ifdef _OPENMP
+		// 係数行列Aのロックを削除
+		omp_destroy_lock(&lockA);
+#endif
 		
 #ifdef USE_VIENNACL
 		// 作成した係数行列をデバイス側に複製

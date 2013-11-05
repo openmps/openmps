@@ -18,7 +18,7 @@ namespace OpenMps
 	void Particle::UpdateNeighborDensity(const Particle::List& particles, const double& r_e)
 	{
 		// 重み関数の総和を粒子数密度とする
-		// TODO: 全粒子探索してるのでGet
+		// TODO: 全粒子探索してるので遅い
 		n = std::accumulate(particles.cbegin(), particles.cend(), 0.0,
 			[this, &r_e](const double& sum, const Particle::Ptr& particle)
 			{
