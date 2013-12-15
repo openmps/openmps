@@ -47,7 +47,7 @@ int main()
 	system("mkdir result");
 	using namespace OpenMps;
 
-	const double l_0 = 1e-3;
+	const double l_0 = 5e-4;
 	const double g = 9.8;
 	const double rho = 998.20;
 	const double nu = 1.004e-6;
