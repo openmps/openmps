@@ -10,6 +10,7 @@
 #include <viennacl/vector.hpp>
 #endif
 #include "Particle.hpp"
+#include "Grid.hpp"
 
 namespace OpenMps
 {
@@ -36,6 +37,9 @@ namespace OpenMps
 
 		// 粒子リスト
 		Particle::List particles;
+
+		// 近傍粒子探索用グリッド
+		Grid grid;
 
 		// 現在時刻
 		double t;
@@ -123,6 +127,8 @@ namespace OpenMps
 		// 速度修正量
 		std::vector<Vector> du;
 
+		// グリッドに登録する
+		inline void StoreGrid();
 
 		// 時間刻みを決定する
 		inline void DetermineDt();
@@ -187,14 +193,11 @@ namespace OpenMps
 			const double& tooNearRatio,
 			const double& tooNearCoefficient,
 #endif
-			const double& l_0);
+			const double& l_0,
+			const Particle::List& particles);
 
 		// 時間を進める
 		void ForwardTime();
-
-		// 粒子を追加する
-		// @param particle 追加する粒子
-		void AddParticle(const Particle::Ptr& particle);
 
 		// 粒子リストを取得する
 		inline const Particle::List Particles() const

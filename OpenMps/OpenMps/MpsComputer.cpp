@@ -30,8 +30,13 @@ namespace OpenMps
 			const double& tooNearRatio,
 			const double& tooNearCoefficient,
 #endif
-			const double& l_0)
+			const double& l_0,
+			const Particle::List& particles)
 		: t(0), dt(0), g(), rho(rho), nu(nu), maxDx(C*l_0), r_e(r_eByl_0 * l_0), surfaceRatio(surfaceRatio),
+
+		particles(particles),
+		grid(r_eByl_0 * l_0),
+
 #ifdef MODIFY_TOO_NEAR
 		tooNearLength(tooNearRatio*l_0), tooNearCoefficient(tooNearCoefficient),
 #endif
@@ -90,6 +95,9 @@ namespace OpenMps
 
 	void MpsComputer::ForwardTime()
 	{
+		// グリッドに登録
+		StoreGrid();
+
 		// 時間刻みを設定
 		DetermineDt();
 
@@ -98,11 +106,14 @@ namespace OpenMps
 
 		// 第一段階の計算
 		ComputeExplicitForces();
-
+		
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子の補正
 		ModifyTooNear();
 #endif
+
+		// グリッドに登録
+		StoreGrid();
 
 		// 粒子数密度を計算する
 		ComputeNeighborDensities();
@@ -112,6 +123,19 @@ namespace OpenMps
 
 		// 時間を進める
 		t += dt;
+	}
+
+	void MpsComputer::StoreGrid()
+	{
+		// TODO: 毎回全消去しない高速化しよう
+		grid.Clear();
+
+		// 全粒子について
+		for(int i = 0; i < (int)particles.size(); i++)
+		{
+			// グリッドに登録
+			grid.AddParticle(particles[i]->VectorX(), i);
+		}
 	}
 
 	void MpsComputer::DetermineDt()
@@ -140,7 +164,7 @@ namespace OpenMps
 		for(int i = 0; i < (int)particles.size(); i++)
 		{
 			// 粒子数密度を計算する
-			particles[i]->UpdateNeighborDensity(particles, r_e);
+			particles[i]->UpdateNeighborDensity(particles, grid, r_e);
 		}
 	}
 
@@ -162,7 +186,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 粘性項の計算
-				auto vis = particles[i]->GetViscosity(particles, n0, r_e, lambda, nu, dt);
+				auto vis = particles[i]->GetViscosity(particles, grid, n0, r_e, lambda, nu, dt);
 
 				// 重力＋粘性項
 				a[i] = g + vis;
@@ -229,7 +253,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 過剰接近粒子からの速度修正量を計算する
-				Vector d = particles[i]->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
+				Vector d = particles[i]->GetCorrectionByTooNear(particles, grid, r_e, rho, tooNearLength, tooNearCoefficient);
 				du[i] = d;
 			}
 
@@ -461,7 +485,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 圧力勾配を計算する
-				Vector d = particles[i]->GetPressureGradient(particles, r_e, dt, rho, n0);
+				Vector d = particles[i]->GetPressureGradient(particles, grid, r_e, dt, rho, n0);
 				du[i] = d;
 			}
 #ifdef _OPENMP
@@ -477,10 +501,5 @@ namespace OpenMps
 				particles[i]->Move(thisDu * dt);
 			}
 		}
-	}
-
-	void MpsComputer::AddParticle(const Particle::Ptr& particle)
-	{
-		particles.push_back(particle);
 	}
 }

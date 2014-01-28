@@ -48,7 +48,7 @@
       <DisableSpecificWarnings>4819</DisableSpecificWarnings>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <OpenMPSupport>true</OpenMPSupport>
+      <OpenMPSupport>false</OpenMPSupport>
       <AdditionalIncludeDirectories>$(SolutionDir)..\boost\;$(SolutionDir)..\viennacl\;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -80,12 +80,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Grid.cpp" />
     <ClCompile Include="MpsComputer.cpp" />
     <ClCompile Include="OpenMpsMain.cpp" />
     <ClCompile Include="Particle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defines.hpp" />
+    <ClInclude Include="Grid.hpp" />
     <ClInclude Include="MpsComputer.hpp" />
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="Vector.hpp" />

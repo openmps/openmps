@@ -3,12 +3,15 @@
 #include "defines.hpp"
 
 #include "Vector.hpp"
+#include "Grid.hpp"
 
 namespace OpenMps
 {
 	// 粒子
 	class Particle
 	{
+	public:
+
 	protected:
 		// 位置ベクトル
 		Vector x;
@@ -146,7 +149,7 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param nu 粘性係数
-		virtual Vector GetViscosity(const Particle::List& particles, const double& n_0, const double& r_e, const double& lambda, const double& nu, const double& dt) const;
+		virtual Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double& n_0, const double& r_e, const double& lambda, const double& nu, const double& dt) const;
 
 
 		// 重み関数を計算する
@@ -160,7 +163,7 @@ namespace OpenMps
 		// 粒子数密度を計算する
 		// @param particles 粒子リスト
 		// @param r_e 影響半径
-		virtual void UpdateNeighborDensity(const Particle::List& particles, const double& r_e);
+		virtual void UpdateNeighborDensity(const Particle::List& particles, const Grid& grid, const double& r_e);
 
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子からの速度補正量を計算する
@@ -169,7 +172,7 @@ namespace OpenMps
 		// @param rho 密度
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
-		virtual Vector GetCorrectionByTooNear(const Particle::List& particles, const double& r_e, const double& rho, const double& tooNearRatio, const double& tooNearCoefficient) const;
+		virtual Vector GetCorrectionByTooNear(const Particle::List& particles,const Grid& grid, const double& r_e, const double& rho, const double& tooNearRatio, const double& tooNearCoefficient) const;
 #endif
 
 #ifdef PRESSURE_EXPLICIT
@@ -218,7 +221,7 @@ namespace OpenMps
 		// @param dt 時間刻み
 		// @param rho 密度
 		// @param n0 基準粒子数密度
-		virtual Vector GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0) const;
+		virtual Vector GetPressureGradient(const Particle::List& particles, const Grid& grid, const double& r_e, const double& dt, const double& rho, const double& n0) const;
 
 		////////////////
 		// プロパティ //
@@ -345,7 +348,7 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param nu 粘性係数
-		virtual Vector GetViscosity(const Particle::List& particles, const double& n_0, const double& r_e, const double& lambda, const double& nu) const
+		virtual Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double& n_0, const double& r_e, const double& lambda, const double& nu) const
 		{
 			// 常に0
 			Vector zero;
@@ -361,7 +364,7 @@ namespace OpenMps
 		// @param rho 密度
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
-		virtual Vector GetCorrectionByTooNear(const Particle::List& particles, const double& r_e, const double& rho, const double& tooNearRatio, const double& tooNearCoefficient) const
+		virtual Vector GetCorrectionByTooNear(const Particle::List& particles,const Grid& grid, const double& r_e, const double& rho, const double& tooNearRatio, const double& tooNearCoefficient) const
 		{
 			// 常に0
 			Vector zero;
@@ -374,7 +377,7 @@ namespace OpenMps
 		// 圧力勾配を計算する
 		// @param particles 粒子リスト
 		// @param r_e 影響半径
-		virtual Vector GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0)
+		virtual Vector GetPressureGradient(const Particle::List& particles, const Grid& grid, const double& r_e, const double& dt, const double& rho, const double& n0) const
 		{
 			// 常に0
 			Vector zero;
@@ -425,7 +428,7 @@ namespace OpenMps
 		// @param rho 密度
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
-		virtual Vector GetCorrectionByTooNear(const Particle::List& particles, const double& r_e, const double& rho, const double& tooNearRatio, const double& tooNearCoefficient) const
+		virtual Vector GetCorrectionByTooNear(const Particle::List& particles,const Grid& grid, const double& r_e, const double& rho, const double& tooNearRatio, const double& tooNearCoefficient) const
 		{
 			// 常に0
 			Vector zero;
@@ -502,7 +505,7 @@ namespace OpenMps
 		// 粒子数密度を計算する
 		// @param particles 粒子リスト
 		// @param r_e 影響半径
-		virtual void UpdateNeighborDensity(const Particle::List& particles, const double& r_e)
+		virtual void UpdateNeighborDensity(const Particle::List& particles, const Grid& grid, const double& r_e)
 		{
 			// 計算しない
 			n = 0;
@@ -548,7 +551,7 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param nu 粘性係数
-		virtual Vector GetViscosity(const Particle::List& particles, const double& n_0, const double& r_e, const double& lambda, const double& nu) const
+		virtual Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double& n_0, const double& r_e, const double& lambda, const double& nu) const
 		{
 			// 常に0
 			Vector zero;
@@ -561,7 +564,7 @@ namespace OpenMps
 		// 圧力勾配を計算する
 		// @param particles 粒子リスト
 		// @param r_e 影響半径
-		virtual Vector GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0)
+		virtual Vector GetPressureGradient(const Particle::List& particles, const Grid& grid, const double& r_e, const double& dt, const double& rho, const double& n0) const
 		{
 			// 常に0
 			Vector zero;

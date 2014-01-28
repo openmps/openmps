@@ -47,7 +47,7 @@ int main()
 	system("mkdir result");
 	using namespace OpenMps;
 
-	const double l_0 = 5e-4;
+	const double l_0 = 10e-4;
 	const double g = 9.8;
 	const double rho = 998.20;
 	const double nu = 1.004e-6;
@@ -65,7 +65,133 @@ int main()
 
 	// 出力時間刻み
 	const double outputInterval = 0.001;
+	
+	// 乱数生成器
+	boost::minstd_rand gen(42);
+	boost::uniform_real<> dst(0, l_0*0.1);
+	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
 
+	Particle::List particles;
+
+	// ダムブレーク環境を作成
+	{
+		const int L = (int)(6e-2/l_0);
+		const int H = (int)(4e-2/l_0);
+
+		// 水を追加
+		for(int i = 0; i < L/2; i++)
+		{
+			for(int j = 0; j < H/1.5; j++)
+			{
+				double x = i*l_0;
+				double y = j*l_0;
+
+				double u = make_rand()*C;
+				double v = make_rand()*C;
+
+				auto particle = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
+				particles.push_back(particle);
+			}
+		}
+		
+		auto particle2 = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
+		//particles.push_back(particle2);
+
+		// 床と天井を追加
+		for(int i = -1; i < L+1; i++)
+		{
+			double x = i*l_0;
+
+			// 床
+			{
+				// 粒子を作成して追加
+				auto wall1 = std::shared_ptr<Particle>(new ParticleWall(x, -l_0*1, 0, 0));
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*2));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*3));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*4));
+				particles.push_back(wall1);
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
+			}
+		}
+
+		// 側壁の追加
+		for(int j = 0; j < H+1; j++)
+		{
+			double y = j*l_0;
+
+			// 左壁
+			{
+				// 粒子を作成して追加
+				auto wall1 = std::shared_ptr<Particle>(new ParticleWall(-l_0*1, y, 0, 0));
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y));
+				particles.push_back(wall1);
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
+			}
+			
+			// 右壁
+			{
+				// 粒子を作成して追加
+				auto wall1 = std::shared_ptr<Particle>(new ParticleWall((L+0)*l_0, y, 0, 0));
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y));
+				particles.push_back(wall1);
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
+			}
+		}
+
+		// 四隅
+		// 側壁の追加
+		for(int j = 0; j < 4; j++)
+		{
+			double y = j*l_0;
+
+			// 左下
+			{
+				// 粒子を作成して追加
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
+			}
+			
+			// 右下
+			{
+				// 粒子を作成して追加
+				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y-4*l_0));
+				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y-4*l_0));
+				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y-4*l_0));
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
+			}
+		}
+	}
+
+	// 粒子数を表示
+	std::cout << particles.size() << " particles" << std::endl;
+
+#ifdef _OPENMP
+	#pragma omp parallel
+	{
+		#pragma omp master
+		{
+			std::cout << omp_get_num_threads() << " threads" << std::endl;
+		}
+	}
+#endif
+
+	
 	// 計算空間の初期化
 	MpsComputer computer(
 		outputInterval/2,
@@ -84,130 +210,8 @@ int main()
 		tooNearRatio,
 		tooNearCoefficient,
 #endif
-		l_0);
-
-	// 乱数生成器
-	boost::minstd_rand gen(42);
-	boost::uniform_real<> dst(0, l_0*0.1);
-	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
-
-	// ダムブレーク環境を作成
-	{
-		const int L = (int)(6e-2/l_0)*2;
-		const int H = (int)(4e-2/l_0)*2;
-
-		// 水を追加
-		for(int i = 0; i < L/2; i++)
-		{
-			for(int j = 0; j < H/1.5; j++)
-			{
-				double x = i*l_0;
-				double y = j*l_0;
-
-				double u = make_rand()*C;
-				double v = make_rand()*C;
-
-				auto particle = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
-				computer.AddParticle(particle);
-			}
-		}
-		
-		auto particle2 = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
-		//computer.AddParticle(particle2);
-
-		// 床と天井を追加
-		for(int i = -1; i < L+1; i++)
-		{
-			double x = i*l_0;
-
-			// 床
-			{
-				// 粒子を作成して追加
-				auto wall1 = std::shared_ptr<Particle>(new ParticleWall(x, -l_0*1, 0, 0));
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*2));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*3));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*4));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
-		}
-
-		// 側壁の追加
-		for(int j = 0; j < H+1; j++)
-		{
-			double y = j*l_0;
-
-			// 左壁
-			{
-				// 粒子を作成して追加
-				auto wall1 = std::shared_ptr<Particle>(new ParticleWall(-l_0*1, y, 0, 0));
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
-			
-			// 右壁
-			{
-				// 粒子を作成して追加
-				auto wall1 = std::shared_ptr<Particle>(new ParticleWall((L+0)*l_0, y, 0, 0));
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
-		}
-
-		// 四隅
-		// 側壁の追加
-		for(int j = 0; j < 4; j++)
-		{
-			double y = j*l_0;
-
-			// 左下
-			{
-				// 粒子を作成して追加
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
-			
-			// 右下
-			{
-				// 粒子を作成して追加
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y-4*l_0));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y-4*l_0));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y-4*l_0));
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
-		}
-	}
-
-	// 粒子数を表示
-	std::cout << computer.Particles().size() << " particles" << std::endl;
-
-#ifdef _OPENMP
-	#pragma omp parallel
-	{
-		#pragma omp master
-		{
-			std::cout << omp_get_num_threads() << " threads" << std::endl;
-		}
-	}
-#endif
+		l_0,
+		particles);
 	
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
@@ -233,7 +237,7 @@ int main()
 		{
 			// 次の出力時間まで
 			nextOutputT += outputInterval;
-			while( computer.T() < nextOutputT)
+			while(computer.T() < nextOutputT)
 			{
 				// 時間を進める
 				computer.ForwardTime();
