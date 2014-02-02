@@ -291,6 +291,9 @@ namespace OpenMps
 #ifdef USE_VIENNACL
 			ppe.tempA = TempMatrix(n, n);
 #endif
+#ifdef _OPENMP
+			ppe.a_ij.resize(n);
+#endif
 		}
 
 		// 係数行列初期化
@@ -302,11 +305,6 @@ namespace OpenMps
 		A.clear();
 
 #ifdef _OPENMP
-		// 係数行列Aのロックを生成
-		// TODO: ロックをなくす（Aのサイズを予約できればよい）
-		omp_lock_t lockA;
-		omp_init_lock(&lockA);
-
 		#pragma omp parallel
 #endif
 		{
@@ -325,6 +323,7 @@ namespace OpenMps
 				ppe.x(i) = x_i;
 			}
 			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
+
 			
 #ifdef _OPENMP
 			#pragma omp for
@@ -334,50 +333,62 @@ namespace OpenMps
 			{
 				// 対角項を初期化
 				double a_ii = 0;
-			
-				// 他の粒子に対して
-				// TODO: 全粒子探索してるので遅い
-				for(unsigned int j = 0; j < particles.size(); j++)
-				{
-					// 自分以外
-					if(i != j)
-					{
-						// 非対角項を計算
-						double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
-						if(a_ij != 0)
-						{
 #ifdef _OPENMP
-							// 係数行列Aをロック
-							omp_set_lock(&lockA);
+				ppe.a_ij[i].clear();
 #endif
-							A(i, j) = a_ij;
+			
+				// 全近傍ブロックで
+				for(auto block = grid.cbegin(particles[i]->VectorX()); block != grid.cend(particles[i]->VectorX()); block++)
+				{
+					// 近傍ブロック内の粒子を取得
+					auto neighbors = grid[*block];
+
+					// 近傍ブロック内の粒子に対して
+					for(auto j : neighbors)
+					{
+						// 自分以外
+						if(i != j)
+						{
+							// 非対角項を計算
+							double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
+							if(a_ij != 0)
+							{
 #ifdef _OPENMP
-							// 係数行列Aをロック解除
-							omp_unset_lock(&lockA);
+								// 非対角項を格納
+								ppe.a_ij[i].push_back(Ppe::A_ij(j, a_ij));
+#else
+								A(i, j) = a_ij;
 #endif
 
-							// 対角項も設定
-							a_ii -= a_ij;
+								// 対角項も設定
+								a_ii -= a_ij;
+							}
 						}
 					}
 				}
 #ifdef _OPENMP
-				// 係数行列Aをロック
-				omp_set_lock(&lockA);
-#endif
-				// 対角項を設定
+				// 対角項を格納
+				ppe.a_ij[i].push_back(Ppe::A_ij(i, a_ii));
+#else
 				A(i, i) = a_ii;
-#ifdef _OPENMP
-				// 係数行列Aをロック解除
-				omp_unset_lock(&lockA);
 #endif
 			}
 		}
 		
-#ifdef _OPENMP
-		// 係数行列Aのロックを削除
-		omp_destroy_lock(&lockA);
-#endif
+		// 全行の
+		for(int i = 0; i < n; i++)
+		{
+			// 全有効列で
+			for(auto k : ppe.a_ij[i])
+			{
+				// 列番号と値を取得
+				int j = k.first;
+				double a_ij = k.second;
+
+				// 行列に格納
+				A(i, j) = a_ij;
+			}
+		}
 		
 #ifdef USE_VIENNACL
 		// 作成した係数行列をデバイス側に複製

@@ -99,6 +99,16 @@ namespace OpenMps
 			TempMatrix tempA;
 #endif
 
+#ifdef _OPENMP
+		// 行列成分
+		typedef std::pair<int, double> A_ij;
+
+		typedef std::vector< std::vector<A_ij> > A_ijList;
+
+		// 各行の成分
+		A_ijList a_ij;
+#endif
+
 			// 圧力方程式の未知数
 			LongVector x;
 
