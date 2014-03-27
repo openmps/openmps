@@ -1,0 +1,2 @@
+Install boost here and build.
+You can get boost from http://www.boost.org/ or https://github.com/mirror/boost.
