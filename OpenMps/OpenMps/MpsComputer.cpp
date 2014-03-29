@@ -255,7 +255,7 @@ namespace OpenMps
 		int n = (int)particles.size();
 
 		// 粒子に増減があれば
-		if(n != ppe.b.size())
+		if(n != (int)ppe.b.size())
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
@@ -316,7 +316,7 @@ namespace OpenMps
 				for(unsigned int j = 0; j < particles.size(); j++)
 				{
 					// 自分以外
-					if(i != j)
+					if(i != (int)j)
 					{
 						// 非対角項を計算
 						double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
