@@ -341,7 +341,8 @@ namespace OpenMps
 				for(auto block = grid.cbegin(particles[i]->VectorX()); block != grid.cend(particles[i]->VectorX()); block++)
 				{
 					// 近傍ブロック内の粒子を取得
-					auto neighbors = grid[*block];
+					auto neighborBlock = *block;
+					auto neighbors = grid[neighborBlock];
 
 					// 近傍ブロック内の粒子に対して
 					for(auto j : neighbors)
