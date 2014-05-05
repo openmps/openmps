@@ -5,8 +5,6 @@
 #include <boost/format.hpp>
 #include <boost/random.hpp>
 #include <boost/timer.hpp>
-#include "defines.hpp"
-#include "Particle.hpp"
 #include "MpsComputer.hpp"
 
 // 粒子タイプを数値に変換する
