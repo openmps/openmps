@@ -374,7 +374,8 @@ namespace OpenMps
 #endif
 			}
 		}
-		
+
+#ifdef _OPENMP
 		// 全行の
 		for(int i = 0; i < n; i++)
 		{
@@ -389,6 +390,7 @@ namespace OpenMps
 				A(i, j) = a_ij;
 			}
 		}
+#endif
 		
 #ifdef USE_VIENNACL
 		// 作成した係数行列をデバイス側に複製
