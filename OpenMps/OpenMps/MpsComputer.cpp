@@ -279,7 +279,7 @@ namespace OpenMps
 		int n = (int)particles.size();
 
 		// 粒子に増減があれば
-		if(n != ppe.b.size())
+		if(n != (int)ppe.b.size())
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
