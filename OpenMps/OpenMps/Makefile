@@ -7,7 +7,7 @@ COMPILER = g++
 CFLAGS   = -std=c++11 -Wextra -g -MMD -MP -O3
 LDFLAGS  =
 LIBS     =
-INCLUDE  = -I../../viennacl -I../../boost
+INCLUDE  =  -I../../boost
 TARGET   = ./$(shell basename `readlink -f ..`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
