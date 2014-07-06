@@ -32,7 +32,7 @@ namespace OpenMps
 #endif
 			const double& l_0,
 			const Particle::List& particles)
-		: t(0), dt(0), g(), rho(rho), nu(nu), maxDx(C*l_0), r_e(r_eByl_0 * l_0), surfaceRatio(surfaceRatio),
+		: t(0), dt(0), g(), rho(rho), nu(nu), maxDx(C*l_0), r_e(r_eByl_0 * l_0),
 
 		particles(particles),
 		grid(r_eByl_0 * l_0),
@@ -42,14 +42,17 @@ namespace OpenMps
 #endif
 #ifdef PRESSURE_EXPLICIT
 		c(c),
-
+#endif
+		surfaceRatio(surfaceRatio)
+	{
+#ifdef PRESSURE_EXPLICIT
 		// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
-		maxDt(std::min(maxDt, maxDx/c))
+		this->maxDt = std::min(maxDt, maxDx/c);
 #else
 		// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
-		maxDt(std::min(maxDt, std::sqrt(2*maxDx/g)))
+		this->maxDt = std::min(maxDt, std::sqrt(2*maxDx/g));
 #endif
-	{
+
 		// 重力加速度を設定
 		this->g[0] = 0;
 		this->g[1] = -g;
