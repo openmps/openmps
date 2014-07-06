@@ -140,10 +140,10 @@ int main()
 				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y));
 				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y));
 				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y));
-				particles.push_back(wall1);
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
+				//particles.push_back(wall1);
+				//particles.push_back(dummy1);
+				//particles.push_back(dummy2);
+				//particles.push_back(dummy3);
 			}
 		}
 
