@@ -29,14 +29,14 @@ void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 	// 各粒子を出力
 	for(auto particle : computer.Particles())
 	{
-		auto typeNum = GetParticleTypeNum(*particle);
+		auto typeNum = GetParticleTypeNum(particle);
 
 		output
 			<< typeNum << ", "
-			<< particle->X() << ", " << particle->Z() << ", "
-			<< particle->U() << ", " << particle->W() << ", "
-			<< particle->P() << ", "
-			<< particle->N() << std::endl;
+			<< particle.X() << ", " << particle.Z() << ", "
+			<< particle.U() << ", " << particle.W() << ", "
+			<< particle.P() << ", "
+			<< particle.N() << std::endl;
 	}
 }
 
@@ -108,12 +108,12 @@ int main()
 				double u = make_rand()*C;
 				double v = make_rand()*C;
 
-				auto particle = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
-				computer.AddParticle(particle);
+				auto particle = std::unique_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
+				computer.AddParticle(*particle);
 			}
 		}
 		
-		auto particle2 = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
+		auto particle2 = std::unique_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
 		//computer.AddParticle(particle2);
 
 		// 床と天井を追加
@@ -124,14 +124,14 @@ int main()
 			// 床
 			{
 				// 粒子を作成して追加
-				auto wall1 = std::shared_ptr<Particle>(new ParticleWall(x, -l_0*1, 0, 0));
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*2));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*3));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*4));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
+				auto wall1 = std::unique_ptr<Particle>(new ParticleWall(x, -l_0*1, 0, 0));
+				auto dummy1 = std::unique_ptr<Particle>(new ParticleDummy(x, -l_0*2));
+				auto dummy2 = std::unique_ptr<Particle>(new ParticleDummy(x, -l_0*3));
+				auto dummy3 = std::unique_ptr<Particle>(new ParticleDummy(x, -l_0*4));
+				computer.AddParticle(*wall1);
+				computer.AddParticle(*dummy1);
+				computer.AddParticle(*dummy2);
+				computer.AddParticle(*dummy3);
 			}
 		}
 
@@ -143,14 +143,14 @@ int main()
 			// 左壁
 			{
 				// 粒子を作成して追加
-				auto wall1 = std::shared_ptr<Particle>(new ParticleWall(-l_0*1, y, 0, 0));
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
+				auto wall1 = std::unique_ptr<Particle>(new ParticleWall(-l_0*1, y, 0, 0));
+				auto dummy1 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*2, y));
+				auto dummy2 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*3, y));
+				auto dummy3 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*4, y));
+				computer.AddParticle(*wall1);
+				computer.AddParticle(*dummy1);
+				computer.AddParticle(*dummy2);
+				computer.AddParticle(*dummy3);
 			}
 		}
 
@@ -163,12 +163,12 @@ int main()
 			// 左下
 			{
 				// 粒子を作成して追加
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
+				auto dummy1 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
+				auto dummy2 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
+				auto dummy3 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
+				computer.AddParticle(*dummy1);
+				computer.AddParticle(*dummy2);
+				computer.AddParticle(*dummy3);
 			}
 		}
 	}

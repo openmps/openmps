@@ -122,13 +122,13 @@ namespace OpenMps
 
 		// 最大速度を取得
 		auto maxUParticle = *std::max_element(particles.cbegin(), particles.cend(),
-			[](const Particle::Ptr& base, const Particle::Ptr& target)
+			[](const Particle& base, const Particle& target)
 			{
-				auto baseU = base->VectorU();
-				auto targetU = target->VectorU();
+				auto baseU = base.VectorU();
+				auto targetU = target.VectorU();
 				return ( ublas::inner_prod(baseU, baseU) < ublas::inner_prod(targetU, targetU));
 			});
-		auto maxU = ublas::norm_2(maxUParticle->VectorU());
+		auto maxU = ublas::norm_2(maxUParticle.VectorU());
 
 		// CFL条件より時間刻みを決定
 		dt = std::min(maxDx/maxU, maxDt);
@@ -142,7 +142,7 @@ namespace OpenMps
 		for(int i = 0; i < (int)particles.size(); i++)
 		{
 			// 粒子数密度を計算する
-			particles[i]->UpdateNeighborDensity(particles, r_e);
+			particles[i].UpdateNeighborDensity(particles, r_e);
 		}
 	}
 
@@ -164,7 +164,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 粘性項の計算
-				auto vis = particles[i]->GetViscosity(particles, n0, r_e, lambda, nu, dt);
+				auto vis = particles[i].GetViscosity(particles, n0, r_e, lambda, nu, dt);
 
 				// 重力＋粘性項
 				a[i] = g + vis;
@@ -178,8 +178,8 @@ namespace OpenMps
 			{
 				// 位置・速度を修正
 				Vector thisA = a[i];
-				particles[i]->Move(particles[i]->VectorU() * dt + a[i]*dt*dt/2);
-				particles[i]->Accelerate(a[i] * dt);
+				particles[i].Move(particles[i].VectorU() * dt + a[i]*dt*dt/2);
+				particles[i].Accelerate(a[i] * dt);
 			}
 		}
 	}
@@ -193,7 +193,7 @@ namespace OpenMps
 #endif
 		for(int i = 0; i < (int)particles.size(); i++)
 		{
-			particles[i]->UpdatePressure(c, rho, n0);
+			particles[i].UpdatePressure(c, rho, n0);
 		}
 #else
 		// 圧力方程式を設定
@@ -205,7 +205,7 @@ namespace OpenMps
 		// 得た圧力を代入する
 		for(unsigned int i = 0; i < particles.size(); i++)
 		{
-			particles[i]->P(ppe.x(i), n0, surfaceRatio);
+			particles[i].P(ppe.x(i), n0, surfaceRatio);
 		}
 #endif
 
@@ -231,7 +231,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 過剰接近粒子からの速度修正量を計算する
-				Vector d = particles[i]->GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
+				Vector d = particles[i].GetCorrectionByTooNear(particles, r_e, rho, tooNearLength, tooNearCoefficient);
 				du[i] = d;
 			}
 
@@ -243,8 +243,8 @@ namespace OpenMps
 			{
 				// 位置・速度を修正
 				Vector thisDu = du[i];
-				particles[i]->Accelerate(thisDu);
-				particles[i]->Move(thisDu * dt);
+				particles[i].Accelerate(thisDu);
+				particles[i].Move(thisDu * dt);
 			}
 		}
 	}
@@ -295,11 +295,11 @@ namespace OpenMps
 			for(int i = 0; i < n; i++)
 			{
 				// 生成項を計算する
-				double b_i = particles[i]->GetPpeSource(n0, dt, surfaceRatio);
+				double b_i = particles[i].GetPpeSource(n0, dt, surfaceRatio);
 				ppe.b(i) = b_i;
 
 				// 圧力を未知数ベクトルの初期値にする
-				double x_i = particles[i]->P();
+				double x_i = particles[i].P();
 				ppe.x(i) = x_i;
 			}
 			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
@@ -321,7 +321,7 @@ namespace OpenMps
 					if(i != (int)j)
 					{
 						// 非対角項を計算
-						double a_ij = particles[i]->GetPpeMatrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
+						double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e, lambda, rho, surfaceRatio);
 						if(a_ij != 0)
 						{
 #ifdef _OPENMP
@@ -463,7 +463,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 圧力勾配を計算する
-				Vector d = particles[i]->GetPressureGradient(particles, r_e, dt, rho, n0);
+				Vector d = particles[i].GetPressureGradient(particles, r_e, dt, rho, n0);
 				du[i] = d;
 			}
 #ifdef _OPENMP
@@ -475,13 +475,13 @@ namespace OpenMps
 			{
 				// 位置・速度を修正
 				Vector thisDu = du[i];
-				particles[i]->Accelerate(thisDu);
-				particles[i]->Move(thisDu * dt);
+				particles[i].Accelerate(thisDu);
+				particles[i].Move(thisDu * dt);
 			}
 		}
 	}
 
-	void MpsComputer::AddParticle(const Particle::Ptr& particle)
+	void MpsComputer::AddParticle(const Particle& particle)
 	{
 		particles.push_back(particle);
 	}

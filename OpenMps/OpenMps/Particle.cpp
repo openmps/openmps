@@ -118,9 +118,9 @@ namespace OpenMps
 		// 重み関数の総和を粒子数密度とする
 		// TODO: 全粒子探索してるので遅い
 		n = std::accumulate(particles.cbegin(), particles.cend(), 0.0,
-			[this, &r_e](const double sum, const Particle::Ptr& particle)
+			[this, &r_e](const double sum, const Particle& particle)
 			{
-				double w = this->Weight(*particle, r_e);
+				double w = this->Weight(particle, r_e);
 				return sum + w;
 			});
 	}
@@ -133,9 +133,9 @@ namespace OpenMps
 
 		// 粘性項を計算して返す
 		return std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &n_0, &r_e, &lambda, &nu, &dt](const Vector& sum, const Particle::Ptr& particle)
+			[this, &n_0, &r_e, &lambda, &nu, &dt](const Vector& sum, const Particle& particle)
 			{
-				Vector du = particle->ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
+				Vector du = particle.ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
 				return (Vector)(sum + du);
 			});
 	}	
@@ -151,24 +151,25 @@ namespace OpenMps
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 		// 速度修正量を計算
 		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle::Ptr& particle)
+			[this, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle& particle)
 			{
-				auto du = particle->PressureGradientTo(*this, r_e, dt, rho, n0);
+				auto du = particle.PressureGradientTo(*this, r_e, dt, rho, n0);
 				return (Vector)(sum + du);
 			});
 #else
 		// 最小圧力を取得する
 		auto minPparticle = std::min_element(particles.cbegin(), particles.cend(),
-			[](const Particle::Ptr& base, const Particle::Ptr& target)
+			[](const Particle& base, const Particle& target)
 			{
-				return base->p < target->p;
+				return base.p < target.p;
 			});
+		const double minP = (*minPparticle).p;
 
 		// 速度修正量を計算
 		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
+			[this, &r_e, &dt, &rho, &n0, &minP](const Vector& sum, const Particle& particle)
 			{
-				auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
+				auto du = particle.PressureGradientTo(*this, minP, r_e, dt, rho, n0);
 				return (Vector)(sum + du);
 			});
 #endif
@@ -186,12 +187,12 @@ namespace OpenMps
 		auto p_i = rho * this->u;
 
 		Vector du = std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle::Ptr& particle)
+			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle& particle)
 			{
 				namespace ublas = boost::numeric::ublas;
 
 				// 相対距離を計算
-				auto x_ij = particle->x - this->x;
+				auto x_ij = particle.x - this->x;
 				double r_ij = ublas::norm_2(x_ij);
 
 				// 相対距離が過剰接近なら
@@ -199,7 +200,7 @@ namespace OpenMps
 				if((0 < r_ij) & (r_ij < tooNearLength))
 				{
 					// 合成運動量を計算
-					auto p = p_i + rho * particle->u;
+					auto p = p_i + rho * particle.u;
 
 					// 運動量の変化量を計算
 					auto delta_p = p_i - p/2;

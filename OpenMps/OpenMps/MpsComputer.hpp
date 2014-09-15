@@ -194,7 +194,7 @@ namespace OpenMps
 
 		// 粒子を追加する
 		// @param particle 追加する粒子
-		void AddParticle(const Particle::Ptr& particle);
+		void AddParticle(const Particle& particle);
 
 		// 粒子リストを取得する
 		inline const Particle::List Particles() const

@@ -10,11 +10,8 @@ namespace OpenMps
 	class Particle
 	{
 	public:
-		// 粒子へのポインタ
-		typedef std::shared_ptr<Particle> Ptr;
-		
 		// 粒子リスト
-		typedef std::vector<Particle::Ptr> List;
+		typedef std::vector<Particle> List;
 
 	protected:
 		// 粒子タイプ
@@ -83,7 +80,7 @@ namespace OpenMps
 #ifndef PRESSURE_GRADIENT_MIDPOINT
 			const double minP,
 #endif
-			const double r_e, const double dt, const double rho, const double n0);
+			const double r_e, const double dt, const double rho, const double n0) const;
 
 		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
 		static const PressureGradientToFunc PressureGradientToFuncTable[ParticleTypeMaxCount];
@@ -94,7 +91,7 @@ namespace OpenMps
 #ifndef PRESSURE_GRADIENT_MIDPOINT
 			const double minP,
 #endif
-			const double r_e, const double dt, const double rho, const double n0)
+			const double r_e, const double dt, const double rho, const double n0) const
 		{
 			namespace ublas = boost::numeric::ublas;
 
@@ -116,7 +113,7 @@ namespace OpenMps
 #ifndef PRESSURE_GRADIENT_MIDPOINT
 			const double minP,
 #endif
-			const double r_e, const double dt, const double rho, const double n0)
+			const double r_e, const double dt, const double rho, const double n0) const
 		{
 			return VectorZero;
 		}
@@ -384,7 +381,7 @@ namespace OpenMps
 #ifndef PRESSURE_GRADIENT_MIDPOINT
 			const double minP, 
 #endif
-			const double r_e, const double dt, const double rho, const double n0)
+			const double r_e, const double dt, const double rho, const double n0) const
 		{
 			return (this->*(Particle::PressureGradientToFuncTable[type]))(particle_i,
 #ifndef PRESSURE_GRADIENT_MIDPOINT
@@ -566,13 +563,13 @@ namespace OpenMps
 		}
 
 		// 位置ベクトルを取得する
-		inline const Vector& VectorX()
+		inline Vector VectorX() const
 		{
 			return x;
 		}
 
 		// 速度ベクトルを取得する
-		inline const Vector& VectorU()
+		inline Vector VectorU() const
 		{
 			return u;
 		}
