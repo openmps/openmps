@@ -46,12 +46,12 @@ int main()
 	system("mkdir result");
 	using namespace OpenMps;
 
-	const double l_0 = 5e-4;
+	const double l_0 = 1e-3;
 	const double g = 9.8;
 	const double rho = 998.20;
 	const double nu = 1.004e-6;
 	const double C = 0.1;
-	const double r_eByl_0 = 2.9;
+	const double r_eByl_0 = 2.4;
 	const double surfaceRatio = 0.95;
 	const double eps = 1e-8;
 #ifdef PRESSURE_EXPLICIT
@@ -59,7 +59,7 @@ int main()
 #endif
 #ifdef MODIFY_TOO_NEAR
 	const double& tooNearRatio = 0.5;
-	const double& tooNearCoefficient = 0.5;
+	const double& tooNearCoefficient = 1.5;
 #endif
 
 	// 出力時間刻み
@@ -92,8 +92,8 @@ int main()
 
 	// ダムブレーク環境を作成
 	{
-		const int L = (int)(6e-2/l_0)*2;
-		const int H = (int)(4e-2/l_0)*2;
+		const int L = 10;
+		const int H = 10;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)
@@ -150,19 +150,6 @@ int main()
 				computer.AddParticle(dummy2);
 				computer.AddParticle(dummy3);
 			}
-			
-			// 右壁
-			{
-				// 粒子を作成して追加
-				auto wall1 = std::shared_ptr<Particle>(new ParticleWall((L+0)*l_0, y, 0, 0));
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
 		}
 
 		// 四隅
@@ -177,17 +164,6 @@ int main()
 				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
 				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
 				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
-			}
-			
-			// 右下
-			{
-				// 粒子を作成して追加
-				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((L+1)*l_0, y-4*l_0));
-				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((L+2)*l_0, y-4*l_0));
-				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((L+3)*l_0, y-4*l_0));
 				computer.AddParticle(dummy1);
 				computer.AddParticle(dummy2);
 				computer.AddParticle(dummy3);
