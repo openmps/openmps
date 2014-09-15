@@ -270,6 +270,8 @@ namespace OpenMps
 					// 自分以外
 					if(i != (int)j)
 					{
+						// 非対角項を計算
+						double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
 						ppe.A(i, j) = a_ij;
 
 						// 対角項も設定
