@@ -12,7 +12,6 @@
 
 namespace OpenMps
 {
-
 	MpsComputer::MpsComputer(
 			const double& maxDt,
 			const double& g,
@@ -296,7 +295,7 @@ namespace OpenMps
 			for(int i = 0; i < n; i++)
 			{
 				// 生成項を計算する
-				double b_i = particles[i]->Source(n0, dt, surfaceRatio);
+				double b_i = particles[i]->GetPpeSource(n0, dt, surfaceRatio);
 				ppe.b(i) = b_i;
 
 				// 圧力を未知数ベクトルの初期値にする
@@ -322,7 +321,7 @@ namespace OpenMps
 					if(i != (int)j)
 					{
 						// 非対角項を計算
-						double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
+						double a_ij = particles[i]->GetPpeMatrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
 						if(a_ij != 0)
 						{
 #ifdef _OPENMP

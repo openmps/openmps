@@ -12,7 +12,7 @@
 // 粒子タイプを数値に変換する
 inline int GetParticleTypeNum(const OpenMps::Particle& particle)
 {
-	return typeid(particle).hash_code();
+	return (int)(particle.Type());
 }
 
 
@@ -44,6 +44,8 @@ void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 int main()
 {
 	system("mkdir result");
+	system("cd");
+	
 	using namespace OpenMps;
 
 	const double l_0 = 1e-3;
@@ -55,7 +57,7 @@ int main()
 	const double surfaceRatio = 0.95;
 	const double eps = 1e-8;
 #ifdef PRESSURE_EXPLICIT
-	const double c = 15;
+	const double c = 1500/1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
 #endif
 #ifdef MODIFY_TOO_NEAR
 	const double& tooNearRatio = 0.5;
@@ -93,7 +95,7 @@ int main()
 	// ダムブレーク環境を作成
 	{
 		const int L = 10;
-		const int H = 10;
+		const int H = 20;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)

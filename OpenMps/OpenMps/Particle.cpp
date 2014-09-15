@@ -4,7 +4,105 @@
 
 namespace OpenMps
 {
-	Particle::Particle(const double& x, const double& z, const double& u, const double& w, const double& p, const double& n)
+#ifndef PRESSURE_EXPLICIT
+	const Particle::GetPpeMatrixTargetFunc Particle::GetPpeMatrixTargetFuncTable[] = 
+	{
+		&Particle::GetPpeMatrixTargetNormal, // 水
+		&Particle::GetPpeMatrixTargetNormal, // 壁
+		&Particle::GetPpeMatrixTargetZero,   // ダミー
+	};
+#endif
+	
+	const Particle::ViscosityToFunc Particle::ViscosityToFuncTable[] = 
+	{
+		&Particle::ViscosityToNormal, // 水
+		&Particle::ViscosityToNormal, // 壁
+		&Particle::ViscosityToZero,   // ダミー
+	};
+	
+	const Particle::PressureGradientToFunc Particle::PressureGradientToFuncTable[] = 
+	{
+		&Particle::PressureGradientToNormal, // 水
+		&Particle::PressureGradientToNormal, // 壁
+		&Particle::PressureGradientToZero,   // ダミー
+	};
+	
+	const Particle::AccelerateFunc Particle::AccelerateFuncTable[] = 
+	{
+		&Particle::AccelerateNormal, // 水
+		&Particle::AccelerateZero,   // 壁
+		&Particle::AccelerateZero,   // ダミー
+	};
+	
+	const Particle::MoveFunc Particle::MoveFuncTable[] = 
+	{
+		&Particle::MoveNormal, // 水
+		&Particle::MoveZero,   // 壁
+		&Particle::MoveZero,   // ダミー
+	};
+	
+	const Particle::GetViscosityFunc Particle::GetViscosityFuncTable[] = 
+	{
+		&Particle::GetViscosityNormal, // 水
+		&Particle::GetViscosityZero,   // 壁
+		&Particle::GetViscosityZero,   // ダミー
+	};
+	
+	const Particle::WeightFunc Particle::WeightFuncTable[] = 
+	{
+		&Particle::WeightNormal, // 水
+		&Particle::WeightNormal, // 壁
+		&Particle::WeightZero,   // ダミー
+	};
+	
+	const Particle::UpdateNeighborDensityFunc Particle::UpdateNeighborDensityFuncTable[] = 
+	{
+		&Particle::UpdateNeighborDensityNormal, // 水
+		&Particle::UpdateNeighborDensityNormal, // 壁
+		&Particle::UpdateNeighborDensityZero,   // ダミー
+	};
+	
+#ifdef MODIFY_TOO_NEAR
+	const Particle::GetCorrectionByTooNearFunc Particle::GetCorrectionByTooNearFuncTable[] = 
+	{
+		&Particle::GetCorrectionByTooNearNormal, // 水
+		&Particle::GetCorrectionByTooNearZero,   // 壁
+		&Particle::GetCorrectionByTooNearZero,   // ダミー
+	};
+#endif
+	
+#ifdef PRESSURE_EXPLICIT
+	const Particle::UpdatePressureFunc Particle::UpdatePressureFuncTable[] = 
+	{
+		&Particle::UpdatePressureNormal, // 水
+		&Particle::UpdatePressureNormal, // 壁
+		&Particle::UpdatePressureZero,   // ダミー
+	};
+#else
+	const Particle::GetPpeSourceFunc Particle::GetPpeSourceFuncTable[] = 
+	{
+		&Particle::GetPpeSourceNormal, // 水
+		&Particle::GetPpeSourceNormal, // 壁
+		&Particle::GetPpeSourceZero,   // ダミー
+	};
+
+	const Particle::GetPpeMatrixFunc Particle::GetPpeMatrixFuncTable[] = 
+	{
+		&Particle::GetPpeMatrixNormal, // 水
+		&Particle::GetPpeMatrixNormal, // 壁
+		&Particle::GetPpeMatrixZero,   // ダミー
+	};
+#endif
+
+	const Particle::GetPressureGradientFunc Particle::GetPressureGradientFuncTable[] = 
+	{
+		&Particle::GetPressureGradientNormal, // 水
+		&Particle::GetPressureGradientZero,   // 壁
+		&Particle::GetPressureGradientZero,   // ダミー
+	};
+
+	Particle::Particle(const ParticleType type, const double x, const double z, const double u, const double w, const double p, const double n)
+		:type(type)
 	{
 		// 各物理値を初期化
 		this->x[0] = x;
@@ -15,19 +113,19 @@ namespace OpenMps
 		this->n = n;
 	}
 
-	void Particle::UpdateNeighborDensity(const Particle::List& particles, const double& r_e)
+	void Particle::UpdateNeighborDensityNormal(const Particle::List& particles, const double r_e)
 	{
 		// 重み関数の総和を粒子数密度とする
 		// TODO: 全粒子探索してるので遅い
 		n = std::accumulate(particles.cbegin(), particles.cend(), 0.0,
-			[this, &r_e](const double& sum, const Particle::Ptr& particle)
+			[this, &r_e](const double sum, const Particle::Ptr& particle)
 			{
 				double w = this->Weight(*particle, r_e);
 				return sum + w;
 			});
 	}
 
-	Vector Particle::GetViscosity(const Particle::List& particles, const double& n_0, const double& r_e, const double& lambda, const double& nu, const double& dt) const
+	Vector Particle::GetViscosityNormal(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
 	{
 		Vector zero;
 		zero(0) = 0;
@@ -42,7 +140,7 @@ namespace OpenMps
 			});
 	}	
 
-	Vector Particle::GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0)  const
+	Vector Particle::GetPressureGradientNormal(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)  const
 	{
 		Vector zero;
 		zero(0) = 0;
@@ -78,7 +176,7 @@ namespace OpenMps
 	}
 
 #ifdef MODIFY_TOO_NEAR
-	Vector Particle::GetCorrectionByTooNear(const Particle::List& particles, const double& r_e, const double& rho, const double& tooNearLength, const double& tooNearCoefficient) const
+	Vector Particle::GetCorrectionByTooNearNormal(const Particle::List& particles, const double r_e, const double rho, const double tooNearLength, const double tooNearCoefficient) const
 	{
 		Vector zero;
 		zero(0) = 0;
