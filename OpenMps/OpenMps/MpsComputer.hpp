@@ -187,23 +187,23 @@ namespace OpenMps
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
 		MpsComputer(
-			const double& maxDt,
-			const double& g,
-			const double& rho,
-			const double& nu,
-			const double& C,
-			const double& r_eByl_0,
-			const double& surfaceRatio,
+			const double maxDt,
+			const double g,
+			const double rho,
+			const double nu,
+			const double C,
+			const double r_eByl_0,
+			const double surfaceRatio,
 #ifdef PRESSURE_EXPLICIT
-			const double& c,
+			const double c,
 #else
-			const double& allowableResidual,
+			const double allowableResidual,
 #endif
 #ifdef MODIFY_TOO_NEAR
-			const double& tooNearRatio,
-			const double& tooNearCoefficient,
+			const double tooNearRatio,
+			const double tooNearCoefficient,
 #endif
-			const double& l_0,
+			const double l_0,
 			const Particle::List& particles);
 
 		// 時間を進める

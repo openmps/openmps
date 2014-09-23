@@ -3,7 +3,7 @@
 
 namespace OpenMps
 {
-	Grid::Grid(const double& blockSize)
+	Grid::Grid(const double blockSize)
 		:blockSize(blockSize)
 	{
 	}

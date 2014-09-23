@@ -12,7 +12,7 @@
 // 粒子タイプを数値に変換する
 inline int GetParticleTypeNum(const OpenMps::Particle& particle)
 {
-	return typeid(particle).hash_code();
+	return (int)(particle.Type());
 }
 
 
@@ -29,14 +29,14 @@ void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 	// 各粒子を出力
 	for(auto particle : computer.Particles())
 	{
-		auto typeNum = GetParticleTypeNum(*particle);
+		auto typeNum = GetParticleTypeNum(particle);
 
 		output
 			<< typeNum << ", "
-			<< particle->X() << ", " << particle->Z() << ", "
-			<< particle->U() << ", " << particle->W() << ", "
-			<< particle->P() << ", "
-			<< particle->N() << std::endl;
+			<< particle.X() << ", " << particle.Z() << ", "
+			<< particle.U() << ", " << particle.W() << ", "
+			<< particle.P() << ", "
+			<< particle.N() << std::endl;
 	}
 }
 
@@ -44,22 +44,24 @@ void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 int main()
 {
 	system("mkdir result");
+	system("cd");
+	
 	using namespace OpenMps;
 
-	const double l_0 = 10e-4;
+	const double l_0 = 1e-3;
 	const double g = 9.8;
 	const double rho = 998.20;
 	const double nu = 1.004e-6;
 	const double C = 0.1;
-	const double r_eByl_0 = 2.9;
+	const double r_eByl_0 = 2.4;
 	const double surfaceRatio = 0.95;
 	const double eps = 1e-8;
 #ifdef PRESSURE_EXPLICIT
-	const double c = 15;
+	const double c = 1500/1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
 #endif
 #ifdef MODIFY_TOO_NEAR
-	const double& tooNearRatio = 0.5;
-	const double& tooNearCoefficient = 1.2;
+	const double tooNearRatio = 0.5;
+	const double tooNearCoefficient = 1.5;
 #endif
 
 	// 出力時間刻み
@@ -75,8 +77,8 @@ int main()
 
 	// ダムブレーク環境を作成
 	{
-		const int L = (int)(2e-2/l_0)*2;
-		const int H = (int)(4e-2/l_0)*2;
+		const int L = 10;
+		const int H = 20;
 		const int wallL = (int)(5.0*L);
 		const int wallH = (int)(1.1*H);
 
@@ -91,12 +93,12 @@ int main()
 				const double u = 0;
 				const double v = 0;
 
-				auto particle = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
-				particles.push_back(particle);
+				auto particle = std::unique_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
+				particles.push_back(*particle);
 			}
 		}
 		
-		auto particle2 = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
+		auto particle2 = std::unique_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
 		//particles.push_back(particle2);
 
 		// 床と天井を追加
@@ -107,14 +109,14 @@ int main()
 			// 床
 			{
 				// 粒子を作成して追加
-				const auto wall1  = std::shared_ptr<Particle>(new ParticleWall (x, -l_0*1, 0, 0));
-				const auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*2));
-				const auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*3));
-				const auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*4));
-				particles.push_back(wall1);
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
+				auto wall1 = std::unique_ptr<Particle>(new ParticleWall(x, -l_0*1, 0, 0));
+				auto dummy1 = std::unique_ptr<Particle>(new ParticleDummy(x, -l_0*2));
+				auto dummy2 = std::unique_ptr<Particle>(new ParticleDummy(x, -l_0*3));
+				auto dummy3 = std::unique_ptr<Particle>(new ParticleDummy(x, -l_0*4));
+				particles.push_back(*wall1);
+				particles.push_back(*dummy1);
+				particles.push_back(*dummy2);
+				particles.push_back(*dummy3);
 			}
 		}
 
@@ -126,27 +128,14 @@ int main()
 			// 左壁
 			{
 				// 粒子を作成して追加
-				const auto wall1  = std::shared_ptr<Particle>(new ParticleWall (-l_0*1, y, 0, 0));
-				const auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y));
-				const auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y));
-				const auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y));
-				particles.push_back(wall1);
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
-			}
-			
-			// 右壁
-			{
-				// 粒子を作成して追加
-				const auto wall1  = std::shared_ptr<Particle>(new ParticleWall ((wallL+0)*l_0, y, 0, 0));
-				const auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((wallL+1)*l_0, y));
-				const auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((wallL+2)*l_0, y));
-				const auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((wallL+3)*l_0, y));
-				//particles.push_back(wall1);
-				//particles.push_back(dummy1);
-				//particles.push_back(dummy2);
-				//particles.push_back(dummy3);
+				auto wall1 = std::unique_ptr<Particle>(new ParticleWall(-l_0*1, y, 0, 0));
+				auto dummy1 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*2, y));
+				auto dummy2 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*3, y));
+				auto dummy3 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*4, y));
+				particles.push_back(*wall1);
+				particles.push_back(*dummy1);
+				particles.push_back(*dummy2);
+				particles.push_back(*dummy3);
 			}
 		}
 
@@ -159,23 +148,12 @@ int main()
 			// 左下
 			{
 				// 粒子を作成して追加
-				const auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
-				const auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
-				const auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
-			}
-			
-			// 右下
-			{
-				// 粒子を作成して追加
-				const auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy((wallL+1)*l_0, y-4*l_0));
-				const auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy((wallL+2)*l_0, y-4*l_0));
-				const auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy((wallL+3)*l_0, y-4*l_0));
-				//particles.push_back(dummy1);
-				//particles.push_back(dummy2);
-				//particles.push_back(dummy3);
+				auto dummy1 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
+				auto dummy2 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
+				auto dummy3 = std::unique_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
+				particles.push_back(*dummy1);
+				particles.push_back(*dummy2);
+				particles.push_back(*dummy3);
 			}
 		}
 	}

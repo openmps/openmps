@@ -6,23 +6,20 @@
 
 namespace OpenMps
 {
-	// 次元数
-	const int DIM = DIMENSTION;
-
 	// 2次元ベクトル
 	typedef boost::numeric::ublas::c_vector<double, DIM> Vector;
 
-	// 定数ベクトル
-	class VectorConst : public Vector
+	// 2次元ベクトルを作成する
+	static inline Vector CreateVector(const double v1, const double v2)
 	{
-	public:
-		VectorConst(const double& value)
-		{
-			std::fill_n(this->begin(), DIM, value);
-		}
-	};
+		Vector vec;
+		vec[0] = v1;
+		vec[1] = v2;
+		return vec;
+	}
 
 	// ゼロベクトル
-	const Vector VectorZero = VectorConst(0.0);
+	static const Vector VectorZero = CreateVector(0, 0);
+
 }
 #endif
