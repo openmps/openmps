@@ -1,4 +1,4 @@
-#ifndef PARTICLE_INCLUDED
+﻿#ifndef PARTICLE_INCLUDED
 #define PARTICLE_INCLUDED
 #include "defines.hpp"
 

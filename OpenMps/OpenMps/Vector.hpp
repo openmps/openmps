@@ -1,4 +1,4 @@
-#ifndef VECTOR_INCLUDED
+﻿#ifndef VECTOR_INCLUDED
 #define VECTOR_INCLUDED
 #include "defines.hpp"
 
