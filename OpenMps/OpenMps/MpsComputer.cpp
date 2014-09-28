@@ -1,4 +1,4 @@
-#include "MpsComputer.hpp"
+﻿#include "MpsComputer.hpp"
 #include <algorithm>
 #include <cmath>
 #include <boost/numeric/ublas/vector.hpp>
