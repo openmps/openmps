@@ -66,19 +66,11 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 		l_0);
 }
 
-// エントリポイント
-int main()
+// 粒子を作成する
+static OpenMps::Particle::List CreateParticles(const double l_0, const double courant)
 {
-	system("mkdir result");
 	system("cd");
 	using namespace OpenMps;
-	
-	const double l_0 = 1e-3;
-	const double outputInterval = 0.001;
-	const double courant = 0.1;
-#ifndef PRESSURE_EXPLICIT
-	const double eps = 1e-8;
-#endif
 
 	// 乱数生成器
 	const double randFactor = 1e-10;
@@ -173,18 +165,24 @@ int main()
 	// 粒子数を表示
 	std::cout << particles.size() << " particles" << std::endl;
 
-#ifdef _OPENMP
-	#pragma omp parallel
-	{
-		#pragma omp master
-		{
-			std::cout << omp_get_num_threads() << " threads" << std::endl;
-		}
-	}
+	return particles;
+}
+// エントリポイント
+int main()
+{
+	system("mkdir result");
+	using namespace OpenMps;
+	
+	const double l_0 = 1e-3;
+	const double outputInterval = 0.001;
+	const double courant = 0.1;
+#ifndef PRESSURE_EXPLICIT
+	const double eps = 1e-8;
 #endif
 
-	// 計算空間パラメーターの作成
-	const OpenMps::MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
+	// 粒子リストと計算空間パラメーターの作成
+	const Particle::List particles = CreateParticles(l_0, courant);
+	const MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
 
 	// 計算空間の初期化
 	MpsComputer computer(
