@@ -8,14 +8,13 @@
 #include "MpsComputer.hpp"
 
 // 粒子タイプを数値に変換する
-inline int GetParticleTypeNum(const OpenMps::Particle& particle)
+static int GetParticleTypeNum(const OpenMps::Particle& particle)
 {
 	return typeid(particle).hash_code();
 }
 
-
 // 計算結果をCSVへ出力する
-void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
+static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -38,50 +37,55 @@ void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 	}
 }
 
+// MPS計算用の計算空間固有パラメータを作成する
+static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
+{
+	const double g = 9.8;
+	const double rho = 998.20;
+	const double nu = 1.004e-6;
+	const double r_eByl_0 = 2.4;
+	const double surfaceRatio = 0.95;
+#ifdef PRESSURE_EXPLICIT
+	const double c = 1500/1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
+#endif
+#ifdef MODIFY_TOO_NEAR
+	const double tooNearRatio = 0.5;
+	const double tooNearCoefficient = 1.5;
+#endif
+
+	return OpenMps::MpsEnvironment(outputInterval/2, courant,
+#ifdef MODIFY_TOO_NEAR
+		tooNearRatio, tooNearCoefficient,
+#endif
+		g, rho, nu, surfaceRatio, r_eByl_0,
+#ifdef PRESSURE_EXPLICIT
+		c,
+#endif
+		l_0);
+}
+
 // エントリポイント
 int main()
 {
 	system("mkdir result");
 	using namespace OpenMps;
-
+	
 	const double l_0 = 1e-3;
-	const double g = 9.8;
-	const double rho = 998.20;
-	const double nu = 1.004e-6;
-	const double C = 0.1;
-	const double r_eByl_0 = 2.4;
-	const double surfaceRatio = 0.95;
+	const double outputInterval = 0.001;
+	const double courant = 0.1;
+#ifndef PRESSURE_EXPLICIT
 	const double eps = 1e-8;
-#ifdef PRESSURE_EXPLICIT
-	const double c = 15;
-#endif
-#ifdef MODIFY_TOO_NEAR
-	const double& tooNearRatio = 0.5;
-	const double& tooNearCoefficient = 1.5;
 #endif
 
-	// 出力時間刻み
-	const double outputInterval = 0.001;
+	// 計算空間パラメーターの作成
+	const OpenMps::MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
 
 	// 計算空間の初期化
 	MpsComputer computer(
-		outputInterval/2,
-		g,
-		rho,
-		nu,
-		C,
-		r_eByl_0,
-		surfaceRatio,
-#ifdef PRESSURE_EXPLICIT
-		c,
-#else
+#ifndef PRESSURE_EXPLICIT
 		eps,
 #endif
-#ifdef MODIFY_TOO_NEAR
-		tooNearRatio,
-		tooNearCoefficient,
-#endif
-		l_0);
+		environment);
 
 	// 乱数生成器
 	boost::minstd_rand gen(42);
@@ -90,8 +94,8 @@ int main()
 
 	// ダムブレーク環境を作成
 	{
-		const int L = 60;
-		const int H = 40;
+		const int L = 10;
+		const int H = 20;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)
@@ -101,8 +105,8 @@ int main()
 				double x = i*l_0;
 				double y = j*l_0;
 
-				double u = make_rand()*C;
-				double v = make_rand()*C;
+				double u = make_rand()*courant;
+				double v = make_rand()*courant;
 
 				auto particle = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
 				computer.AddParticle(particle);
@@ -168,27 +172,40 @@ int main()
 			}
 		}
 	}
+
+	// 粒子数を表示
+	std::cout << computer.Particles().size() << " particles" << std::endl;
+
+	// 初期状態を出力
+	OutputToCsv(computer, 0);
 	
 	// 開始時間を保存
 	boost::timer timer;
 	timer.restart();
+	auto timeFormat = boost::format("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
-	// 初期状態を出力
-	OutputToCsv(computer, 0);
+	// 開始時間を画面表示
+	auto t = std::time(nullptr);
+	auto tm = std::localtime(&t);
+	std::cout << timeFormat % 0.0 % 0 % 0
+				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
+				% timer.elapsed() << std::endl;
 
 	// 計算が終了するまで
 	double nextOutputT = 0;
 	int iteration = 0;
 	for(int outputCount = 1; outputCount <= 100 ; outputCount++)
 	{
+		double tComputer = computer.Environment().T();
 		try
 		{
 			// 次の出力時間まで
 			nextOutputT += outputInterval;
-			while( computer.T() < nextOutputT)
+			while(tComputer < nextOutputT)
 			{
 				// 時間を進める
 				computer.ForwardTime();
+				tComputer = computer.Environment().T();
 				iteration++;
 			}
 
@@ -198,7 +215,7 @@ int main()
 			// 現在時刻を画面表示
 			auto t = std::time(nullptr);
 			auto tm = std::localtime(&t);
-			std::cout << boost::format("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)") % computer.T() % iteration % outputCount
+			std::cout << timeFormat % tComputer % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 				% timer.elapsed() << std::endl;
 		}
@@ -207,7 +224,7 @@ int main()
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
-				<< boost::format("#%3%: t=%1% (%2%)") % computer.T() % iteration % outputCount << std::endl
+				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % outputCount << std::endl
 				<< ex.Message << std::endl;
 			break;
 		}
