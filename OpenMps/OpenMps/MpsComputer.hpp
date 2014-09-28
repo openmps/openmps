@@ -102,15 +102,11 @@ namespace OpenMps
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
 #endif	
-			const MpsEnvironment& env
-			);
+			const MpsEnvironment& env,
+			const Particle::List& particles);
 
 		// 時間を進める
 		void ForwardTime();
-
-		// 粒子を追加する
-		// @param particle 追加する粒子
-		void AddParticle(const Particle::Ptr& particle);
 
 		// 粒子リストを取得する
 		const Particle::List Particles() const

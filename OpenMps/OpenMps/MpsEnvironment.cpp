@@ -28,10 +28,10 @@ namespace OpenMps
 		C(c),
 
 		// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
-		maxDt(std::min(maxDt, maxDx/c))
+		maxDt(std::min(maxDt, (courant*l_0)/c))
 #else
 		// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
-		maxDt(std::min(maxDt, std::sqrt(2*maxDx/g)))
+		maxDt(std::min(maxDt, std::sqrt(2*(courant*l_0)/g)))
 #endif
 	{
 		// 基準粒子数密度とλの計算
