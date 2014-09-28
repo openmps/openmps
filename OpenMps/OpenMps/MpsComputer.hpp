@@ -5,6 +5,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include "Particle.hpp"
+#include "MpsEnvironment.hpp"
 
 namespace OpenMps
 {
@@ -21,52 +22,9 @@ namespace OpenMps
 		// 粒子リスト
 		Particle::List particles;
 
-		// 現在時刻
-		double t;
-
-		// 時間刻み
-		double dt;
-
-		// 基準粒子数密度
-		double n0;
-
-		// 重力加速度
-		Vector g;
-
-		// 密度
-		double rho;
-
-		// 動粘性係数
-		double nu;
-
-#ifdef PRESSURE_EXPLICIT
-		// 音速
-		double c;
-#endif
-
-		// 1ステップの最大移動距離
-		double maxDx;
-
-		// 最大時間刻み
-		double maxDt;
-
-		// 影響半径
-		double r_e;
-
-		// 自由表面を判定する係数
-		double surfaceRatio;
-
-		// 拡散モデル定数
-		double lambda;
-
-#ifdef MODIFY_TOO_NEAR
-		// 過剰接近粒子と判定される距離
-		double tooNearLength;
-
-		// 過剰接近粒子から受ける修正量の係数
-		double tooNearCoefficient;
-#endif
-
+		// 計算空間のパラメーター
+		MpsEnvironment environment;
+		
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
@@ -136,36 +94,16 @@ namespace OpenMps
 			std::string Message;
 		};
 		
-		// @param maxDt 最大時間刻み（出力時間刻み以下など）
-		// @param g 重力加速度
-		// @param c 音速
-		// @param rho 密度
-		// @param nu 動粘性係数
-		// @param C クーラン数
-		// @param r_eByl_0 影響半径と初期粒子間距離の比
-		// @param surfaceRatio 自由表面判定の係数
+#ifndef PRESSURE_EXPLICIT
 		// @param allowableResidual 圧力方程式の収束判定（許容誤差）
-		// @param l_0 初期粒子間距離
-		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
-		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
+#endif
+		// @param env MPS計算用の計算空間固有パラメータ
 		MpsComputer(
-			const double& maxDt,
-			const double& g,
-			const double& rho,
-			const double& nu,
-			const double& C,
-			const double& r_eByl_0,
-			const double& surfaceRatio,
-#ifdef PRESSURE_EXPLICIT
-			const double& c,
-#else
-			const double& allowableResidual,
-#endif
-#ifdef MODIFY_TOO_NEAR
-			const double& tooNearRatio,
-			const double& tooNearCoefficient,
-#endif
-			const double& l_0);
+#ifndef PRESSURE_EXPLICIT
+			const double allowableResidual,
+#endif	
+			const MpsEnvironment& env
+			);
 
 		// 時間を進める
 		void ForwardTime();
@@ -180,10 +118,10 @@ namespace OpenMps
 			return this->particles;
 		}
 
-		// 現在時刻を取得する
-		double T() const
+		// 計算空間パラメーターを取得する
+		inline const MpsEnvironment Environment() const
 		{
-			return t;
+			return environment;
 		}
 	};
 }

@@ -4,7 +4,7 @@
 
 namespace OpenMps
 {
-	Particle::Particle(const double& x, const double& z, const double& u, const double& w, const double& p, const double& n)
+	Particle::Particle(const double x, const double z, const double u, const double w, const double p, const double n)
 	{
 		// 各物理値を初期化
 		this->x[0] = x;
@@ -15,19 +15,19 @@ namespace OpenMps
 		this->n = n;
 	}
 
-	void Particle::UpdateNeighborDensity(const Particle::List& particles, const double& r_e)
+	void Particle::UpdateNeighborDensity(const Particle::List& particles, const double r_e)
 	{
 		// 重み関数の総和を粒子数密度とする
 		// TODO: 全粒子探索してるのでGet
 		n = std::accumulate(particles.cbegin(), particles.cend(), 0.0,
-			[this, &r_e](const double& sum, const Particle::Ptr& particle)
+			[this, &r_e](const double sum, const Particle::Ptr& particle)
 			{
 				double w = this->Weight(*particle, r_e);
 				return sum + w;
 			});
 	}
 
-	Vector Particle::GetViscosity(const Particle::List& particles, const double& n_0, const double& r_e, const double& lambda, const double& nu, const double& dt) const
+	Vector Particle::GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
 	{
 		Vector zero;
 		zero(0) = 0;
@@ -42,7 +42,7 @@ namespace OpenMps
 			});
 	}	
 
-	Vector Particle::GetPressureGradient(const Particle::List& particles, const double& r_e, const double& dt, const double& rho, const double& n0)  const
+	Vector Particle::GetPressureGradient(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)  const
 	{
 		Vector zero;
 		zero(0) = 0;
@@ -78,7 +78,7 @@ namespace OpenMps
 	}
 
 #ifdef MODIFY_TOO_NEAR
-	Vector Particle::GetCorrectionByTooNear(const Particle::List& particles, const double& r_e, const double& rho, const double& tooNearLength, const double& tooNearCoefficient) const
+	Vector Particle::GetCorrectionByTooNear(const Particle::List& particles, const double r_e, const double rho, const double tooNearLength, const double tooNearCoefficient) const
 	{
 		Vector zero;
 		zero(0) = 0;
