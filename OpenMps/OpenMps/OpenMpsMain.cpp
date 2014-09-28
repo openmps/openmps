@@ -85,10 +85,9 @@ int main()
 	boost::minstd_rand gen(42);
 	boost::uniform_real<> dst(-l_0*randFactor, l_0*randFactor);
 	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
-
+	
+	// ダムブレークのモデルを作成
 	Particle::List particles;
-
-	// ダムブレーク環境を作成
 	{
 		const int L = 10;
 		const int H = 20;

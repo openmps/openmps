@@ -140,8 +140,7 @@ namespace OpenMps
 			const double allowableResidual,
 #endif	
 			const MpsEnvironment& env,
-			const Particle::List& particles
-			);
+			const Particle::List& particles);
 
 		// 時間を進める
 		void ForwardTime();
