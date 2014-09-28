@@ -81,12 +81,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MpsComputer.cpp" />
+    <ClCompile Include="MpsEnvironment.cpp" />
     <ClCompile Include="OpenMpsMain.cpp" />
     <ClCompile Include="Particle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defines.hpp" />
     <ClInclude Include="MpsComputer.hpp" />
+    <ClInclude Include="MpsEnvironment.hpp" />
     <ClInclude Include="Particle.hpp" />
     <ClInclude Include="Vector.hpp" />
   </ItemGroup>
