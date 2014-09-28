@@ -64,24 +64,16 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 		l_0);
 }
 
-// エントリポイント
-int main()
+// 粒子を作成する
+static OpenMps::Particle::List CreateParticles(const double l_0, const double courant)
 {
-	system("mkdir result");
 	using namespace OpenMps;
-	
-	const double l_0 = 1e-3;
-	const double outputInterval = 0.001;
-	const double courant = 0.1;
-#ifndef PRESSURE_EXPLICIT
-	const double eps = 1e-8;
-#endif
 
 	// 乱数生成器
 	boost::minstd_rand gen(42);
 	boost::uniform_real<> dst(0, l_0*0.1);
 	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
-	
+
 	// ダムブレークのモデルを作成
 	Particle::List particles;
 	{
@@ -167,8 +159,24 @@ int main()
 	// 粒子数を表示
 	std::cout << particles.size() << " particles" << std::endl;
 
-	// 計算空間パラメーターの作成
-	const OpenMps::MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
+	return particles;
+}
+// エントリポイント
+int main()
+{
+	system("mkdir result");
+	using namespace OpenMps;
+	
+	const double l_0 = 1e-3;
+	const double outputInterval = 0.001;
+	const double courant = 0.1;
+#ifndef PRESSURE_EXPLICIT
+	const double eps = 1e-8;
+#endif
+
+	// 粒子リストと計算空間パラメーターの作成
+	const Particle::List particles = CreateParticles(l_0, courant);
+	const MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
 
 	// 計算空間の初期化
 	MpsComputer computer(
