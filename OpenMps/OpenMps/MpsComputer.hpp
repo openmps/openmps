@@ -1,4 +1,4 @@
-#ifndef MPSCOMPUTER_INCLUDED
+﻿#ifndef MPSCOMPUTER_INCLUDED
 #define MPSCOMPUTER_INCLUDED
 
 #include <vector>
