@@ -1,4 +1,4 @@
-#ifndef DEFINE_INCLUDED
+﻿#ifndef DEFINE_INCLUDED
 #define DEFINE_INCLUDED
 
 // 次元数

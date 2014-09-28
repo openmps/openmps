@@ -1,4 +1,4 @@
-#include "defines.hpp"
+﻿#include "defines.hpp"
 #include <iostream>
 #include <fstream>
 #include <typeinfo>
@@ -10,14 +10,13 @@
 #include "MpsComputer.hpp"
 
 // 粒子タイプを数値に変換する
-inline int GetParticleTypeNum(const OpenMps::Particle& particle)
+static int GetParticleTypeNum(const OpenMps::Particle& particle)
 {
 	return (int)(particle.Type());
 }
 
-
 // 計算結果をCSVへ出力する
-void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
+static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -40,22 +39,14 @@ void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
 	}
 }
 
-// エントリポイント
-int main()
+// MPS計算用の計算空間固有パラメータを作成する
+static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
 {
-	system("mkdir result");
-	system("cd");
-	
-	using namespace OpenMps;
-
-	const double l_0 = 1e-3;
 	const double g = 9.8;
 	const double rho = 998.20;
 	const double nu = 1.004e-6;
-	const double C = 0.1;
 	const double r_eByl_0 = 2.4;
 	const double surfaceRatio = 0.95;
-	const double eps = 1e-8;
 #ifdef PRESSURE_EXPLICIT
 	const double c = 1500/1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
 #endif
@@ -64,9 +55,31 @@ int main()
 	const double tooNearCoefficient = 1.5;
 #endif
 
-	// 出力時間刻み
-	const double outputInterval = 0.001;
+	return OpenMps::MpsEnvironment(outputInterval/2, courant,
+#ifdef MODIFY_TOO_NEAR
+		tooNearRatio, tooNearCoefficient,
+#endif
+		g, rho, nu, surfaceRatio, r_eByl_0,
+#ifdef PRESSURE_EXPLICIT
+		c,
+#endif
+		l_0);
+}
+
+// エントリポイント
+int main()
+{
+	system("mkdir result");
+	system("cd");
+	using namespace OpenMps;
 	
+	const double l_0 = 1e-3;
+	const double outputInterval = 0.001;
+	const double courant = 0.1;
+#ifndef PRESSURE_EXPLICIT
+	const double eps = 1e-8;
+#endif
+
 	// 乱数生成器
 	const double randFactor = 1e-10;
 	boost::minstd_rand gen(42);
@@ -87,8 +100,8 @@ int main()
 		{
 			for(int j = 0; j < H; j++)
 			{
-				const double x = i*l_0 + make_rand()*C;
-				const double y = j*l_0 - make_rand()*C;
+				const double x = i*l_0 + make_rand()*courant;
+				const double y = j*l_0 - make_rand()*courant;
 
 				const double u = 0;
 				const double v = 0;
@@ -171,26 +184,15 @@ int main()
 	}
 #endif
 
-	
+	// 計算空間パラメーターの作成
+	const OpenMps::MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
+
 	// 計算空間の初期化
 	MpsComputer computer(
-		outputInterval/2,
-		g,
-		rho,
-		nu,
-		C,
-		r_eByl_0,
-		surfaceRatio,
-#ifdef PRESSURE_EXPLICIT
-		c,
-#else
+#ifndef PRESSURE_EXPLICIT
 		eps,
 #endif
-#ifdef MODIFY_TOO_NEAR
-		tooNearRatio,
-		tooNearCoefficient,
-#endif
-		l_0,
+		environment,
 		particles);
 	
 	// 初期状態を出力
@@ -204,7 +206,7 @@ int main()
 	// 開始時間を画面表示
 	auto t = std::time(nullptr);
 	auto tm = std::localtime(&t);
-	std::cout << timeFormat % computer.T() % 0 % 0
+	std::cout << timeFormat % computer.Environment().T() % 0 % 0
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 				% timer.elapsed() << std::endl;
 
@@ -213,14 +215,16 @@ int main()
 	int iteration = 0;
 	for(int outputCount = 1; outputCount <= 500 ; outputCount++)
 	{
+		double tComputer = computer.Environment().T();
 		try
 		{
 			// 次の出力時間まで
 			nextOutputT += outputInterval;
-			while(computer.T() < nextOutputT)
+			while(tComputer < nextOutputT)
 			{
 				// 時間を進める
 				computer.ForwardTime();
+				tComputer = computer.Environment().T();
 				iteration++;
 			}
 
@@ -228,9 +232,9 @@ int main()
 			OutputToCsv(computer, outputCount);
 
 			// 現在時刻を画面表示
-			t = std::time(nullptr);
-			tm = std::localtime(&t);
-			std::cout << timeFormat % computer.T() % iteration % outputCount
+			auto t = std::time(nullptr);
+			auto tm = std::localtime(&t);
+			std::cout << timeFormat % tComputer % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 				% timer.elapsed() << std::endl;
 		}
@@ -239,7 +243,7 @@ int main()
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
-				<< boost::format("#%3%: t=%1% (%2%)") % computer.T() % iteration % outputCount << std::endl
+				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % outputCount << std::endl
 				<< ex.Message << std::endl;
 			break;
 		}
