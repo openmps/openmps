@@ -64,35 +64,18 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 		l_0);
 }
 
-// エントリポイント
-int main()
+// 粒子を作成する
+static OpenMps::Particle::List CreateParticles(const double l_0, const double courant)
 {
-	system("mkdir result");
 	using namespace OpenMps;
-	
-	const double l_0 = 1e-3;
-	const double outputInterval = 0.001;
-	const double courant = 0.1;
-#ifndef PRESSURE_EXPLICIT
-	const double eps = 1e-8;
-#endif
-
-	// 計算空間パラメーターの作成
-	const OpenMps::MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
-
-	// 計算空間の初期化
-	MpsComputer computer(
-#ifndef PRESSURE_EXPLICIT
-		eps,
-#endif
-		environment);
 
 	// 乱数生成器
 	boost::minstd_rand gen(42);
 	boost::uniform_real<> dst(0, l_0*0.1);
 	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
 
-	// ダムブレーク環境を作成
+	// ダムブレークのモデルを作成
+	Particle::List particles;
 	{
 		const int L = 10;
 		const int H = 20;
@@ -109,12 +92,12 @@ int main()
 				double v = make_rand()*courant;
 
 				auto particle = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
-				computer.AddParticle(particle);
+				particles.push_back(particle);
 			}
 		}
 		
 		auto particle2 = std::shared_ptr<Particle>(new ParticleIncompressibleNewton(l_0*0.3, 0, 0, 0, 0, 0));
-		//computer.AddParticle(particle2);
+		//particles.push_back(particle2);
 
 		// 床を追加
 		for(int i = -1; i < L+1; i++)
@@ -128,10 +111,10 @@ int main()
 				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*2));
 				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*3));
 				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(x, -l_0*4));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
+				particles.push_back(wall1);
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
 			}
 		}
 
@@ -147,10 +130,10 @@ int main()
 				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y));
 				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y));
 				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y));
-				computer.AddParticle(wall1);
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
+				particles.push_back(wall1);
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
 			}
 		}
 
@@ -166,15 +149,42 @@ int main()
 				auto dummy1 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*2, y-4*l_0));
 				auto dummy2 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*3, y-4*l_0));
 				auto dummy3 = std::shared_ptr<Particle>(new ParticleDummy(-l_0*4, y-4*l_0));
-				computer.AddParticle(dummy1);
-				computer.AddParticle(dummy2);
-				computer.AddParticle(dummy3);
+				particles.push_back(dummy1);
+				particles.push_back(dummy2);
+				particles.push_back(dummy3);
 			}
 		}
 	}
 
 	// 粒子数を表示
-	std::cout << computer.Particles().size() << " particles" << std::endl;
+	std::cout << particles.size() << " particles" << std::endl;
+
+	return particles;
+}
+// エントリポイント
+int main()
+{
+	system("mkdir result");
+	using namespace OpenMps;
+	
+	const double l_0 = 1e-3;
+	const double outputInterval = 0.001;
+	const double courant = 0.1;
+#ifndef PRESSURE_EXPLICIT
+	const double eps = 1e-8;
+#endif
+
+	// 粒子リストと計算空間パラメーターの作成
+	const Particle::List particles = CreateParticles(l_0, courant);
+	const MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
+
+	// 計算空間の初期化
+	MpsComputer computer(
+#ifndef PRESSURE_EXPLICIT
+		eps,
+#endif
+		environment,
+		particles);
 
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
