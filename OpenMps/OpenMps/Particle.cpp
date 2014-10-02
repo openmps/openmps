@@ -127,12 +127,8 @@ namespace OpenMps
 
 	Vector Particle::GetViscosityNormal(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		// 粘性項を計算して返す
-		return std::accumulate(particles.cbegin(), particles.cend(), zero,
+		return std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
 			[this, &n_0, &r_e, &lambda, &nu, &dt](const Vector& sum, const Particle& particle)
 			{
 				Vector du = particle.ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
@@ -142,15 +138,11 @@ namespace OpenMps
 
 	Vector Particle::GetPressureGradientNormal(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)  const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		Vector du;
 
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 		// 速度修正量を計算
-		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+		du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
 			[this, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle& particle)
 			{
 				auto du = particle.PressureGradientTo(*this, r_e, dt, rho, n0);
@@ -166,7 +158,7 @@ namespace OpenMps
 		const double minP = (*minPparticle).p;
 
 		// 速度修正量を計算
-		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+		du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
 			[this, &r_e, &dt, &rho, &n0, &minP](const Vector& sum, const Particle& particle)
 			{
 				auto du = particle.PressureGradientTo(*this, minP, r_e, dt, rho, n0);
@@ -179,15 +171,11 @@ namespace OpenMps
 #ifdef MODIFY_TOO_NEAR
 	Vector Particle::GetCorrectionByTooNearNormal(const Particle::List& particles, const double r_e, const double rho, const double tooNearLength, const double tooNearCoefficient) const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		// 運動量を計算
 		auto p_i = rho * this->u;
 
-		Vector du = std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle& particle)
+		Vector du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
+			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i](const Vector& sum, const Particle& particle)
 			{
 				namespace ublas = boost::numeric::ublas;
 
@@ -196,7 +184,7 @@ namespace OpenMps
 				double r_ij = ublas::norm_2(x_ij);
 
 				// 相対距離が過剰接近なら
-				auto d = zero;
+				auto d = VectorZero;
 				if((0 < r_ij) & (r_ij < tooNearLength))
 				{
 					// 合成運動量を計算
