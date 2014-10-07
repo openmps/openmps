@@ -57,13 +57,13 @@ namespace OpenMps
 		// @param lambda 拡散モデル係数λ
 		// @param nu 粘性係数
 		inline virtual Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
-		{			
+		{
 			// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
 			Vector result = (nu * 2*DIM/lambda/n_0 * particle_i.Weight(*this, r_e))*(this->u - particle_i.u);
 			return result;
 		}
 
-		
+
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 		// 対象の粒子へ与える圧力勾配を計算する
 		// @param particle_i 対象の粒子
@@ -113,7 +113,7 @@ namespace OpenMps
 	public:
 		// 粒子へのポインタ
 		typedef std::shared_ptr<Particle> Ptr;
-		
+
 		// 粒子リスト
 		typedef std::vector<Particle::Ptr> List;
 
@@ -209,7 +209,7 @@ namespace OpenMps
 			// 自由表面の場合は0
 			return IsSurface(n0, surfaceRatio) ? 0
 				: target.MatrixTarget(*this, n0, r_e, lambda, rho, surfaceRatio);
-		} 
+		}
 #endif
 
 		// 圧力勾配を計算する
@@ -290,7 +290,7 @@ namespace OpenMps
 			return n/n0 < surfaceRatio;
 		}
 	};
-	
+
 
 	// 非圧縮性ニュートン流体（水など）
 	class ParticleIncompressibleNewton : public Particle
@@ -309,7 +309,7 @@ namespace OpenMps
 		{
 		}
 	};
-	
+
 	// 壁粒子（位置と速度が変化しない）
 	class ParticleWall : public Particle
 	{
@@ -528,7 +528,7 @@ namespace OpenMps
 			// 生成項は0
 			return 0;
 		}
-		
+
 		// 圧力方程式の係数を計算する
 		// @param particle 対象粒子
 		// @@aram n_0 基準粒子数密度
