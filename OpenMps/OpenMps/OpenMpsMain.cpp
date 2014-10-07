@@ -192,6 +192,16 @@ int main()
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
 
+#ifdef _OPENMP
+	#pragma omp parallel
+	{
+		#pragma omp master
+		{
+			std::cout << omp_get_num_threads() << " threads" << std::endl;
+		}
+	}
+#endif
+
 	// 開始時間を保存
 	boost::timer timer;
 	timer.restart();
