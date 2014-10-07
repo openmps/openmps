@@ -11,7 +11,7 @@ namespace OpenMps
 	MpsComputer::MpsComputer(
 #ifndef PRESSURE_EXPLICIT
 		const double allowableResidual,
-#endif	
+#endif
 		const MpsEnvironment& env,
 		const Particle::List& particles)
 		: environment(env),
@@ -183,10 +183,10 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		unsigned int n = particles.size();
+		const int n = particles.size();
 
 		// 粒子に増減があれば
-		if(n != (int)ppe.b.size())
+		if(n != static_cast<int>(ppe.b.size()))
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
@@ -197,7 +197,7 @@ namespace OpenMps
 			ppe.cg.Ap = LongVector(n);
 		}
 		// 全粒子で
-		for(unsigned int i = 0; i < n; i++)
+		for(int i = 0; i < n; i++)
 		{
 			const auto n0 = environment.N0();
 			const auto dt = environment.Dt();
@@ -217,20 +217,20 @@ namespace OpenMps
 		ppe.A.clear();
 
 		// 全粒子で
-		for(unsigned int i = 0; i < n; i++)
+		for(int i = 0; i < n; i++)
 		{
 			// 対角項を初期化
 			double a_ii = 0;
-			
+
 			// 他の粒子に対して
 			// TODO: 全粒子探索してるので遅い
-			for(unsigned int j = 0; j < particles.size(); j++)
+			for(int j = 0; j < static_cast<int>(particles.size()); j++)
 			{
 				// 自分以外
 				if(i != j)
 				{
 					// 自分以外
-					if(i != (int)j)
+					if(i != static_cast<int>(j))
 					{
 						const auto n0 = environment.N0();
 						const auto r_e = environment.R_e;
