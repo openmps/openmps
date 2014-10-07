@@ -26,7 +26,7 @@ namespace OpenMps
 			// ダミー（粒子数密度の計算にのみ対象となる）
 			ParticleTypeDummy,
 		} ParticleType;
-		
+
 	private:
 		// 粒子タイプの数
 		static const int ParticleTypeMaxCount = 3;
@@ -45,7 +45,7 @@ namespace OpenMps
 			double w = this->Weight(source, r_e);
 			return -2*DIM/(rho*lambda) * w/n0;
 		}
-		
+
 		// 自分に対する圧力方程式の係数が0である粒子を対象とした、圧力方程式の係数を計算する
 		double GetPpeMatrixTargetZero(const Particle& source, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
 		{
@@ -67,13 +67,13 @@ namespace OpenMps
 			Vector result = (nu * 2*DIM/lambda/n_0 * particle_i.Weight(*this, r_e))*(this->u - particle_i.u);
 			return result;
 		}
-		
+
 		// 対象の粒子へ粘性効果を与えない粒子の与える粘性項を計算する
 		Vector ViscosityToZero(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
 		{
 			return VectorZero;
 		}
-		
+
 		// 対象の粒子へ与える圧力勾配を計算する関数ポインタの型
 		typedef Vector(Particle::*PressureGradientToFunc)(
 			const Particle& particle_i,
@@ -106,7 +106,7 @@ namespace OpenMps
 #endif
 			return (r2 == 0 ? 0 : result) * dx;
 		}
-		
+
 		// 対象の粒子へ圧力勾配を与えない粒子の圧力勾配を計算する
 		Vector PressureGradientToZero(
 			const Particle& particle_i,
@@ -130,7 +130,7 @@ namespace OpenMps
 		{
 			u += du;
 		}
-		
+
 		// 移動しない粒子を加速（速度を変更）する
 		void AccelerateZero(const Vector&)
 		{
@@ -149,7 +149,7 @@ namespace OpenMps
 		{
 			x += dx;
 		}
-		
+
 		// 移動しない粒子を移動（位置を変更）する
 		void MoveZero(const Vector&)
 		{
@@ -165,7 +165,7 @@ namespace OpenMps
 
 		// 通常粒子の粘性項を計算するする
 		Vector GetViscosityNormal(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const;
-		
+
 		// 移動しない粒子の粘性項を計算する
 		Vector GetViscosityZero(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
 		{
@@ -184,14 +184,14 @@ namespace OpenMps
 		{
 			return target.WeightTarget(*this, r_e);
 		}
-		
+
 		// 重み関数を計算しない粒子の重み関数を計算する
 		double WeightZero(const Particle& target, const double r_e) const
 		{
 			return 0;
 		}
 
-		
+
 		// 粘性項を計算する関数ポインタの型
 		typedef void(Particle::*UpdateNeighborDensityFunc)(const Particle::List& particles, const double r_e);
 
@@ -200,7 +200,7 @@ namespace OpenMps
 
 		// 通常粒子の粘性項を計算する
 		void UpdateNeighborDensityNormal(const Particle::List& particles, const double r_e);
-		
+
 		// 移動しない粒子の粘性項を計算する
 		void UpdateNeighborDensityZero(const Particle::List& particles, const double r_e)
 		{
@@ -208,7 +208,7 @@ namespace OpenMps
 			n = 0;
 		}
 
-		
+
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子からの速度補正量を計算する関数ポインタの型
 		typedef Vector(Particle::*GetCorrectionByTooNearFunc)(const Particle::List& particles, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const;
@@ -218,7 +218,7 @@ namespace OpenMps
 
 		// 通常粒子の過剰接近粒子からの速度補正量を計算する
 		Vector GetCorrectionByTooNearNormal(const Particle::List& particles, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const;
-		
+
 		// 移動しない粒子の過剰接近粒子からの速度補正量を計算する
 		Vector GetCorrectionByTooNearZero(const Particle::List& particles, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const
 		{
@@ -226,7 +226,7 @@ namespace OpenMps
 		}
 #endif
 
-		
+
 #ifdef PRESSURE_EXPLICIT
 		// 圧力を計算する関数ポインタの型
 		typedef void(Particle::*UpdatePressureFunc)(const double c, const double rho0, const double n0);
@@ -243,7 +243,7 @@ namespace OpenMps
 			// 圧力の計算：c^2 (ρ-ρ0)（基準密度以下なら圧力は発生しない）
 			p = (rho <= rho0) ? 0 : c*c*(rho - rho0);
 		}
-		
+
 		// 圧力を持たない粒子の圧力を計算する
 		void UpdatePressureZero(const double c, const double rho0, const double n0)
 		{
@@ -267,7 +267,7 @@ namespace OpenMps
 				// 標準MPS法：b_i = 1/dt^2 * (n_i - n0)/n0
 				: (n - n0)/n0 /(dt*dt);
 		}
-		
+
 		// 圧力を持たない粒子の圧力方程式の生成項を計算する
 		double GetPpeSourceZero(const double c, const double rho0, const double n0) const
 		{
@@ -289,7 +289,7 @@ namespace OpenMps
 			return IsSurface(n0, surfaceRatio) ? 0
 				: target.GetPpeMatrixTarget(*this, n0, r_e, lambda, rho, surfaceRatio);
 		}
-		
+
 		// 圧力を持たない粒子の圧力方程式の係数を計算する
 		double GetPpeMatrixZero(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
 		{
@@ -306,7 +306,7 @@ namespace OpenMps
 
 		// 通常粒子の圧力勾配を計算する
 		Vector GetPressureGradientNormal(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0) const;
-		
+
 		// 移動しない粒子の圧力勾配を計算する
 		Vector GetPressureGradientZero(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0) const
 		{
@@ -377,9 +377,9 @@ namespace OpenMps
 		// @param rho 密度
 		// @param n0 粒子数密度
 		Vector PressureGradientTo(
-			const Particle& particle_i, 
+			const Particle& particle_i,
 #ifndef PRESSURE_GRADIENT_MIDPOINT
-			const double minP, 
+			const double minP,
 #endif
 			const double r_e, const double dt, const double rho, const double n0) const
 		{
@@ -492,7 +492,7 @@ namespace OpenMps
 		double GetPpeMatrix(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
 		{
 			return (this->*(Particle::GetPpeMatrixFuncTable[type]))(target, n0, r_e, lambda, rho, surfaceRatio);
-		} 
+		}
 #endif
 
 		// 圧力勾配を計算する
@@ -502,7 +502,7 @@ namespace OpenMps
 		// @param rho 密度
 		// @param n0 基準粒子数密度
 		Vector GetPressureGradient(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0) const
-		{	
+		{
 			return (this->*(Particle::GetPressureGradientFuncTable[type]))(particles, r_e, dt, rho, n0);
 		}
 
@@ -582,7 +582,7 @@ namespace OpenMps
 			return n/n0 < surfaceRatio;
 		}
 	};
-	
+
 
 	// 非圧縮性ニュートン流体（水など）
 	class ParticleIncompressibleNewton : public Particle
@@ -600,7 +600,7 @@ namespace OpenMps
 		{
 		}
 	};
-	
+
 	// 壁粒子（位置と速度が変化しない）
 	class ParticleWall : public Particle
 	{
