@@ -50,7 +50,7 @@ namespace OpenMps
 					x[0] = i*l_0;
 					x[1] = j*l_0;
 
-					// 重み関数を計算	
+					// 重み関数を計算
 					double r = boost::numeric::ublas::norm_2(x);
 					auto w = Particle::Weight(r, R_e);
 

@@ -16,11 +16,11 @@ namespace OpenMps
 		typedef std::pair<int, int> BlockID;
 
 	private:
-	
-		// 粒子番号リスト
+
+
 		typedef std::vector<int> Block;
-	
-		// グリッド本体
+
+
 		std::map<BlockID, Block> grid;
 
 
@@ -142,13 +142,13 @@ namespace OpenMps
 			// なかったら空のブロック
 			return Block();
 		}
-		
+
 
 		inline NeighborBlockIterator begin(const Vector& x) const
 		{
 			return cbegin(x);
 		}
-		
+
 		inline NeighborBlockIterator end(const Vector& x) const
 		{
 			return cend(x);

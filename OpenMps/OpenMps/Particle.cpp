@@ -5,88 +5,88 @@
 namespace OpenMps
 {
 #ifndef PRESSURE_EXPLICIT
-	const Particle::GetPpeMatrixTargetFunc Particle::GetPpeMatrixTargetFuncTable[] = 
+	const Particle::GetPpeMatrixTargetFunc Particle::GetPpeMatrixTargetFuncTable[] =
 	{
 		&Particle::GetPpeMatrixTargetNormal, // 水
 		&Particle::GetPpeMatrixTargetNormal, // 壁
 		&Particle::GetPpeMatrixTargetZero,   // ダミー
 	};
 #endif
-	
-	const Particle::ViscosityToFunc Particle::ViscosityToFuncTable[] = 
+
+	const Particle::ViscosityToFunc Particle::ViscosityToFuncTable[] =
 	{
 		&Particle::ViscosityToNormal, // 水
 		&Particle::ViscosityToNormal, // 壁
 		&Particle::ViscosityToZero,   // ダミー
 	};
-	
-	const Particle::PressureGradientToFunc Particle::PressureGradientToFuncTable[] = 
+
+	const Particle::PressureGradientToFunc Particle::PressureGradientToFuncTable[] =
 	{
 		&Particle::PressureGradientToNormal, // 水
 		&Particle::PressureGradientToNormal, // 壁
 		&Particle::PressureGradientToZero,   // ダミー
 	};
-	
-	const Particle::AccelerateFunc Particle::AccelerateFuncTable[] = 
+
+	const Particle::AccelerateFunc Particle::AccelerateFuncTable[] =
 	{
 		&Particle::AccelerateNormal, // 水
 		&Particle::AccelerateZero,   // 壁
 		&Particle::AccelerateZero,   // ダミー
 	};
-	
-	const Particle::MoveFunc Particle::MoveFuncTable[] = 
+
+	const Particle::MoveFunc Particle::MoveFuncTable[] =
 	{
 		&Particle::MoveNormal, // 水
 		&Particle::MoveZero,   // 壁
 		&Particle::MoveZero,   // ダミー
 	};
-	
-	const Particle::GetViscosityFunc Particle::GetViscosityFuncTable[] = 
+
+	const Particle::GetViscosityFunc Particle::GetViscosityFuncTable[] =
 	{
 		&Particle::GetViscosityNormal, // 水
 		&Particle::GetViscosityZero,   // 壁
 		&Particle::GetViscosityZero,   // ダミー
 	};
-	
-	const Particle::WeightFunc Particle::WeightFuncTable[] = 
+
+	const Particle::WeightFunc Particle::WeightFuncTable[] =
 	{
 		&Particle::WeightNormal, // 水
 		&Particle::WeightNormal, // 壁
 		&Particle::WeightZero,   // ダミー
 	};
-	
-	const Particle::UpdateNeighborDensityFunc Particle::UpdateNeighborDensityFuncTable[] = 
+
+	const Particle::UpdateNeighborDensityFunc Particle::UpdateNeighborDensityFuncTable[] =
 	{
 		&Particle::UpdateNeighborDensityNormal, // 水
 		&Particle::UpdateNeighborDensityNormal, // 壁
 		&Particle::UpdateNeighborDensityZero,   // ダミー
 	};
-	
+
 #ifdef MODIFY_TOO_NEAR
-	const Particle::GetCorrectionByTooNearFunc Particle::GetCorrectionByTooNearFuncTable[] = 
+	const Particle::GetCorrectionByTooNearFunc Particle::GetCorrectionByTooNearFuncTable[] =
 	{
 		&Particle::GetCorrectionByTooNearNormal, // 水
 		&Particle::GetCorrectionByTooNearZero,   // 壁
 		&Particle::GetCorrectionByTooNearZero,   // ダミー
 	};
 #endif
-	
+
 #ifdef PRESSURE_EXPLICIT
-	const Particle::UpdatePressureFunc Particle::UpdatePressureFuncTable[] = 
+	const Particle::UpdatePressureFunc Particle::UpdatePressureFuncTable[] =
 	{
 		&Particle::UpdatePressureNormal, // 水
 		&Particle::UpdatePressureNormal, // 壁
 		&Particle::UpdatePressureZero,   // ダミー
 	};
 #else
-	const Particle::GetPpeSourceFunc Particle::GetPpeSourceFuncTable[] = 
+	const Particle::GetPpeSourceFunc Particle::GetPpeSourceFuncTable[] =
 	{
 		&Particle::GetPpeSourceNormal, // 水
 		&Particle::GetPpeSourceNormal, // 壁
 		&Particle::GetPpeSourceZero,   // ダミー
 	};
 
-	const Particle::GetPpeMatrixFunc Particle::GetPpeMatrixFuncTable[] = 
+	const Particle::GetPpeMatrixFunc Particle::GetPpeMatrixFuncTable[] =
 	{
 		&Particle::GetPpeMatrixNormal, // 水
 		&Particle::GetPpeMatrixNormal, // 壁
@@ -94,7 +94,7 @@ namespace OpenMps
 	};
 #endif
 
-	const Particle::GetPressureGradientFunc Particle::GetPressureGradientFuncTable[] = 
+	const Particle::GetPressureGradientFunc Particle::GetPressureGradientFuncTable[] =
 	{
 		&Particle::GetPressureGradientNormal, // 水
 		&Particle::GetPressureGradientZero,   // 壁
@@ -140,7 +140,7 @@ namespace OpenMps
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
-				
+
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
 					[this, &n_0, &r_e, &lambda, &nu, &dt, &particles](const Vector& sum2, const int& id)
@@ -154,7 +154,7 @@ namespace OpenMps
 
 		// 粘性項を返す
 		return vis;
-	}	
+	}
 
 	Vector Particle::GetPressureGradientNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double dt, const double rho, const double n0)  const
 	{
@@ -165,7 +165,7 @@ namespace OpenMps
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
-				
+
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
 					[this, &r_e, &dt, &rho, &n0, &particles](const Vector& sum2, const int& id)
@@ -199,64 +199,22 @@ namespace OpenMps
 #ifdef MODIFY_TOO_NEAR
 	Vector Particle::GetCorrectionByTooNearNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double rho, const double tooNearLength, const double tooNearCoefficient) const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		// 運動量を計算
 		auto p_i = rho * this->u;
 
-		Vector du = std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle& particle)
-			{
-				namespace ublas = boost::numeric::ublas;
-
-				// 相対距離を計算
-				auto x_ij = particle.x - this->x;
-				double r_ij = ublas::norm_2(x_ij);
-
-				// 相対距離が過剰接近なら
-				auto d = zero;
-				if((0 < r_ij) & (r_ij < tooNearLength))
-				{
-					// 合成運動量を計算
-					auto p = p_i + rho * particle.u;
-
-					// 運動量の変化量を計算
-					auto delta_p = p_i - p/2;
-					auto abs_delta_p = ublas::inner_prod(delta_p, x_ij) / r_ij;
-
-					// 運動量が増加する方向なら
-					if(abs_delta_p > 0)
-					{
-						// 反発率をかける
-						auto p_m = (tooNearCoefficient * abs_delta_p / r_ij) * x_ij;
-
-						// 速度の修正量を計算
-						d = p_m / rho;
-					}
-				}
-
-				return (Vector)(sum - d);
-			});
-
-		/*
-		Vector du = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), zero,
+		Vector du = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
 			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &particles, &grid](const Vector& sum, const Grid::BlockID block)
 			{
+				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
 
-				Vector zero2;
-				zero2(0) = 0;
-				zero2(1) = 0;
-
-				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), zero2,
+				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
 					[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &particles](const Vector& sum2, const int& id)
 					{
 						namespace ublas = boost::numeric::ublas;
 
 						// 相対距離を計算
-						auto x_ij = particles[id]->x - this->x;
+						auto x_ij = particles[id].x - this->x;
 						double r_ij = ublas::norm_2(x_ij);
 
 						// 相対距離が過剰接近なら
@@ -266,7 +224,7 @@ namespace OpenMps
 						if((0 < r_ij) & (r_ij < tooNearLength))
 						{
 							// 合成運動量を計算
-							auto p = p_i + rho * particles[id]->u;
+							auto p = p_i + rho * particles[id].u;
 
 							// 運動量の変化量を計算
 							auto delta_p = p_i - p/2;
@@ -288,7 +246,7 @@ namespace OpenMps
 
 				return static_cast<Vector>(sum + duBlock);
 			});
-		*/
+
 		return du;
 	}
 #endif
