@@ -40,7 +40,7 @@ namespace OpenMps
 
 		// 計算空間のパラメーター
 		MpsEnvironment environment;
-		
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
@@ -58,10 +58,10 @@ namespace OpenMps
 
 			// 圧力方程式の右辺
 			LongVector b;
-			
+
 			// 収束判定（許容誤差）
 			double allowableResidual;
-			
+
 			// 共役勾配法で使う用
 			struct ConjugateGradient
 			{
@@ -98,7 +98,7 @@ namespace OpenMps
 		// 過剰接近粒子を補正する
 		inline void ModifyTooNear();
 #endif
-		
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式を設定する
 		inline void SetPressurePoissonEquation();
@@ -109,13 +109,13 @@ namespace OpenMps
 
 		// 圧力勾配によって速度と位置を修正する
 		inline void ModifyByPressureGradient();
-		
+
 	public:
 		struct Exception
 		{
 			std::string Message;
 		};
-		
+
 #ifndef PRESSURE_EXPLICIT
 		// @param allowableResidual 圧力方程式の収束判定（許容誤差）
 #endif
@@ -123,7 +123,7 @@ namespace OpenMps
 		MpsComputer(
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
-#endif	
+#endif
 			const MpsEnvironment& env,
 			const Particle::List& particles);
 

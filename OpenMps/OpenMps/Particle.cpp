@@ -134,7 +134,7 @@ namespace OpenMps
 				Vector du = particle.ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
 				return (Vector)(sum + du);
 			});
-	}	
+	}
 
 	Vector Particle::GetPressureGradientNormal(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)  const
 	{

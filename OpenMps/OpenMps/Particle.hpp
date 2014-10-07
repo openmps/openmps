@@ -492,7 +492,7 @@ namespace OpenMps
 		double GetPpeMatrix(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
 		{
 			return (this->*(Particle::GetPpeMatrixFuncTable[type]))(target, n0, r_e, lambda, rho, surfaceRatio);
-		} 
+		}
 #endif
 
 		// 圧力勾配を計算する
@@ -582,7 +582,7 @@ namespace OpenMps
 			return n/n0 < surfaceRatio;
 		}
 	};
-	
+
 
 	// 非圧縮性ニュートン流体（水など）
 	class ParticleIncompressibleNewton : public Particle
@@ -600,7 +600,7 @@ namespace OpenMps
 		{
 		}
 	};
-	
+
 	// 壁粒子（位置と速度が変化しない）
 	class ParticleWall : public Particle
 	{

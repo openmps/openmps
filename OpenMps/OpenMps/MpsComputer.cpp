@@ -15,7 +15,7 @@ namespace OpenMps
 	MpsComputer::MpsComputer(
 #ifndef PRESSURE_EXPLICIT
 		const double allowableResidual,
-#endif	
+#endif
 		const MpsEnvironment& env,
 		const Particle::List& particles)
 		: environment(env),
@@ -215,10 +215,10 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		int n = (int)particles.size();
+		const int n = static_cast<int>(particles.size());
 
 		// 粒子に増減があれば
-		if(n != (int)ppe.b.size())
+		if(n != static_cast<int>(ppe.b.size()))
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
@@ -268,7 +268,7 @@ namespace OpenMps
 				ppe.x(i) = x_i;
 			}
 			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
-			
+
 #ifdef _OPENMP
 			#pragma omp for
 #endif
@@ -283,7 +283,7 @@ namespace OpenMps
 				for(unsigned int j = 0; j < particles.size(); j++)
 				{
 					// 自分以外
-					if(i != (int)j)
+					if(i != static_cast<int>(j))
 					{
 						const auto n0 = environment.N0();
 						const auto r_e = environment.R_e;
