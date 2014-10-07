@@ -41,7 +41,7 @@ namespace OpenMps
 
 		// 第一段階の計算
 		ComputeExplicitForces();
-		
+
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子の補正
 		ModifyTooNear();
@@ -298,7 +298,7 @@ namespace OpenMps
 #ifdef _OPENMP
 				ppe.a_ij[i].clear();
 #endif
-			
+
 				// 全近傍ブロックで
 				for(auto block = grid.cbegin(particles[i].VectorX()); block != grid.cend(particles[i].VectorX()); block++)
 				{

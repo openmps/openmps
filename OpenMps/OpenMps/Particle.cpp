@@ -140,7 +140,7 @@ namespace OpenMps
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
-				
+
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
 					[this, &n_0, &r_e, &lambda, &nu, &dt, &particles](const Vector& sum2, const int& id)
@@ -154,7 +154,7 @@ namespace OpenMps
 
 		// 粘性項を返す
 		return vis;
-	}	
+	}
 
 	Vector Particle::GetPressureGradientNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double dt, const double rho, const double n0)  const
 	{
@@ -165,7 +165,7 @@ namespace OpenMps
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
-				
+
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
 					[this, &r_e, &dt, &rho, &n0, &particles](const Vector& sum2, const int& id)

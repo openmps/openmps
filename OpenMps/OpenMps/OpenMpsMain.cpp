@@ -77,7 +77,7 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 	boost::minstd_rand gen(42);
 	boost::uniform_real<> dst(-l_0*randFactor, l_0*randFactor);
 	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
-	
+
 	// ダムブレークのモデルを作成
 	Particle::List particles;
 	{
