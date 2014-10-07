@@ -24,7 +24,7 @@ static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputC
 
 	// ヘッダ出力
 	output << "Type, x, z, u, w, p, n" << std::endl;
-			
+
 	// 各粒子を出力
 	for(auto particle : computer.Particles())
 	{
@@ -101,7 +101,7 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 				particles.push_back(*particle);
 			}
 		}
-		
+
 		// 床と天井を追加
 		for(int i = -1; i < wallL+1; i++)
 		{
@@ -169,7 +169,7 @@ int main()
 {
 	system("mkdir result");
 	using namespace OpenMps;
-	
+
 	const double l_0 = 1e-3;
 	const double outputInterval = 0.001;
 	const double courant = 0.1;
@@ -188,10 +188,10 @@ int main()
 #endif
 		environment,
 		particles);
-	
+
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
-	
+
 	// 開始時間を保存
 	boost::timer timer;
 	timer.restart();

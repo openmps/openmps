@@ -15,7 +15,7 @@ namespace OpenMps
 	MpsComputer::MpsComputer(
 #ifndef PRESSURE_EXPLICIT
 		const double allowableResidual,
-#endif	
+#endif
 		const MpsEnvironment& env,
 		const Particle::List& particles)
 		: environment(env),
@@ -235,10 +235,10 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		int n = (int)particles.size();
+		const int n = static_cast<int>(particles.size());
 
 		// 粒子に増減があれば
-		if(n != (int)ppe.b.size())
+		if(n != static_cast<int>(ppe.b.size()))
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
@@ -246,7 +246,7 @@ namespace OpenMps
 			ppe.b = LongVector(n);
 			ppe.cg.r = LongVector(n);
 			ppe.cg.p = LongVector(n);
-			ppe.cg.Ap = LongVector(n);	
+			ppe.cg.Ap = LongVector(n);
 #ifdef USE_VIENNACL
 			ppe.tempA = TempMatrix(n, n);
 #endif
@@ -287,7 +287,6 @@ namespace OpenMps
 			}
 			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
 
-			
 #ifdef _OPENMP
 			#pragma omp for
 #endif
@@ -360,7 +359,7 @@ namespace OpenMps
 			}
 		}
 #endif
-		
+
 #ifdef USE_VIENNACL
 		// 作成した係数行列をデバイス側に複製
 		viennacl::copy(ppe.tempA, ppe.A);
