@@ -226,7 +226,7 @@ namespace OpenMps
 			ppe.b = LongVector(n);
 			ppe.cg.r = LongVector(n);
 			ppe.cg.p = LongVector(n);
-			ppe.cg.Ap = LongVector(n);	
+			ppe.cg.Ap = LongVector(n);
 #ifdef USE_VIENNACL
 			ppe.tempA = TempMatrix(n, n);
 #endif
@@ -277,7 +277,7 @@ namespace OpenMps
 			{
 				// 対角項を初期化
 				double a_ii = 0;
-			
+
 				// 他の粒子に対して
 				// TODO: 全粒子探索してるので遅い
 				for(unsigned int j = 0; j < particles.size(); j++)
@@ -322,12 +322,12 @@ namespace OpenMps
 #endif
 			}
 		}
-		
+
 #ifdef _OPENMP
 		// 係数行列Aのロックを削除
 		omp_destroy_lock(&lockA);
 #endif
-		
+
 #ifdef USE_VIENNACL
 		// 作成した係数行列をデバイス側に複製
 		viennacl::copy(ppe.tempA, ppe.A);

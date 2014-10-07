@@ -195,7 +195,7 @@ int main()
 		}
 	}
 #endif
-	
+
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
 

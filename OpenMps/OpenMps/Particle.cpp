@@ -5,88 +5,88 @@
 namespace OpenMps
 {
 #ifndef PRESSURE_EXPLICIT
-	const Particle::GetPpeMatrixTargetFunc Particle::GetPpeMatrixTargetFuncTable[] = 
+	const Particle::GetPpeMatrixTargetFunc Particle::GetPpeMatrixTargetFuncTable[] =
 	{
 		&Particle::GetPpeMatrixTargetNormal, // 水
 		&Particle::GetPpeMatrixTargetNormal, // 壁
 		&Particle::GetPpeMatrixTargetZero,   // ダミー
 	};
 #endif
-	
-	const Particle::ViscosityToFunc Particle::ViscosityToFuncTable[] = 
+
+	const Particle::ViscosityToFunc Particle::ViscosityToFuncTable[] =
 	{
 		&Particle::ViscosityToNormal, // 水
 		&Particle::ViscosityToNormal, // 壁
 		&Particle::ViscosityToZero,   // ダミー
 	};
-	
-	const Particle::PressureGradientToFunc Particle::PressureGradientToFuncTable[] = 
+
+	const Particle::PressureGradientToFunc Particle::PressureGradientToFuncTable[] =
 	{
 		&Particle::PressureGradientToNormal, // 水
 		&Particle::PressureGradientToNormal, // 壁
 		&Particle::PressureGradientToZero,   // ダミー
 	};
-	
-	const Particle::AccelerateFunc Particle::AccelerateFuncTable[] = 
+
+	const Particle::AccelerateFunc Particle::AccelerateFuncTable[] =
 	{
 		&Particle::AccelerateNormal, // 水
 		&Particle::AccelerateZero,   // 壁
 		&Particle::AccelerateZero,   // ダミー
 	};
-	
-	const Particle::MoveFunc Particle::MoveFuncTable[] = 
+
+	const Particle::MoveFunc Particle::MoveFuncTable[] =
 	{
 		&Particle::MoveNormal, // 水
 		&Particle::MoveZero,   // 壁
 		&Particle::MoveZero,   // ダミー
 	};
-	
-	const Particle::GetViscosityFunc Particle::GetViscosityFuncTable[] = 
+
+	const Particle::GetViscosityFunc Particle::GetViscosityFuncTable[] =
 	{
 		&Particle::GetViscosityNormal, // 水
 		&Particle::GetViscosityZero,   // 壁
 		&Particle::GetViscosityZero,   // ダミー
 	};
-	
-	const Particle::WeightFunc Particle::WeightFuncTable[] = 
+
+	const Particle::WeightFunc Particle::WeightFuncTable[] =
 	{
 		&Particle::WeightNormal, // 水
 		&Particle::WeightNormal, // 壁
 		&Particle::WeightZero,   // ダミー
 	};
-	
-	const Particle::UpdateNeighborDensityFunc Particle::UpdateNeighborDensityFuncTable[] = 
+
+	const Particle::UpdateNeighborDensityFunc Particle::UpdateNeighborDensityFuncTable[] =
 	{
 		&Particle::UpdateNeighborDensityNormal, // 水
 		&Particle::UpdateNeighborDensityNormal, // 壁
 		&Particle::UpdateNeighborDensityZero,   // ダミー
 	};
-	
+
 #ifdef MODIFY_TOO_NEAR
-	const Particle::GetCorrectionByTooNearFunc Particle::GetCorrectionByTooNearFuncTable[] = 
+	const Particle::GetCorrectionByTooNearFunc Particle::GetCorrectionByTooNearFuncTable[] =
 	{
 		&Particle::GetCorrectionByTooNearNormal, // 水
 		&Particle::GetCorrectionByTooNearZero,   // 壁
 		&Particle::GetCorrectionByTooNearZero,   // ダミー
 	};
 #endif
-	
+
 #ifdef PRESSURE_EXPLICIT
-	const Particle::UpdatePressureFunc Particle::UpdatePressureFuncTable[] = 
+	const Particle::UpdatePressureFunc Particle::UpdatePressureFuncTable[] =
 	{
 		&Particle::UpdatePressureNormal, // 水
 		&Particle::UpdatePressureNormal, // 壁
 		&Particle::UpdatePressureZero,   // ダミー
 	};
 #else
-	const Particle::GetPpeSourceFunc Particle::GetPpeSourceFuncTable[] = 
+	const Particle::GetPpeSourceFunc Particle::GetPpeSourceFuncTable[] =
 	{
 		&Particle::GetPpeSourceNormal, // 水
 		&Particle::GetPpeSourceNormal, // 壁
 		&Particle::GetPpeSourceZero,   // ダミー
 	};
 
-	const Particle::GetPpeMatrixFunc Particle::GetPpeMatrixFuncTable[] = 
+	const Particle::GetPpeMatrixFunc Particle::GetPpeMatrixFuncTable[] =
 	{
 		&Particle::GetPpeMatrixNormal, // 水
 		&Particle::GetPpeMatrixNormal, // 壁
@@ -94,7 +94,7 @@ namespace OpenMps
 	};
 #endif
 
-	const Particle::GetPressureGradientFunc Particle::GetPressureGradientFuncTable[] = 
+	const Particle::GetPressureGradientFunc Particle::GetPressureGradientFuncTable[] =
 	{
 		&Particle::GetPressureGradientNormal, // 水
 		&Particle::GetPressureGradientZero,   // 壁
