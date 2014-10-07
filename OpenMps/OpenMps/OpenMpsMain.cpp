@@ -174,7 +174,7 @@ int main()
 	const double outputInterval = 0.001;
 	const double courant = 0.1;
 #ifndef PRESSURE_EXPLICIT
-	const double eps = 1e-8;
+	const double eps = 1e-10;
 #endif
 
 	// 粒子リストと計算空間パラメーターの作成

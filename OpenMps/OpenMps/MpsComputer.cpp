@@ -395,47 +395,39 @@ namespace OpenMps
 		r = b - Ap;
 		p = r;
 		double rr = blas::inner_prod(r, r);
+		const double residual0 = rr*ppe.allowableResidual*ppe.allowableResidual;
 
-		// 初期値でまだ収束していない場合
-		bool isConverged = (blas::norm_inf(r)< ppe.allowableResidual);
-		if(!isConverged)
+		// 初期値で既に収束している場合は即時終了
+		bool isConverged = (residual0 == 0);
+		// 未知数分だけ繰り返す
+		for(unsigned int i = 0; (i < x.size())&&(!isConverged); i++)
 		{
-			// 未知数分だけ繰り返す
-			for(unsigned int i = 0; i < x.size(); i++)
+			// 計算を実行
+			//  Ap = A * p
+			//  α = rr/(p・Ap)
+			//  x' += αp
+			//  r' -= αAp
+			//  r'r' = r'・r'
+			Ap = blas::prod(A, p);
+			const double alpha = rr / blas::inner_prod(p, Ap);
+			x += alpha * p;
+			r -= alpha * Ap;
+			const double rrNew = blas::inner_prod(r, r);
+
+			// 収束判定
+			const double residual = rrNew;
+			isConverged = (residual < residual0);
+
+			// 収束していなければ、残りの計算を実行
+			if(!isConverged)
 			{
-				// 計算を実行
-				//  Ap = A * p
-				//  α = rr/(p・Ap)
-				//  x' += αp
-				//  r' -= αAp
-				Ap = blas::prod(A, p);
-				double alpha = rr / blas::inner_prod(p, Ap);
-				x += alpha * p;
-				r -= alpha * Ap;
-
-				// 収束判定（残差＝残差ベクトルの最大要素値）
-				double residual = blas::norm_inf(r);
-				isConverged = (residual < ppe.allowableResidual);
-
-				// 収束していたら
-				if(isConverged)
-				{
-					// 繰り返し終了
-					break;
-				}
-				// なかったら
-				else
-				{
-					// 残りの計算を実行
-					//  r'r' = r'・r'
-					//  β= r'r'/rr
-					//  p = r' + βp
-					//  rr = r'r'
-					double rrNew = blas::inner_prod(r, r);
-					double beta = rrNew / rr;
-					p = r + beta * p;
-					rr = rrNew;
-				}
+				// 残りの計算を実行
+				//  β= r'r'/rr
+				//  p = r' + βp
+				//  rr = r'r'
+				const double beta = rrNew / rr;
+				p = r + beta * p;
+				rr = rrNew;
 			}
 		}
 
