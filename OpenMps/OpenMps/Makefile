@@ -3,7 +3,7 @@
 #	開発の本流はVisual StudioによるWindows環境です。そちらを使うことを強く推奨します。
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
-COMPILER = g++
+COMPILER = clang++
 CFLAGS   = -std=c++11 -Wextra -g -MMD -MP -O3 -fopenmp
 LDFLAGS  = -lgomp
 LIBS     =

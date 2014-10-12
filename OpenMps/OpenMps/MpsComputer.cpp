@@ -1,13 +1,22 @@
 ﻿#include "MpsComputer.hpp"
 #include <algorithm>
 #include <cmath>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
 #ifdef USE_VIENNACL
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <viennacl/linalg/prod.hpp>
 #include <viennacl/linalg/inner_prod.hpp>
 #include <viennacl/linalg/norm_inf.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #endif
 
 namespace OpenMps
@@ -110,7 +119,7 @@ namespace OpenMps
 			for(int i = 0; i < (int)particles.size(); i++)
 			{
 				// 粘性項の計算
-				auto vis = particles[i].GetViscosity(particles, n0, r_e, lambda, nu, dt);
+				auto vis = particles[i].GetViscosity(particles, n0, r_e, lambda, nu);
 
 				// 重力＋粘性項
 				a[i] = g + vis;
