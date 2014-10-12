@@ -3,12 +3,21 @@
 #include "defines.hpp"
 
 #include <vector>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #ifdef USE_VIENNACL
 #include <viennacl/compressed_matrix.hpp>
 #include <viennacl/vector.hpp>
 #endif
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 #include "Particle.hpp"
 #include "MpsEnvironment.hpp"
 
@@ -40,7 +49,7 @@ namespace OpenMps
 
 		// 計算空間のパラメーター
 		MpsEnvironment environment;
-		
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
@@ -58,10 +67,10 @@ namespace OpenMps
 
 			// 圧力方程式の右辺
 			LongVector b;
-			
+
 			// 収束判定（許容誤差）
 			double allowableResidual;
-			
+
 			// 共役勾配法で使う用
 			struct ConjugateGradient
 			{
@@ -98,7 +107,7 @@ namespace OpenMps
 		// 過剰接近粒子を補正する
 		inline void ModifyTooNear();
 #endif
-		
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式を設定する
 		inline void SetPressurePoissonEquation();
@@ -109,13 +118,13 @@ namespace OpenMps
 
 		// 圧力勾配によって速度と位置を修正する
 		inline void ModifyByPressureGradient();
-		
+
 	public:
 		struct Exception
 		{
 			std::string Message;
 		};
-		
+
 #ifndef PRESSURE_EXPLICIT
 		// @param allowableResidual 圧力方程式の収束判定（許容誤差）
 #endif
@@ -123,16 +132,12 @@ namespace OpenMps
 		MpsComputer(
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
-#endif	
-			const MpsEnvironment& env
-			);
+#endif
+			const MpsEnvironment& env,
+			const Particle::List& particles);
 
 		// 時間を進める
 		void ForwardTime();
-
-		// 粒子を追加する
-		// @param particle 追加する粒子
-		void AddParticle(const Particle& particle);
 
 		// 粒子リストを取得する
 		const Particle::List Particles() const

@@ -2,7 +2,15 @@
 #define VECTOR_INCLUDED
 #include "defines.hpp"
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <boost/numeric/ublas/vector.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 
 namespace OpenMps
 {
