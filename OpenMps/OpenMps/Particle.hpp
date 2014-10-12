@@ -25,7 +25,7 @@ namespace OpenMps
 		// 自分を対象とした重み関数を計算する
 		// @param source 基準とする粒子
 		// @param r_e 影響半径
-		inline virtual double WeightTarget(const Particle& source, const double r_e) const
+		virtual double WeightTarget(const Particle& source, const double r_e) const
 		{
 			namespace ublas = boost::numeric::ublas;
 
@@ -41,8 +41,7 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param rho 密度
-		// @param surfaceRatio 自由表面の判定係数（基準粒子数密度からのずれがこの割合以下なら自由表面と判定される）
-		inline virtual double MatrixTarget(const Particle& source, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
+		virtual double MatrixTarget(const Particle& source, const double n0, const double r_e, const double lambda, const double rho) const
 		{
 			// 標準MPS法：-2D/ρλ w/n0
 			double w = this->Weight(source, r_e);
@@ -56,7 +55,7 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param nu 粘性係数
-		inline virtual Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
+		virtual Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const
 		{
 			// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
 			Vector result = (nu * 2*DIM/lambda/n_0 * particle_i.Weight(*this, r_e))*(this->u - particle_i.u);
@@ -71,7 +70,7 @@ namespace OpenMps
 		// @param dt 時間刻み
 		// @param rho 密度
 		// @param n0 粒子数密度
-		inline virtual Vector PressureGradientTo(const Particle& particle_i, const double r_e, const double dt, const double rho, const double n0)
+		virtual Vector PressureGradientTo(const Particle& particle_i, const double r_e, const double dt, const double rho, const double n0)
 		{
 			namespace ublas = boost::numeric::ublas;
 
@@ -89,7 +88,7 @@ namespace OpenMps
 		// @param dt 時間刻み
 		// @param rho 密度
 		// @param n0 粒子数密度
-		inline virtual Vector PressureGradientTo(const Particle& particle_i, const double minP, const double r_e, const double dt, const double rho, const double n0)
+		virtual Vector PressureGradientTo(const Particle& particle_i, const double minP, const double r_e, const double dt, const double rho, const double n0)
 		{
 			namespace ublas = boost::numeric::ublas;
 
@@ -128,14 +127,14 @@ namespace OpenMps
 
 		// 粒子を加速（速度を変更）する
 		// @param du 速度の変化量
-		inline virtual void Accelerate(const Vector& du)
+		virtual void Accelerate(const Vector& du)
 		{
 			u += du;
 		}
 
 		// 粒子の移動（位置を変更）する
 		// @param dx 位置の変化量
-		inline virtual void Move(const Vector& dx)
+		virtual void Move(const Vector& dx)
 		{
 			x += dx;
 		}
@@ -146,13 +145,13 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param nu 粘性係数
-		virtual Vector GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const;
+		virtual Vector GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu) const;
 
 
 		// 重み関数を計算する
 		// @param target 計算相手の粒子
 		// @param r_e 影響半径
-		inline virtual double Weight(const Particle& target, const double r_e) const
+		virtual double Weight(const Particle& target, const double r_e) const
 		{
 			return target.WeightTarget(*this, r_e);
 		}
@@ -177,7 +176,7 @@ namespace OpenMps
 		// @param c 音速
 		// @param rho0 （基準）密度
 		// @param n0 基準粒子数密度
-		inline virtual void UpdatePressure(const double c, const double rho0, const double n0)
+		virtual void UpdatePressure(const double c, const double rho0, const double n0)
 		{
 			// 仮想的な密度：ρ0/n0 * n
 			auto rho = rho0/n0 * n;
@@ -190,7 +189,7 @@ namespace OpenMps
 		// @param n0 基準粒子数密度
 		// @param dt 時間刻み
 		// @param surfaceRatio 自由表面の判定係数（基準粒子数密度からのずれがこの割合以下なら自由表面と判定される）
-		inline virtual double Source(const double n0, const double dt, const double surfaceRatio) const
+		virtual double Source(const double n0, const double dt, const double surfaceRatio) const
 		{
 			// 自由表面の場合は0
 			return IsSurface(n0, surfaceRatio) ? 0
@@ -204,11 +203,11 @@ namespace OpenMps
 		// @param r_e 影響半径
 		// @param lambda 拡散モデル係数λ
 		// @param rho 密度
-		inline virtual double Matrix(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
+		virtual double Matrix(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
 		{
 			// 自由表面の場合は0
 			return IsSurface(n0, surfaceRatio) ? 0
-				: target.MatrixTarget(*this, n0, r_e, lambda, rho, surfaceRatio);
+				: target.MatrixTarget(*this, n0, r_e, lambda, rho);
 		}
 #endif
 
@@ -326,61 +325,38 @@ namespace OpenMps
 		}
 
 		// 粒子を加速（速度を変更）する
-		// @param du 速度の変化量
-		inline virtual void Accelerate(const Vector& du)
+		virtual void Accelerate(const Vector&)
 		{
 			// 動かさない
 		}
 
 		// 粒子の移動（位置を変更）する
-		// @param dx 位置の変化量
-		inline virtual void Move(const Vector& dx)
+		virtual void Move(const Vector&)
 		{
 			// 動かさない
 		}
 
 		// 粘性項を計算する
-		// @param particles 粒子リスト
-		// @@aram n_0 基準粒子数密度
-		// @param r_e 影響半径
-		// @param lambda 拡散モデル係数λ
-		// @param nu 粘性係数
-		virtual Vector GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu) const
+		virtual Vector GetViscosity(const Particle::List&, const double, const double, const double, const double) const
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子からの速度補正量を計算する
-		// @param particles 粒子リスト
-		// @param r_e 影響半径
-		// @param rho 密度
-		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
-		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
-		virtual Vector GetCorrectionByTooNear(const Particle::List& particles, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const
+		virtual Vector GetCorrectionByTooNear(const Particle::List&, const double, const double, const double, const double) const
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 #endif
 
 		// 圧力勾配を計算する
-		// @param particles 粒子リスト
-		// @param r_e 影響半径
-		virtual Vector GetPressureGradient(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)
+		virtual Vector GetPressureGradient(const Particle::List&, const double, const double, const double, const double)
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 	};
 
@@ -390,12 +366,7 @@ namespace OpenMps
 	protected:
 #ifndef PRESSURE_EXPLICIT
 		// 自分を対象とした圧力方程式の係数を計算する
-		// @param source 基準とする粒子
-		// @@aram n_0 基準粒子数密度
-		// @param r_e 影響半径
-		// @param lambda 拡散モデル係数λ
-		// @param rho 密度
-		inline virtual double MatrixTarget(const Particle& source, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
+		virtual double MatrixTarget(const Particle&, const double, const double, const double, const double) const
 		{
 			// 相手基準の係数は常に0
 			return 0;
@@ -404,67 +375,34 @@ namespace OpenMps
 
 
 		// 対象の粒子から受ける粘性項を計算する
-		// @param particle 対象の粒子粒子
-		// @@aram n_0 基準粒子数密度
-		// @param r_e 影響半径
-		// @param lambda 拡散モデル係数λ
-		// @param nu 粘性係数
-		inline virtual Vector ViscosityTo(const Particle& particle, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
+		virtual Vector ViscosityTo(const Particle&, const double, const double, const double, const double) const
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子からの速度補正量を計算する
-		// @param particles 粒子リスト
-		// @param r_e 影響半径
-		// @param rho 密度
-		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
-		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
-		virtual Vector GetCorrectionByTooNear(const Particle::List& particles, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const
+		virtual Vector GetCorrectionByTooNear(const Particle::List&, const double, const double, const double, const double) const
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 #endif
 
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 		// 対象の粒子へ与える圧力勾配を計算する
-		// @param particle_i 対象の粒子
-		// @param r_e 影響半径
-		// @param dt 時間刻み
-		// @param rho 密度
-		// @param n0 粒子数密度
-		inline virtual Vector PressureGradientTo(const Particle& particle_i, const double r_e, const double dt, const double rho, const double n0)
+		virtual Vector PressureGradientTo(const Particle&, const double, const double, const double, const double)
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 #else
 		// 対象の粒子から受ける圧力勾配を計算する
-		// @param particle 対象の粒子
-		// @param thisP 計算で使用する自分の圧力（周囲の最小圧力）
-		// @param r_e 影響半径
-		// @param dt 時間刻み
-		// @param rho 密度
-		// @param n0 粒子数密度
-		inline virtual Vector PressureGradientTo(const Particle& particle, const double thisP, const double r_e, const double dt, const double rho, const double n0)
+		virtual Vector PressureGradientTo(const Particle&, const double, const double, const double, const double, const double)
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 #endif
 
@@ -478,31 +416,25 @@ namespace OpenMps
 		}
 
 		// 粒子を加速（速度を変更）する
-		// @param du 速度の変化量
-		inline virtual void Accelerate(const Vector& du)
+		virtual void Accelerate(const Vector&)
 		{
 			// 動かさない
 		}
 
 		// 粒子の移動（位置を変更）する
-		// @param dx 位置の変化量
-		inline virtual void Move(const Vector& dx)
+		virtual void Move(const Vector&)
 		{
 			// 動かさない
 		}
 
 		// 重み関数を計算する
-		// @param target 計算相手の粒子
-		// @param r_e 影響半径
-		inline virtual double Weight(const Particle& target, const double r_e) const
+		virtual double Weight(const Particle&, const double) const
 		{
 			// 常に0
 			return 0;
 		}
 		// 粒子数密度を計算する
-		// @param particles 粒子リスト
-		// @param r_e 影響半径
-		virtual void UpdateNeighborDensity(const Particle::List& particles, const double r_e)
+		virtual void UpdateNeighborDensity(const Particle::List&, const double)
 		{
 			// 計算しない
 			n = 0;
@@ -510,32 +442,21 @@ namespace OpenMps
 
 #ifdef PRESSURE_EXPLICIT
 		// 圧力を計算する
-		// @param c 音速
-		// @param rho0 （基準）密度
-		// @param n0 基準粒子数密度
-		inline virtual void UpdatePressure(const double c, const double rho0, const double n0)
+		virtual void UpdatePressure(const double, const double, const double)
 		{
 			// 常に0
 			p = 0;
 		}
 #else
 		// 圧力方程式の生成項を計算する
-		// @param n0 基準粒子数密度
-		// @param dt 時間刻み
-		// @param surfaceRatio 自由表面の判定係数（基準粒子数密度からのずれがこの割合以下なら自由表面と判定される）
-		inline virtual double Source(const double n0, const double dt, const double surfaceRatio) const
+		virtual double Source(const double, const double, const double) const
 		{
 			// 生成項は0
 			return 0;
 		}
 
 		// 圧力方程式の係数を計算する
-		// @param particle 対象粒子
-		// @@aram n_0 基準粒子数密度
-		// @param r_e 影響半径
-		// @param lambda 拡散モデル係数λ
-		// @param rho 密度
-		inline virtual double Matrix(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
+		virtual double Matrix(const Particle&, const double, const double, const double, const double, const double) const
 		{
 			// 自分基準の係数は常に0
 			return 0;
@@ -543,31 +464,18 @@ namespace OpenMps
 #endif
 
 		// 粘性項を計算する
-		// @param particles 粒子リスト
-		// @@aram n_0 基準粒子数密度
-		// @param r_e 影響半径
-		// @param lambda 拡散モデル係数λ
-		// @param nu 粘性係数
-		virtual Vector GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu) const
+		virtual Vector GetViscosity(const Particle::List&, const double, const double, const double, const double) const
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 
 
 		// 圧力勾配を計算する
-		// @param particles 粒子リスト
-		// @param r_e 影響半径
-		virtual Vector GetPressureGradient(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)
+		virtual Vector GetPressureGradient(const Particle::List&, const double, const double, const double, const double)
 		{
 			// 常に0
-			Vector zero;
-			zero[0] = 0;
-			zero[1] = 0;
-			return zero;
+			return VectorZero;
 		}
 	};
 }
