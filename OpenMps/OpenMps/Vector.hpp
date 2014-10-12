@@ -1,14 +1,21 @@
 ﻿#ifndef VECTOR_INCLUDED
 #define VECTOR_INCLUDED
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <boost/numeric/ublas/vector.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
 #include "defines.hpp"
 
 namespace OpenMps
 {
 	// 2次元ベクトル
 	typedef boost::numeric::ublas::c_vector<double, DIM> Vector;
-	
 	// 2次元ベクトルを作成する
 	static inline Vector CreateVector(const double v1, const double v2)
 	{

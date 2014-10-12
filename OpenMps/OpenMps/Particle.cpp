@@ -1,6 +1,14 @@
 ﻿#include "Particle.hpp"
 #include <numeric>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <boost/numeric/ublas/io.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 namespace OpenMps
 {
@@ -27,32 +35,24 @@ namespace OpenMps
 			});
 	}
 
-	Vector Particle::GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
+	Vector Particle::GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu) const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		// 粘性項を計算して返す
-		return std::accumulate(particles.cbegin(), particles.cend(), zero,
-			[this, &n_0, &r_e, &lambda, &nu, &dt](const Vector& sum, const Particle::Ptr& particle)
+		return std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
+			[this, &n_0, &r_e, &lambda, &nu](const Vector& sum, const Particle::Ptr& particle)
 			{
-				Vector du = particle->ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
+				Vector du = particle->ViscosityTo(*this, n_0, r_e, lambda, nu);
 				return (Vector)(sum + du);
 			});
-	}	
+	}
 
 	Vector Particle::GetPressureGradient(const Particle::List& particles, const double r_e, const double dt, const double rho, const double n0)  const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		Vector du;
 
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 		// 速度修正量を計算
-		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+		du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
 			[this, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle::Ptr& particle)
 			{
 				auto du = particle->PressureGradientTo(*this, r_e, dt, rho, n0);
@@ -67,7 +67,7 @@ namespace OpenMps
 			});
 
 		// 速度修正量を計算
-		du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+		du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
 			[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
 			{
 				auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
@@ -80,14 +80,10 @@ namespace OpenMps
 #ifdef MODIFY_TOO_NEAR
 	Vector Particle::GetCorrectionByTooNear(const Particle::List& particles, const double r_e, const double rho, const double tooNearLength, const double tooNearCoefficient) const
 	{
-		Vector zero;
-		zero(0) = 0;
-		zero(1) = 0;
-
 		// 運動量を計算
 		auto p_i = rho * this->u;
 
-		Vector du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+		Vector du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
 			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle::Ptr& particle)
 			{
 				namespace ublas = boost::numeric::ublas;

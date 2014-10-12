@@ -28,13 +28,13 @@ namespace OpenMps
 		const double maxDx;
 
 	public:
-		
+
 		// 影響半径
 		const double R_e;
-		
+
 		// 重力加速度
 		const Vector G;
-		
+
 		// 密度
 		const double Rho;
 
@@ -84,7 +84,7 @@ namespace OpenMps
 			const double c,
 #endif
 			const double l_0);
-		
+
 		// する
 		inline void SetDt(const double maxU)
 		{
@@ -98,22 +98,22 @@ namespace OpenMps
 			t += dt;
 		}
 
-		inline const double T() const
+		inline double T() const
 		{
 			return t;
 		}
 
-		inline const double Dt() const
+		inline double Dt() const
 		{
 			return dt;
 		}
 
-		inline const double N0() const
+		inline double N0() const
 		{
 			return n0;
 		}
 
-		inline const double Lambda() const
+		inline double Lambda() const
 		{
 			return lambda;
 		}
