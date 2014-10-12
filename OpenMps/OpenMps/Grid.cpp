@@ -1,4 +1,4 @@
-#include "Grid.hpp"
+﻿#include "Grid.hpp"
 #include <numeric>
 
 namespace OpenMps

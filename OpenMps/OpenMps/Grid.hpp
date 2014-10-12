@@ -1,4 +1,4 @@
-#ifndef GRID_INCLUDED
+﻿#ifndef GRID_INCLUDED
 #define GRID_INCLUDED
 
 #include <vector>
