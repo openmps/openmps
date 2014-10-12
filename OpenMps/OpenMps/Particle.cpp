@@ -1,6 +1,14 @@
 ﻿#include "Particle.hpp"
 #include <numeric>
-#include <boost/assign/list_of.hpp>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+#include <boost/numeric/ublas/io.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 namespace OpenMps
 {
@@ -132,20 +140,20 @@ namespace OpenMps
 			});
 	}
 
-	Vector Particle::GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
+	Vector Particle::GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const
 	{
 		// 粘性項を計算
 		auto vis = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
-			[this, &n_0, &r_e, &lambda, &nu, &dt, &particles, &grid](const Vector& sum, const Grid::BlockID block)
+			[this, &n_0, &r_e, &lambda, &nu, &particles, &grid](const Vector& sum, const Grid::BlockID block)
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
 
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
-					[this, &n_0, &r_e, &lambda, &nu, &dt, &particles](const Vector& sum2, const int& id)
+					[this, &n_0, &r_e, &lambda, &nu, &particles](const Vector& sum2, const int& id)
 					{
-						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
+						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e, lambda, nu);
 						return static_cast<Vector>(sum2 + duParticle);
 					});
 

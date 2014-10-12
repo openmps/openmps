@@ -30,9 +30,10 @@ namespace OpenMps
 	public:
 
 		// 近傍粒子番号イテレータ
-		struct NeighborBlockIterator
+		class NeighborBlockIterator
 			: public boost::iterator_facade<NeighborBlockIterator, const BlockID, boost::forward_traversal_tag>
 		{
+		private:
 			static const int INVALID_INDEX = -1;
 			static const int MAX_INDEX = 10;
 
@@ -42,25 +43,34 @@ namespace OpenMps
 			// 遷移状態
 			int index;
 
-			friend class boost::iterator_core_access;
+			// 今のブロック
+			BlockID current;
+
+			// 現在のブロックを更新する
+			inline void UpdateCurrent()
+			{
+				current.first = id.first - 1 + (index % 3);
+				current.second = id.second - 1 + (index / 3);
+			}
 
 			// 次の近傍ブロック
 			inline void increment()
 			{
 				index++;
+				UpdateCurrent();
 			}
 
 			// 一つ前の近傍ブロック
 			inline void decrement()
 			{
 				index--;
+				UpdateCurrent();
 			}
 
 			// ブロックの参照
-			inline const BlockID dereference() const
+			inline const BlockID& dereference() const
 			{
-				BlockID ret(id.first - 1 + (index % 3), id.second - 1 + (index / 3));
-				return ret;
+				return current;
 			}
 
 			// 等号
@@ -70,19 +80,20 @@ namespace OpenMps
 			}
 
 			// コンストラクタは非公開
-			NeighborBlockIterator(const std::map<BlockID, Block>& grid, const BlockID& block, int index)
+			NeighborBlockIterator(const BlockID& block, int index)
 				: id(block), index(index)
 			{
 			}
 
+			friend class boost::iterator_core_access;
+
 		public:
 
 			// 最初の近傍ブロックを作成する
-			// @param grid グリッド
 			// @param block 自分のブロック
-			inline static NeighborBlockIterator CreateBegin(const std::map<BlockID, Block>& grid, const BlockID& block)
+			inline static NeighborBlockIterator CreateBegin(const BlockID& block)
 			{
-				NeighborBlockIterator it(grid, block, INVALID_INDEX);
+				NeighborBlockIterator it(block, INVALID_INDEX);
 				it.increment();
 
 				return it;
@@ -90,11 +101,10 @@ namespace OpenMps
 			}
 
 			// 最後の近傍ブロックを作成する
-			// @param grid グリッド
 			// @param block 自分のブロック
-			inline static NeighborBlockIterator CreateEnd(const std::map<BlockID, Block>& grid, const BlockID& block)
+			inline static NeighborBlockIterator CreateEnd( const BlockID& block)
 			{
-				NeighborBlockIterator it(grid, block, MAX_INDEX);
+				NeighborBlockIterator it(block, MAX_INDEX);
 				it.decrement();
 
 				return it;
@@ -160,7 +170,7 @@ namespace OpenMps
 		{
 			BlockID myBlock = this->GetBlockID(x);
 
-			return NeighborBlockIterator::CreateBegin(this->grid, myBlock);
+			return NeighborBlockIterator::CreateBegin(myBlock);
 		}
 
 		// 指定した位置にあるブロックの近傍ブロックのうち最後のものを取得する
@@ -169,7 +179,7 @@ namespace OpenMps
 		{
 			BlockID myBlock = this->GetBlockID(x);
 
-			return NeighborBlockIterator::CreateEnd(this->grid, myBlock);
+			return NeighborBlockIterator::CreateEnd(myBlock);
 		}
 
 		// グリッドを全消去する
