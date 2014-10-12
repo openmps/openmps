@@ -4,8 +4,8 @@
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
 COMPILER = g++
-CFLAGS   = -std=c++11 -Wextra -g -MMD -MP -O3
-LDFLAGS  =
+CFLAGS   = -std=c++11 -Wextra -g -MMD -MP -O3 -fopenmp
+LDFLAGS  = -lgomp
 LIBS     =
 INCLUDE  = -I../../viennacl -I../../boost
 TARGET   = ./$(shell basename `readlink -f ..`)
