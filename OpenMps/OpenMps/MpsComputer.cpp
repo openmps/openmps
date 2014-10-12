@@ -1,9 +1,17 @@
 ﻿#include "MpsComputer.hpp"
 #include <algorithm>
 #include <cmath>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 namespace OpenMps
 {
@@ -99,7 +107,7 @@ namespace OpenMps
 			Vector d = g;
 
 			// 粘性項の計算
-			auto vis = particle->GetViscosity(particles, n0, r_e, lambda, nu, dt);
+			auto vis = particle->GetViscosity(particles, n0, r_e, lambda, nu);
 			d += vis;
 			a.push_back(d);
 		}

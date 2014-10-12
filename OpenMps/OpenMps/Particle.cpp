@@ -1,6 +1,14 @@
 ﻿#include "Particle.hpp"
 #include <numeric>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
 #include <boost/numeric/ublas/io.hpp>
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 namespace OpenMps
 {
@@ -27,13 +35,13 @@ namespace OpenMps
 			});
 	}
 
-	Vector Particle::GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu, const double dt) const
+	Vector Particle::GetViscosity(const Particle::List& particles, const double n_0, const double r_e, const double lambda, const double nu) const
 	{
 		// 粘性項を計算して返す
 		return std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
-			[this, &n_0, &r_e, &lambda, &nu, &dt](const Vector& sum, const Particle::Ptr& particle)
+			[this, &n_0, &r_e, &lambda, &nu](const Vector& sum, const Particle::Ptr& particle)
 			{
-				Vector du = particle->ViscosityTo(*this, n_0, r_e, lambda, nu, dt);
+				Vector du = particle->ViscosityTo(*this, n_0, r_e, lambda, nu);
 				return (Vector)(sum + du);
 			});
 	}
