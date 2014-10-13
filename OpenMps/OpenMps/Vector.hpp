@@ -1,6 +1,7 @@
 ﻿#ifndef VECTOR_INCLUDED
 #define VECTOR_INCLUDED
 
+#pragma warning(push, 0)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -9,6 +10,7 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+#pragma warning(pop)
 
 #include "defines.hpp"
 
