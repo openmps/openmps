@@ -1,10 +1,21 @@
 ﻿#ifndef GRID_INCLUDED
 #define GRID_INCLUDED
 
+#pragma warning(push, 0)
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#endif
+
 #include <vector>
 #include <map>
 #include <boost/iterator/iterator_facade.hpp>
 #include "Vector.hpp"
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#pragma warning(pop)
 
 namespace OpenMps
 {
@@ -16,13 +27,11 @@ namespace OpenMps
 		typedef std::pair<int, int> BlockID;
 
 	private:
-
-
+		// ブロック（近傍粒子番号のリスト）
 		typedef std::vector<int> Block;
 
-
+		// グリッド（ブロックのリスト）
 		std::map<BlockID, Block> grid;
-
 
 		// ブロックの大きさ
 		double blockSize;

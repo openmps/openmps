@@ -1,4 +1,5 @@
 ﻿#include "Particle.hpp"
+#pragma warning(push, 0)
 #include <numeric>
 
 #ifdef __clang__
@@ -9,6 +10,7 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+#pragma warning(pop)
 
 namespace OpenMps
 {
@@ -132,8 +134,10 @@ namespace OpenMps
 
 				// 近傍ブロック内の粒子に対して計算
 				return sum + std::accumulate(neighbors.cbegin(), neighbors.cend(), 0.0,
-					[this, &r_e, &particles](const double sum2, const int& id)
+					[this, &r_e, &particles](const double sum2, const int& idd)
 					{
+						const unsigned int id = static_cast<unsigned int>(idd);
+
 						double w = this->Weight(particles[id], r_e);
 						return sum2 + w;
 					});
@@ -151,8 +155,10 @@ namespace OpenMps
 
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
-					[this, &n_0, &r_e, &lambda, &nu, &particles](const Vector& sum2, const int& id)
+					[this, &n_0, &r_e, &lambda, &nu, &particles](const Vector& sum2, const int& idd)
 					{
+						const unsigned int id = static_cast<unsigned int>(idd);
+
 						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e, lambda, nu);
 						return static_cast<Vector>(sum2 + duParticle);
 					});
@@ -176,8 +182,10 @@ namespace OpenMps
 
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
-					[this, &r_e, &dt, &rho, &n0, &particles](const Vector& sum2, const int& id)
+					[this, &r_e, &dt, &rho, &n0, &particles](const Vector& sum2, const int& idd)
 					{
+						const unsigned int id = static_cast<unsigned int>(idd);
+
 						auto duParticle = particles[id].PressureGradientTo(*this, r_e, dt, rho, n0);
 						return (Vector)(sum2 + duParticle);
 					});
@@ -217,8 +225,10 @@ namespace OpenMps
 				auto neighbors = grid[block];
 
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
-					[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &particles](const Vector& sum2, const int& id)
+					[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &particles](const Vector& sum2, const int& idd)
 					{
+						const unsigned int id = static_cast<unsigned int>(idd);
+
 						namespace ublas = boost::numeric::ublas;
 
 						// 相対距離を計算

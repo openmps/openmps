@@ -1,4 +1,6 @@
 ﻿#include "MpsComputer.hpp"
+
+#pragma warning(push, 0)
 #include <algorithm>
 #include <cmath>
 
@@ -18,6 +20,7 @@
 #pragma clang diagnostic pop
 #endif
 #endif
+#pragma warning(pop)
 
 namespace OpenMps
 {
@@ -75,10 +78,12 @@ namespace OpenMps
 		grid.Clear();
 
 		// 全粒子について
-		for(int i = 0; i < (int)particles.size(); i++)
+		for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 		{
+			const unsigned int i = static_cast<unsigned int>(ii);
+
 			// グリッドに登録
-			grid.AddParticle(particles[i].VectorX(), i);
+			grid.AddParticle(particles[i].VectorX(), ii);
 		}
 	}
 
@@ -107,8 +112,10 @@ namespace OpenMps
 #ifdef _OPENMP
 		#pragma omp parallel for
 #endif
-		for(int i = 0; i < (int)particles.size(); i++)
+		for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 		{
+			const unsigned int i = static_cast<unsigned int>(ii);
+
 			// 粒子数密度を計算する
 			particles[i].UpdateNeighborDensity(particles, grid, r_e);
 		}
@@ -136,8 +143,10 @@ namespace OpenMps
 			#pragma omp for
 #endif
 			// 全粒子で
-			for(int i = 0; i < (int)particles.size(); i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				// 粘性項の計算
 				auto vis = particles[i].GetViscosity(particles, grid, n0, r_e, lambda, nu);
 
@@ -149,8 +158,10 @@ namespace OpenMps
 #ifdef _OPENMP
 			#pragma omp for
 #endif
-			for(int i = 0; i < (int)particles.size(); i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				// 位置・速度を修正
 				Vector thisA = a[i];
 				particles[i].Move(particles[i].VectorU() * dt + a[i]*dt*dt/2);
@@ -211,8 +222,10 @@ namespace OpenMps
 			#pragma omp for
 #endif
 			// 全粒子で
-			for(int i = 0; i < (int)particles.size(); i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				const auto r_e = environment.R_e;
 				const auto rho = environment.Rho;
 				const auto tooNearLength = environment.TooNearLength;
@@ -227,8 +240,10 @@ namespace OpenMps
 			#pragma omp for
 #endif
 			// 全粒子で
-			for(int i = 0; i < (int)particles.size(); i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				const auto dt = environment.Dt();
 
 				// 位置・速度を修正
@@ -244,10 +259,10 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		const int n = static_cast<int>(particles.size());
+		const unsigned int n = particles.size();
 
 		// 粒子に増減があれば
-		if(n != static_cast<int>(ppe.b.size()))
+		if(n != ppe.b.size())
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
@@ -280,8 +295,10 @@ namespace OpenMps
 			#pragma omp for
 #endif
 			// 全粒子で
-			for(int i = 0; i < n; i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				const auto n0 = environment.N0();
 				const auto dt = environment.Dt();
 				const auto surfaceRatio = environment.SurfaceRatio;
@@ -300,8 +317,10 @@ namespace OpenMps
 			#pragma omp for
 #endif
 			// 全粒子で
-			for(int i = 0; i < n; i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				// 対角項を初期化
 				double a_ii = 0;
 #ifdef _OPENMP
@@ -316,8 +335,10 @@ namespace OpenMps
 					auto neighbors = grid[neighborBlock];
 
 					// 近傍ブロック内の粒子に対して
-					for(auto j : neighbors)
+					for(auto jj : neighbors)
 					{
+						const unsigned int j = static_cast<unsigned int>(jj);
+
 						const auto n0 = environment.N0();
 						const auto r_e = environment.R_e;
 						const auto rho = environment.Rho;
@@ -354,13 +375,15 @@ namespace OpenMps
 
 #ifdef _OPENMP
 		// 全行の
-		for(int i = 0; i < n; i++)
+		for(int ii = 0; ii < static_cast<int>(n); ii++)
 		{
+			const unsigned int i = static_cast<unsigned int>(ii);
+
 			// 全有効列で
 			for(auto k : ppe.a_ij[i])
 			{
 				// 列番号と値を取得
-				int j = k.first;
+				const unsigned int j = static_cast<unsigned int>(k.first);
 				double a_ij = k.second;
 
 				// 行列に格納
@@ -464,8 +487,10 @@ namespace OpenMps
 			#pragma omp for
 #endif
 			// 全粒子で
-			for(int i = 0; i < (int)particles.size(); i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				const double r_e = environment.R_e;
 				const double dt = environment.Dt();
 				const double rho = environment.Rho;
@@ -480,8 +505,10 @@ namespace OpenMps
 #endif
 
 			// 全粒子で
-			for(int i = 0; i < (int)particles.size(); i++)
+			for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 			{
+				const unsigned int i = static_cast<unsigned int>(ii);
+
 				const double dt = environment.Dt();
 
 				// 位置・速度を修正
