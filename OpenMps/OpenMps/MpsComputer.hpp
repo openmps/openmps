@@ -2,6 +2,7 @@
 #define MPSCOMPUTER_INCLUDED
 #include "defines.hpp"
 
+#pragma warning(push, 0)
 #include <vector>
 
 #ifdef __clang__
@@ -17,6 +18,7 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+#pragma warning(pop)
 
 #include "Particle.hpp"
 #include "MpsEnvironment.hpp"
@@ -149,6 +151,17 @@ namespace OpenMps
 		const MpsEnvironment Environment() const
 		{
 			return environment;
+		}
+
+		// 代入演算子
+		// @param src 代入元
+		MpsComputer& operator=(const MpsComputer& src)
+		{
+			this->particles = src.particles;
+			this->ppe = src.ppe;
+			this->environment = src.environment;
+			this->du = src.du;
+			return *this;
 		}
 	};
 }

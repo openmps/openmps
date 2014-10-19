@@ -2,6 +2,7 @@
 #define VECTOR_INCLUDED
 #include "defines.hpp"
 
+#pragma warning(push, 0)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -10,6 +11,7 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+#pragma warning(pop)
 
 
 namespace OpenMps
@@ -27,7 +29,7 @@ namespace OpenMps
 	}
 
 	// ゼロベクトル
-	static const Vector VectorZero = CreateVector(0, 0);
+	static const Vector VectorZero(CreateVector(0, 0));
 
 }
 #endif

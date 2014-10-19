@@ -399,6 +399,9 @@ namespace OpenMps
 		Particle(const ParticleType type, const double x, const double z, const double u, const double w, const double p, const double n);
 
 	public:
+		virtual ~Particle()
+		{
+		}
 
 		// 距離から重み関数を計算する
 		// @param r 距離
@@ -579,6 +582,17 @@ namespace OpenMps
 		inline bool IsSurface(const double n0, const double surfaceRatio) const
 		{
 			return n/n0 < surfaceRatio;
+		}
+
+		// 代入演算子
+		// @param src 代入元
+		Particle& operator=(const Particle& src)
+		{
+			this->x = src.x;
+			this->u = src.u;
+			this->p = src.p;
+			this->n = src.n;
+			const_cast<ParticleType&>(this->type) = src.type;
 		}
 	};
 

@@ -117,6 +117,31 @@ namespace OpenMps
 		{
 			return lambda;
 		}
+
+		// 代入演算子
+		// @param src 代入元
+		MpsEnvironment& operator=(const MpsEnvironment& src)
+		{	
+			this->t = src.t;
+			this->dt = src.dt;
+			this->n0 = src.n0;
+			this->lambda = src.lambda;
+			const_cast<double&>(this->maxDt) = src.maxDt;
+			const_cast<double&>(this->maxDx) = src.maxDx;
+			const_cast<double&>(this->R_e) = src.R_e;
+			const_cast<Vector&>(this->G) = src.G;
+			const_cast<double&>(this->Rho) = src.Rho;
+			const_cast<double&>(this->Nu) = src.Nu;
+			const_cast<double&>(this->SurfaceRatio) = src.SurfaceRatio;
+#ifdef MODIFY_TOO_NEAR
+			const_cast<double&>(TooNearLength) = src.TooNearLength;
+			const_cast<double&>(TooNearCoefficient) = src.TooNearCoefficient;
+#endif
+#ifdef PRESSURE_EXPLICIT
+			const_cast<double&>(C) = src.C;
+#endif
+			return *this;
+		}
 	};
 }
 #endif
