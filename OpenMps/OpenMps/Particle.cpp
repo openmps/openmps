@@ -1,4 +1,5 @@
 ﻿#include "Particle.hpp"
+#pragma warning(push, 0)
 #include <numeric>
 
 #ifdef __clang__
@@ -9,6 +10,7 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+#pragma warning(pop)
 
 namespace OpenMps
 {
