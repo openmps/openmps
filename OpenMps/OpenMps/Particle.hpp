@@ -109,11 +109,11 @@ namespace OpenMps
 		// @param n 粒子数密度
 		Particle(const double x, const double z, const double u, const double w, const double p, const double n);
 
+	public:
 		virtual ~Particle()
 		{
 		}
 
-	public:
 		// 粒子へのポインタ
 		typedef std::shared_ptr<Particle> Ptr;
 
