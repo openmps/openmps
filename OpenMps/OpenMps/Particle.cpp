@@ -86,7 +86,7 @@ namespace OpenMps
 		auto p_i = rho * this->u;
 
 		Vector du = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
-			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i, &zero](const Vector& sum, const Particle::Ptr& particle)
+			[this, &r_e, &rho, &tooNearLength, & tooNearCoefficient, &p_i](const Vector& sum, const Particle::Ptr& particle)
 			{
 				namespace ublas = boost::numeric::ublas;
 
@@ -95,7 +95,7 @@ namespace OpenMps
 				double r_ij = ublas::norm_2(x_ij);
 
 				// 相対距離が過剰接近なら
-				auto d = zero;
+				auto d = VectorZero;
 				if((0 < r_ij) & (r_ij < tooNearLength))
 				{
 					// 合成運動量を計算
