@@ -155,8 +155,10 @@ namespace OpenMps
 #ifdef _OPENMP
 		#pragma omp parallel for
 #endif
-		for(int i = 0; i < (int)particles.size(); i++)
+		for(int ii = 0; ii < static_cast<int>(particles.size()); ii++)
 		{
+			const unsigned int i = static_cast<unsigned int>(ii);
+
 			const auto c = environment.C;
 			const auto n0 = environment.N0();
 			const auto rho = environment.Rho;
