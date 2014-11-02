@@ -173,7 +173,9 @@ namespace OpenMps
 		MpsComputer& operator=(const MpsComputer& src)
 		{
 			this->particles = src.particles;
+#ifndef PRESSURE_EXPLICIT
 			this->ppe = src.ppe;
+#endif
 			this->environment = src.environment;
 			this->du = src.du;
 			return *this;
