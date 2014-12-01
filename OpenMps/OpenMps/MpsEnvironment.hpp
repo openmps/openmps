@@ -88,7 +88,7 @@ namespace OpenMps
 		// する
 		inline void SetDt(const double maxU)
 		{
-			dt = std::min(maxDx/maxU, maxDt);
+			dt = (maxU == 0 ? maxDt : std::min(maxDx/maxU, maxDt));
 		}
 		// CFL条件より時間刻みを決定する
 
