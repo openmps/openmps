@@ -351,13 +351,19 @@ namespace OpenMps
 						const auto n0 = environment.N0();
 						const auto r_e = environment.R_e;
 						const auto rho = environment.Rho;
+#ifndef MPS_HL
 						const auto lambda = environment.Lambda();
+#endif
 						const auto surfaceRatio = environment.SurfaceRatio;
 						// 自分以外
 						if(i != j)
 						{
 							// 非対角項を計算
-							double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e, lambda, rho, surfaceRatio);
+							double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e,
+#ifndef MPS_HL
+								lambda,
+#endif
+								rho, surfaceRatio);
 							if(a_ij != 0)
 							{
 #ifdef _OPENMP
