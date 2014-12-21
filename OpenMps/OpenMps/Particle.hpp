@@ -85,11 +85,11 @@ namespace OpenMps
 #else
 			namespace ublas = boost::numeric::ublas;
 
-			// MPS-HL：-1/ρn0 3r_e/r^3
+			// MPS-HL：-1/ρ (5-D)/n0 r_e/r^3
 			const auto x_ij = this->x - source.x;
 			const double r_ij = ublas::norm_2(x_ij);
 
-			return -1.0/(rho*n0) * 3*r_e/(r_ij*r_ij*r_ij);
+			return -1.0/rho * (5-DIM)/n0 *r_e/(r_ij*r_ij*r_ij);
 #endif
 		}
 
@@ -106,21 +106,43 @@ namespace OpenMps
 
 
 		// 対象の粒子へ与える粘性項を計算する関数ポインタの型
-		typedef Vector(Particle::*ViscosityToFunc)(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const;
+		typedef Vector(Particle::*ViscosityToFunc)(const Particle& particle_i, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif 
+			const double nu) const;
 
 		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
 		static const ViscosityToFunc ViscosityToFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子へ与える粘性項を計算する
-		Vector ViscosityToNormal(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const
+		Vector ViscosityToNormal(const Particle& particle_i, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const
 		{
+#ifndef MPS_HV
 			// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
 			Vector result = (nu * 2*DIM/lambda/n_0 * particle_i.Weight(*this, r_e))*(this->u - particle_i.u);
+#else
+			namespace ublas = boost::numeric::ublas;
+
+			// MPS-HV：ν*(5-D)/n0 r_e/r^3 * (u_j - u_i)（ただし自分自身からは影響を受けない）
+			const auto x_ij = this->x - particle_i.x;
+			const double r_ij = ublas::norm_2(x_ij);
+			Vector result = ((r_ij == 0) ? VectorZero
+				: (nu * (5-DIM)/n_0 *r_e/(r_ij*r_ij*r_ij)*(this->u - particle_i.u)));
+#endif
 			return result;
 		}
 
 		// 対象の粒子へ粘性効果を与えない粒子の与える粘性項を計算する
-		Vector ViscosityToZero(const Particle&, const double, const double, const double, const double) const
+		Vector ViscosityToZero(const Particle&, const double, const double,
+#ifndef MPS_HV
+			const double,
+#endif
+			const double) const
 		{
 			return VectorZero;
 		}
@@ -209,16 +231,28 @@ namespace OpenMps
 
 
 		// 粘性項を計算する関数ポインタの型
-		typedef Vector(Particle::*GetViscosityFunc)(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const;
+		typedef Vector(Particle::*GetViscosityFunc)(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const;
 
 		// 各粒子タイプで粘性項を計算する関数
 		static const GetViscosityFunc GetViscosityFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の粘性項を計算するする
-		Vector GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const;
+		Vector GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const;
 
 		// 移動しない粒子の粘性項を計算する
-		Vector GetViscosityZero(const Particle::List&, const Grid&, const double, const double, const double, const double) const
+		Vector GetViscosityZero(const Particle::List&, const Grid&, const double, const double,
+#ifndef MPS_HV
+			const double,
+#endif
+			const double) const
 		{
 			return VectorZero;
 		}
@@ -452,11 +486,21 @@ namespace OpenMps
 		// @param particle_i 対象の粒子粒子
 		// @@aram n_0 基準粒子数密度
 		// @param r_e 影響半径
+#ifndef MPS_HV
 		// @param lambda 拡散モデル係数λ
+#endif
 		// @param nu 粘性係数
-		Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const
+		Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const
 		{
-			return (this->*(Particle::ViscosityToFuncTable[type]))(particle_i, n_0, r_e, lambda, nu);
+			return (this->*(Particle::ViscosityToFuncTable[type]))(particle_i, n_0, r_e,
+#ifndef MPS_HV
+				lambda,
+#endif
+				nu);
 		}
 
 		// 対象の粒子へ与える圧力勾配を計算する
@@ -524,11 +568,21 @@ namespace OpenMps
 		// @param grid 近傍粒子探索用グリッド
 		// @@aram n_0 基準粒子数密度
 		// @param r_e 影響半径
+#ifndef MPS_HV
 		// @param lambda 拡散モデル係数λ
+#endif
 		// @param nu 粘性係数
-		Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const
+		Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const
 		{
-			return (this->*(Particle::GetViscosityFuncTable[type]))(particles, grid, n_0, r_e, lambda, nu);
+			return (this->*(Particle::GetViscosityFuncTable[type]))(particles, grid, n_0, r_e,
+#ifndef MPS_HV
+				lambda,
+#endif
+				nu);
 		}
 
 		// 重み関数を計算する

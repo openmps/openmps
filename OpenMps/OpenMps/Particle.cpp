@@ -151,22 +151,38 @@ namespace OpenMps
 			});
 	}
 
-	Vector Particle::GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const
+	Vector Particle::GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+		const double lambda,
+#endif
+		const double nu) const
 	{
 		// 粘性項を計算
 		auto vis = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
-			[this, &n_0, &r_e, &lambda, &nu, &particles, &grid](const Vector& sum, const Grid::BlockID block)
+			[this, &n_0, &r_e,
+#ifndef MPS_HV
+				&lambda,
+#endif
+				&nu, &particles, &grid](const Vector& sum, const Grid::BlockID block)
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
 
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
-					[this, &n_0, &r_e, &lambda, &nu, &particles](const Vector& sum2, const int& idd)
+					[this, &n_0, &r_e,
+#ifndef MPS_HV
+						&lambda,
+#endif
+						&nu, &particles](const Vector& sum2, const int& idd)
 					{
 						const unsigned int id = static_cast<unsigned int>(idd);
 
-						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e, lambda, nu);
+						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e,
+#ifndef MPS_HV
+							lambda,
+#endif
+							nu);
 						return static_cast<Vector>(sum2 + duParticle);
 					});
 

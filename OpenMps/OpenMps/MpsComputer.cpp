@@ -125,7 +125,9 @@ namespace OpenMps
 	{
 		const auto n0 = environment.N0();
 		const auto r_e = environment.R_e;
+#ifndef MPS_HV
 		const auto lambda = environment.Lambda();
+#endif
 		const auto nu = environment.Nu;
 		const auto dt = environment.Dt();
 		const auto g = environment.G;
@@ -148,7 +150,11 @@ namespace OpenMps
 				const unsigned int i = static_cast<unsigned int>(ii);
 
 				// 粘性項の計算
-				auto vis = particles[i].GetViscosity(particles, grid, n0, r_e, lambda, nu);
+				auto vis = particles[i].GetViscosity(particles, grid, n0, r_e,
+#ifndef MPS_HV
+					lambda,
+#endif
+					nu);
 
 				// 重力＋粘性項
 				a[i] = g + vis;

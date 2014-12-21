@@ -37,7 +37,9 @@ namespace OpenMps
 		// 基準粒子数密度とλの計算
 		int range = (int)std::ceil(r_eByl_0);
 		n0 = 0;
+#if !defined(MPS_HL) || !defined(MPS_HV)
 		lambda = 0;
+#endif
 		for(int i = -range; i < range; i++)
 		{
 			for(int j = -range; j < range; j++)
@@ -56,15 +58,19 @@ namespace OpenMps
 
 					// 基準粒子数密度に足す
 					n0 += w;
-
+					
+#if !defined(MPS_HL) || !defined(MPS_HV)
 					// λに足す
 					lambda += r*r * w;
+#endif
 				}
 			}
 		}
-
+		
+#if !defined(MPS_HL) || !defined(MPS_HV)
 		// λの最終計算
 		// λ = (Σr^2 w)/(Σw)
 		lambda /= n0;
+#endif
 	}
 }
