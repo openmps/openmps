@@ -1,4 +1,6 @@
 ﻿#include "MpsComputer.hpp"
+
+#pragma warning(push, 0)
 #include <algorithm>
 #include <cmath>
 
@@ -12,6 +14,7 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+#pragma warning(pop)
 
 namespace OpenMps
 {
@@ -191,10 +194,10 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		const int n = particles.size();
+		const unsigned int n = particles.size();
 
 		// 粒子に増減があれば
-		if(n != static_cast<int>(ppe.b.size()))
+		if(n != ppe.b.size())
 		{
 			// サイズを変えて作り直し
 			ppe.A = Matrix(n, n);
@@ -205,18 +208,18 @@ namespace OpenMps
 			ppe.cg.Ap = LongVector(n);
 		}
 		// 全粒子で
-		for(int i = 0; i < n; i++)
+		for(unsigned int i = 0; i < n; i++)
 		{
 			const auto n0 = environment.N0();
 			const auto dt = environment.Dt();
 			const auto surfaceRatio = environment.SurfaceRatio;
 
 			// 生成項を計算する
-			double b_i = particles[i]->Source(n0, dt, surfaceRatio);
+			const double b_i = particles[i]->Source(n0, dt, surfaceRatio);
 			ppe.b(i) = b_i;
 
 			// 圧力を未知数ベクトルの初期値にする
-			double x_i = particles[i]->P();
+			const double x_i = particles[i]->P();
 			ppe.x(i) = x_i;
 		}
 		// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
@@ -225,20 +228,20 @@ namespace OpenMps
 		ppe.A.clear();
 
 		// 全粒子で
-		for(int i = 0; i < n; i++)
+		for(unsigned int i = 0; i < n; i++)
 		{
 			// 対角項を初期化
 			double a_ii = 0;
 
 			// 他の粒子に対して
 			// TODO: 全粒子探索してるので遅い
-			for(int j = 0; j < static_cast<int>(particles.size()); j++)
+			for(unsigned int j = 0; j < particles.size(); j++)
 			{
 				// 自分以外
 				if(i != j)
 				{
 					// 自分以外
-					if(i != static_cast<int>(j))
+					if(i != j)
 					{
 						const auto n0 = environment.N0();
 						const auto r_e = environment.R_e;

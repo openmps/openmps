@@ -1,16 +1,19 @@
-﻿#include <iostream>
+﻿#pragma warning(push, 0)
+#include <iostream>
 #include <fstream>
 #include <typeinfo>
 #include <ctime>
 #include <boost/format.hpp>
 #include <boost/random.hpp>
 #include <boost/timer.hpp>
+#pragma warning(pop)
+
 #include "MpsComputer.hpp"
 
 // 粒子タイプを数値に変換する
 static int GetParticleTypeNum(const OpenMps::Particle& particle)
 {
-	return typeid(particle).hash_code();
+	return static_cast<int>(typeid(particle).hash_code());
 }
 
 // 計算結果をCSVへ出力する
