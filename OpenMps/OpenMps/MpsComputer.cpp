@@ -301,12 +301,19 @@ namespace OpenMps
 			{
 				const unsigned int i = static_cast<unsigned int>(ii);
 
+#ifdef MPS_HS
+				const auto r_e = environment.R_e;
+#endif
 				const auto n0 = environment.N0();
 				const auto dt = environment.Dt();
 				const auto surfaceRatio = environment.SurfaceRatio;
 
 				// 生成項を計算する
-				double b_i = particles[i].GetPpeSource(n0, dt, surfaceRatio);
+				double b_i = particles[i].GetPpeSource(
+#ifdef MPS_HS
+					particles, grid, r_e,
+#endif
+					n0, dt, surfaceRatio);
 				ppe.b(i) = b_i;
 
 				// 圧力を未知数ベクトルの初期値にする

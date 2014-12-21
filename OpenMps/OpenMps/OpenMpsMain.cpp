@@ -86,13 +86,13 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 	{
 		const int L = 10;
 		const int H = 20;
-		const int wallL = (int)(5.0*L);
-		const int wallH = (int)(1.1*H);
+		const int wallL = (int)(2.0*L);
+		const int wallH = (int)(1.5*H);
 
 		// 水を追加
-		for(int i = 0; i < L; i++)
+		for(int i = 0; i <= L; i++)
 		{
-			for(int j = 0; j < H; j++)
+			for(int j = 0; j <= H; j++)
 			{
 				const double x = i*l_0 + make_rand()*courant;
 				const double y = j*l_0 - make_rand()*courant;
@@ -106,7 +106,7 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 		}
 
 		// 床と天井を追加
-		for(int i = -1; i < wallL+1; i++)
+		for(int i = -1; i <= wallL+1; i++)
 		{
 			const double x = i*l_0;
 
@@ -141,6 +141,19 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 				particles.push_back(*dummy2);
 				particles.push_back(*dummy3);
 			}
+
+			// 右壁
+			{
+				// 粒子を作成して追加
+				std::unique_ptr<Particle> wall1(new ParticleWall((wallL+1)*l_0, y, 0, 0));
+				std::unique_ptr<Particle> dummy1(new ParticleDummy((wallL+2)*l_0, y));
+				std::unique_ptr<Particle> dummy2(new ParticleDummy((wallL+3)*l_0, y));
+				std::unique_ptr<Particle> dummy3(new ParticleDummy((wallL+4)*l_0, y));
+				particles.push_back(*wall1);
+				particles.push_back(*dummy1);
+				particles.push_back(*dummy2);
+				particles.push_back(*dummy3);
+			}
 		}
 
 		// 四隅
@@ -155,6 +168,17 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 				std::unique_ptr<Particle> dummy1(new ParticleDummy(-l_0*2, y-4*l_0));
 				std::unique_ptr<Particle> dummy2(new ParticleDummy(-l_0*3, y-4*l_0));
 				std::unique_ptr<Particle> dummy3(new ParticleDummy(-l_0*4, y-4*l_0));
+				particles.push_back(*dummy1);
+				particles.push_back(*dummy2);
+				particles.push_back(*dummy3);
+			}
+
+			// 右下
+			{
+				// 粒子を作成して追加
+				std::unique_ptr<Particle> dummy1(new ParticleDummy((wallL+2)*l_0, y-4*l_0));
+				std::unique_ptr<Particle> dummy2(new ParticleDummy((wallL+3)*l_0, y-4*l_0));
+				std::unique_ptr<Particle> dummy3(new ParticleDummy((wallL+4)*l_0, y-4*l_0));
 				particles.push_back(*dummy1);
 				particles.push_back(*dummy2);
 				particles.push_back(*dummy3);
