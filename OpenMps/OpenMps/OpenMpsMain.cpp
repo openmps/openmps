@@ -1,4 +1,5 @@
 ﻿#include "defines.hpp"
+#pragma warning(push, 0)
 #include <iostream>
 #include <fstream>
 #include <typeinfo>
@@ -7,12 +8,14 @@
 #include <boost/format.hpp>
 #include <boost/random.hpp>
 #include <boost/timer.hpp>
+#pragma warning(pop)
+
 #include "MpsComputer.hpp"
 
 // 粒子タイプを数値に変換する
 static int GetParticleTypeNum(const OpenMps::Particle& particle)
 {
-	return (int)(particle.Type());
+	return static_cast<int>(particle.Type());
 }
 
 // 計算結果をCSVへ出力する
