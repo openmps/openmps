@@ -33,22 +33,72 @@ namespace OpenMps
 		static const int ParticleTypeMaxCount = 3;
 
 #ifndef PRESSURE_EXPLICIT
+		// 対象の粒子の圧力方程式の生成項の寄与分を計算する関数ポインタの型
+		typedef double(Particle::*GetPpeSourceToFunc)(const Particle& particle_i, const double r_e, const double dt, const double n0) const;
+
+		// 各粒子タイプで対象の粒子の圧力方程式の生成項の寄与分を計算する関数
+		static const GetPpeSourceToFunc GetPpeSourceToFuncTable[ParticleTypeMaxCount];
+
+		// 通常粒子を対象とした圧力方程式の生成項の寄与分を計算する
+		double GetPpeSourceToNormal(const Particle& particle_i, const double r_e, const double dt, const double n0) const
+		{
+			namespace ublas = boost::numeric::ublas;
+
+			// MPS-HS：b_i = Σ-1/dt/n0 r_e/r^3 u・x
+			const auto u_ij = this->u - particle_i.u;
+			const auto x_ij = this->x - particle_i.x;
+			const double r_ij = ublas::norm_2(x_ij);
+			const double ux = ublas::inner_prod(u_ij, x_ij);
+
+			// 自分からの寄与分は0
+			return ((r_ij == 0) ? 0 : -1.0/dt/n0 * r_e/(r_ij*r_ij*r_ij)*ux);
+		}
+
+		// 自分に対する圧力方程式の寄与分が0である粒子を対象とした、対象の粒子の圧力方程式の生成項の寄与分を計算する
+		double GetPpeSourceToZero(const Particle&, const double, const double, const double) const
+		{
+			return 0;
+		}
+
+
 		// 自分を対象とした圧力方程式の係数を計算する関数ポインタの型
-		typedef double(Particle::*GetPpeMatrixTargetFunc)(const Particle& source, const double n0, const double r_e, const double lambda, const double rho) const;
+		typedef double(Particle::*GetPpeMatrixTargetFunc)(const Particle& source, const double n0, const double r_e,
+#ifndef MPS_HL
+			const double lambda,
+#endif
+			const double rho) const;
 
 		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
 		static const GetPpeMatrixTargetFunc GetPpeMatrixTargetFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子を対象とした圧力方程式の係数を計算する
-		double GetPpeMatrixTargetNormal(const Particle& source, const double n0, const double r_e, const double lambda, const double rho) const
+		double GetPpeMatrixTargetNormal(const Particle& source, const double n0, const double r_e,
+#ifndef MPS_HL
+			const double lambda,
+#endif
+			const double rho) const
 		{
+#ifndef MPS_HL
 			// 標準MPS法：-2D/ρλ w/n0
 			double w = this->Weight(source, r_e);
 			return -2*DIM/(rho*lambda) * w/n0;
+#else
+			namespace ublas = boost::numeric::ublas;
+
+			// MPS-HL：-1/ρ (5-D)/n0 r_e/r^3
+			const auto x_ij = this->x - source.x;
+			const double r_ij = ublas::norm_2(x_ij);
+
+			return -1.0/rho * (5-DIM)/n0 *r_e/(r_ij*r_ij*r_ij);
+#endif
 		}
 
 		// 自分に対する圧力方程式の係数が0である粒子を対象とした、圧力方程式の係数を計算する
-		double GetPpeMatrixTargetZero(const Particle&, const double, const double, const double, const double) const
+		double GetPpeMatrixTargetZero(const Particle&, const double, const double,
+#ifndef MPS_HL
+			const double,
+#endif
+			const double) const
 		{
 			return 0;
 		}
@@ -56,21 +106,43 @@ namespace OpenMps
 
 
 		// 対象の粒子へ与える粘性項を計算する関数ポインタの型
-		typedef Vector(Particle::*ViscosityToFunc)(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const;
+		typedef Vector(Particle::*ViscosityToFunc)(const Particle& particle_i, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif 
+			const double nu) const;
 
 		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
 		static const ViscosityToFunc ViscosityToFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子へ与える粘性項を計算する
-		Vector ViscosityToNormal(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const
+		Vector ViscosityToNormal(const Particle& particle_i, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const
 		{
+#ifndef MPS_HV
 			// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
 			Vector result = (nu * 2*DIM/lambda/n_0 * particle_i.Weight(*this, r_e))*(this->u - particle_i.u);
+#else
+			namespace ublas = boost::numeric::ublas;
+
+			// MPS-HV：ν*(5-D)/n0 r_e/r^3 * (u_j - u_i)（ただし自分自身からは影響を受けない）
+			const auto x_ij = this->x - particle_i.x;
+			const double r_ij = ublas::norm_2(x_ij);
+			Vector result = ((r_ij == 0) ? VectorZero
+				: (nu * (5-DIM)/n_0 *r_e/(r_ij*r_ij*r_ij)*(this->u - particle_i.u)));
+#endif
 			return result;
 		}
 
 		// 対象の粒子へ粘性効果を与えない粒子の与える粘性項を計算する
-		Vector ViscosityToZero(const Particle&, const double, const double, const double, const double) const
+		Vector ViscosityToZero(const Particle&, const double, const double,
+#ifndef MPS_HV
+			const double,
+#endif
+			const double) const
 		{
 			return VectorZero;
 		}
@@ -159,16 +231,28 @@ namespace OpenMps
 
 
 		// 粘性項を計算する関数ポインタの型
-		typedef Vector(Particle::*GetViscosityFunc)(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const;
+		typedef Vector(Particle::*GetViscosityFunc)(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const;
 
 		// 各粒子タイプで粘性項を計算する関数
 		static const GetViscosityFunc GetViscosityFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の粘性項を計算するする
-		Vector GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const;
+		Vector GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const;
 
 		// 移動しない粒子の粘性項を計算する
-		Vector GetViscosityZero(const Particle::List&, const Grid&, const double, const double, const double, const double) const
+		Vector GetViscosityZero(const Particle::List&, const Grid&, const double, const double,
+#ifndef MPS_HV
+			const double,
+#endif
+			const double) const
 		{
 			return VectorZero;
 		}
@@ -255,22 +339,28 @@ namespace OpenMps
 
 
 		// 圧力方程式の生成項を計算する関数ポインタの型
-		typedef double(Particle::*GetPpeSourceFunc)(const double n0, const double dt, const double surfaceRatio) const;
+		typedef double(Particle::*GetPpeSourceFunc)(
+#ifdef MPS_HS
+			const Particle::List& particles, const Grid& grid, const double r_e,
+#endif
+			const double n0, const double dt, const double surfaceRatio) const;
 
 		// 各粒子タイプで圧力方程式の生成項を計算する関数
 		static const GetPpeSourceFunc GetPpeSourceFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の圧力方程式の生成項を計算する
-		double GetPpeSourceNormal(const double n0, const double dt, const double surfaceRatio) const
-		{
-			// 自由表面の場合は0
-			return IsSurface(n0, surfaceRatio) ? 0
-				// 標準MPS法：b_i = 1/dt^2 * (n_i - n0)/n0
-				: (n - n0)/n0 /(dt*dt);
-		}
+		double GetPpeSourceNormal(
+#ifdef MPS_HS
+			const Particle::List& particles, const Grid& grid, const double r_e,
+#endif
+			const double n0, const double dt, const double surfaceRatio) const;
 
 		// 圧力を持たない粒子の圧力方程式の生成項を計算する
-		double GetPpeSourceZero(const double, const double, const double) const
+		double GetPpeSourceZero(
+#ifdef MPS_HS
+			const Particle::List&, const Grid&, const double,
+#endif
+			const double, const double, const double) const
 		{
 			// 計算しない
 			return 0;
@@ -278,21 +368,37 @@ namespace OpenMps
 
 
 		// 圧力方程式の係数を計算する関数ポインタの型
-		typedef double(Particle::*GetPpeMatrixFunc)(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const;
+		typedef double(Particle::*GetPpeMatrixFunc)(const Particle& target, const double n0, const double r_e,
+#ifndef MPS_HL
+			const double lambda,
+#endif
+			const double rho, const double surfaceRatio) const;
 
 		// 各粒子タイプで圧力方程式の係数を計算する関数
 		static const GetPpeMatrixFunc GetPpeMatrixFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の圧力方程式の係数を計算する
-		double GetPpeMatrixNormal(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
+		double GetPpeMatrixNormal(const Particle& target, const double n0, const double r_e,
+#ifndef MPS_HL
+			const double lambda,
+#endif
+			const double rho, const double surfaceRatio) const
 		{
 			// 自由表面の場合は0
 			return IsSurface(n0, surfaceRatio) ? 0
-				: target.GetPpeMatrixTarget(*this, n0, r_e, lambda, rho, surfaceRatio);
+				: target.GetPpeMatrixTarget(*this, n0, r_e,
+#ifndef MPS_HL
+					lambda,
+#endif
+					rho);
 		}
 
 		// 圧力を持たない粒子の圧力方程式の係数を計算する
-		double GetPpeMatrixZero(const Particle&, const double, const double, const double, const double, const double) const
+		double GetPpeMatrixZero(const Particle&, const double, const double,
+#ifndef MPS_HL
+			const double,
+#endif
+			const double, const double) const
 		{
 			// 計算しない
 			return 0;
@@ -344,15 +450,35 @@ namespace OpenMps
 		}
 
 #ifndef PRESSURE_EXPLICIT
+		// 対象の粒子の圧力方程式の生成項の寄与分を計算する
+		// @param source 基準とする粒子
+		// @param dt 時間刻み
+		// @param r_e 影響半径
+		// @@aram n0 基準粒子数密度
+		double GetPpeSourceTo(const Particle& particle_i, const double r_e, const double dt, const double n0) const
+		{
+			return (this->*(Particle::GetPpeSourceToFuncTable[type]))(particle_i, r_e, dt, n0);
+		}
+
 		// 自分を対象とした圧力方程式の係数を計算する
 		// @param source 基準とする粒子
+#ifndef MPS_HL
+		// @param lambda 拡散モデル係数λ
+#endif
+		// @param rho 密度
 		// @@aram n_0 基準粒子数密度
 		// @param r_e 影響半径
-		// @param lambda 拡散モデル係数λ
-		// @param rho 密度
-		double GetPpeMatrixTarget(const Particle& source, const double n0, const double r_e, const double lambda, const double rho, const double) const
+		double GetPpeMatrixTarget(const Particle& source, const double n0, const double r_e,
+#ifndef MPS_HL
+			const double lambda,
+#endif
+			const double rho) const
 		{
-			return (this->*(Particle::GetPpeMatrixTargetFuncTable[type]))(source, n0, r_e, lambda, rho);
+			return (this->*(Particle::GetPpeMatrixTargetFuncTable[type]))(source, n0, r_e,
+#ifndef MPS_HL
+				lambda,
+#endif
+				rho);
 		}
 #endif
 
@@ -360,11 +486,21 @@ namespace OpenMps
 		// @param particle_i 対象の粒子粒子
 		// @@aram n_0 基準粒子数密度
 		// @param r_e 影響半径
+#ifndef MPS_HV
 		// @param lambda 拡散モデル係数λ
+#endif
 		// @param nu 粘性係数
-		Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e, const double lambda, const double nu) const
+		Vector ViscosityTo(const Particle& particle_i, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const
 		{
-			return (this->*(Particle::ViscosityToFuncTable[type]))(particle_i, n_0, r_e, lambda, nu);
+			return (this->*(Particle::ViscosityToFuncTable[type]))(particle_i, n_0, r_e,
+#ifndef MPS_HV
+				lambda,
+#endif
+				nu);
 		}
 
 		// 対象の粒子へ与える圧力勾配を計算する
@@ -429,13 +565,24 @@ namespace OpenMps
 
 		// 粘性項を計算する
 		// @param particles 粒子リスト
+		// @param grid 近傍粒子探索用グリッド
 		// @@aram n_0 基準粒子数密度
 		// @param r_e 影響半径
+#ifndef MPS_HV
 		// @param lambda 拡散モデル係数λ
+#endif
 		// @param nu 粘性係数
-		Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const
+		Vector GetViscosity(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+			const double lambda,
+#endif
+			const double nu) const
 		{
-			return (this->*(Particle::GetViscosityFuncTable[type]))(particles, grid, n_0, r_e, lambda, nu);
+			return (this->*(Particle::GetViscosityFuncTable[type]))(particles, grid, n_0, r_e,
+#ifndef MPS_HV
+				lambda,
+#endif
+				nu);
 		}
 
 		// 重み関数を計算する
@@ -448,6 +595,7 @@ namespace OpenMps
 
 		// 粒子数密度を計算する
 		// @param particles 粒子リスト
+		// @param grid 近傍粒子探索用グリッド
 		// @param r_e 影響半径
 		void UpdateNeighborDensity(const Particle::List& particles, const Grid& grid, const double r_e)
 		{
@@ -457,6 +605,7 @@ namespace OpenMps
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子からの速度補正量を計算する
 		// @param particles 粒子リスト
+		// @param grid 近傍粒子探索用グリッド
 		// @param r_e 影響半径
 		// @param rho 密度
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
@@ -478,28 +627,52 @@ namespace OpenMps
 		}
 #else
 		// 圧力方程式の生成項を計算する
+#ifdef MPS_HS
+		// @param particles 粒子リスト
+		// @param grid 近傍粒子探索用グリッド
+		// @param r_e 影響半径
+#endif
 		// @param n0 基準粒子数密度
 		// @param dt 時間刻み
 		// @param surfaceRatio 自由表面の判定係数（基準粒子数密度からのずれがこの割合以下なら自由表面と判定される）
-		double GetPpeSource(const double n0, const double dt, const double surfaceRatio) const
+		double GetPpeSource(
+#ifdef MPS_HS
+			const Particle::List& particles, const Grid& grid, const double r_e,
+#endif
+			const double n0, const double dt, const double surfaceRatio) const
 		{
-			return (this->*(Particle::GetPpeSourceFuncTable[type]))(n0, dt, surfaceRatio);
+			return (this->*(Particle::GetPpeSourceFuncTable[type]))(
+#ifdef MPS_HS
+				particles, grid, r_e,
+#endif
+				n0, dt, surfaceRatio);
 		}
 
 		// 圧力方程式の係数を計算する
 		// @param particle 対象粒子
-		// @@aram n_0 基準粒子数密度
+		// @param n_0 基準粒子数密度
 		// @param r_e 影響半径
+#ifndef MPS_HL
 		// @param lambda 拡散モデル係数λ
+#endif
 		// @param rho 密度
-		double GetPpeMatrix(const Particle& target, const double n0, const double r_e, const double lambda, const double rho, const double surfaceRatio) const
+		double GetPpeMatrix(const Particle& target, const double n0, const double r_e,
+#ifndef MPS_HL
+			const double lambda,
+#endif
+			const double rho, const double surfaceRatio) const
 		{
-			return (this->*(Particle::GetPpeMatrixFuncTable[type]))(target, n0, r_e, lambda, rho, surfaceRatio);
+			return (this->*(Particle::GetPpeMatrixFuncTable[type]))(target, n0, r_e,
+#ifndef MPS_HL
+				lambda,
+#endif
+				rho, surfaceRatio);
 		}
 #endif
 
 		// 圧力勾配を計算する
 		// @param particles 粒子リスト
+		// @param grid 近傍粒子探索用グリッド
 		// @param r_e 影響半径
 		// @param dt 時間刻み
 		// @param rho 密度

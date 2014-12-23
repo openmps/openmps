@@ -15,6 +15,13 @@
 namespace OpenMps
 {
 #ifndef PRESSURE_EXPLICIT
+	const Particle::GetPpeSourceToFunc Particle::GetPpeSourceToFuncTable[] =
+	{
+		&Particle::GetPpeSourceToNormal, // 水
+		&Particle::GetPpeSourceToNormal, // 壁
+		&Particle::GetPpeSourceToZero,   // ダミー
+	};
+
 	const Particle::GetPpeMatrixTargetFunc Particle::GetPpeMatrixTargetFuncTable[] =
 	{
 		&Particle::GetPpeMatrixTargetNormal, // 水
@@ -144,22 +151,38 @@ namespace OpenMps
 			});
 	}
 
-	Vector Particle::GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e, const double lambda, const double nu) const
+	Vector Particle::GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
+#ifndef MPS_HV
+		const double lambda,
+#endif
+		const double nu) const
 	{
 		// 粘性項を計算
 		auto vis = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
-			[this, &n_0, &r_e, &lambda, &nu, &particles, &grid](const Vector& sum, const Grid::BlockID block)
+			[this, &n_0, &r_e,
+#ifndef MPS_HV
+				&lambda,
+#endif
+				&nu, &particles, &grid](const Vector& sum, const Grid::BlockID block)
 			{
 				// 近傍ブロック内の粒子を取得
 				auto neighbors = grid[block];
 
 				// 近傍ブロック内の粒子に対して計算
 				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
-					[this, &n_0, &r_e, &lambda, &nu, &particles](const Vector& sum2, const int& idd)
+					[this, &n_0, &r_e,
+#ifndef MPS_HV
+						&lambda,
+#endif
+						&nu, &particles](const Vector& sum2, const int& idd)
 					{
 						const unsigned int id = static_cast<unsigned int>(idd);
 
-						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e, lambda, nu);
+						Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e,
+#ifndef MPS_HV
+							lambda,
+#endif
+							nu);
 						return static_cast<Vector>(sum2 + duParticle);
 					});
 
@@ -268,4 +291,39 @@ namespace OpenMps
 		return du;
 	}
 #endif
+
+	double Particle::GetPpeSourceNormal(
+#ifdef MPS_HS
+		const Particle::List& particles, const Grid& grid, const double r_e,
+#endif
+		const double n0, const double dt, const double surfaceRatio) const
+	{
+		// 自由表面の場合は0
+		return IsSurface(n0, surfaceRatio) ? 0
+#ifdef MPS_HS
+			// MPS-HS：b_i = Σ-1/dt/n0 r_e/r^3 u・x
+			: std::accumulate(grid.cbegin(this->x), grid.cend(this->x), 0.0,
+				[this, &r_e, &dt, &n0, &particles, &grid](const double& sum, const Grid::BlockID block)
+				{
+					// 近傍ブロック内の粒子を取得
+					auto neighbors = grid[block];
+
+					// 近傍ブロック内の粒子に対して計算
+					const double value = std::accumulate(neighbors.cbegin(), neighbors.cend(), 0.0,
+						[this, &r_e, &dt, &n0, &particles](const double& sum2, const int& idd)
+						{
+							const unsigned int id = static_cast<unsigned int>(idd);
+
+							const double value2 = particles[id].GetPpeSourceTo(*this, r_e, dt, n0);
+
+							return sum2 + value2;
+						});
+
+					return sum + value;
+				});
+#else
+			// 標準MPS法：b_i = 1/dt^2 * (n_i - n0)/n0
+			: (n - n0)/n0 /(dt*dt);
+#endif
+	}
 }

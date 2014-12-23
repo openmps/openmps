@@ -125,7 +125,9 @@ namespace OpenMps
 	{
 		const auto n0 = environment.N0();
 		const auto r_e = environment.R_e;
+#ifndef MPS_HV
 		const auto lambda = environment.Lambda();
+#endif
 		const auto nu = environment.Nu;
 		const auto dt = environment.Dt();
 		const auto g = environment.G;
@@ -148,7 +150,11 @@ namespace OpenMps
 				const unsigned int i = static_cast<unsigned int>(ii);
 
 				// 粘性項の計算
-				auto vis = particles[i].GetViscosity(particles, grid, n0, r_e, lambda, nu);
+				auto vis = particles[i].GetViscosity(particles, grid, n0, r_e,
+#ifndef MPS_HV
+					lambda,
+#endif
+					nu);
 
 				// 重力＋粘性項
 				a[i] = g + vis;
@@ -301,12 +307,19 @@ namespace OpenMps
 			{
 				const unsigned int i = static_cast<unsigned int>(ii);
 
+#ifdef MPS_HS
+				const auto r_e = environment.R_e;
+#endif
 				const auto n0 = environment.N0();
 				const auto dt = environment.Dt();
 				const auto surfaceRatio = environment.SurfaceRatio;
 
 				// 生成項を計算する
-				double b_i = particles[i].GetPpeSource(n0, dt, surfaceRatio);
+				double b_i = particles[i].GetPpeSource(
+#ifdef MPS_HS
+					particles, grid, r_e,
+#endif
+					n0, dt, surfaceRatio);
 				ppe.b(i) = b_i;
 
 				// 圧力を未知数ベクトルの初期値にする
@@ -344,13 +357,19 @@ namespace OpenMps
 						const auto n0 = environment.N0();
 						const auto r_e = environment.R_e;
 						const auto rho = environment.Rho;
+#ifndef MPS_HL
 						const auto lambda = environment.Lambda();
+#endif
 						const auto surfaceRatio = environment.SurfaceRatio;
 						// 自分以外
 						if(i != j)
 						{
 							// 非対角項を計算
-							double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e, lambda, rho, surfaceRatio);
+							double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e,
+#ifndef MPS_HL
+								lambda,
+#endif
+								rho, surfaceRatio);
 							if(a_ij != 0)
 							{
 #ifdef _OPENMP

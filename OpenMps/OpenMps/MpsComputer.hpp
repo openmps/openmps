@@ -157,13 +157,13 @@ namespace OpenMps
 		void ForwardTime();
 
 		// 粒子リストを取得する
-		const Particle::List Particles() const
+		const Particle::List& Particles() const
 		{
 			return this->particles;
 		}
 
 		// 計算空間パラメーターを取得する
-		const MpsEnvironment Environment() const
+		const MpsEnvironment& Environment() const
 		{
 			return environment;
 		}
