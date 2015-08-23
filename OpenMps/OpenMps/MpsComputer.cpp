@@ -194,7 +194,7 @@ namespace OpenMps
 	void MpsComputer::SetPressurePoissonEquation()
 	{
 		// 粒子数を取得
-		const unsigned int n = particles.size();
+		const std::size_t n = particles.size();
 
 		// 粒子に増減があれば
 		if(n != ppe.b.size())
