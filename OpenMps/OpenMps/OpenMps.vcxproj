@@ -144,7 +144,6 @@
     <ClCompile Include="MpsComputer.cpp" />
     <ClCompile Include="MpsEnvironment.cpp" />
     <ClCompile Include="OpenMpsMain.cpp" />
-    <ClCompile Include="Particle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="defines.hpp" />
