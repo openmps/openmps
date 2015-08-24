@@ -141,7 +141,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MpsComputer.cpp" />
     <ClCompile Include="OpenMpsMain.cpp" />
   </ItemGroup>
   <ItemGroup>
