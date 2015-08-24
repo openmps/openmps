@@ -142,7 +142,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MpsComputer.cpp" />
-    <ClCompile Include="MpsEnvironment.cpp" />
     <ClCompile Include="OpenMpsMain.cpp" />
   </ItemGroup>
   <ItemGroup>
