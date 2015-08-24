@@ -22,10 +22,10 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="OpenMpsMain.cpp" />
-    <ClCompile Include="Grid.cpp">
+    <ClCompile Include="MpsEnvironment.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MpsEnvironment.cpp">
+    <ClCompile Include="Grid.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
