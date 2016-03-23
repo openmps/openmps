@@ -117,7 +117,7 @@ namespace OpenMps
 
 						// 重み関数を計算
 						double r = boost::numeric::ublas::norm_2(x);
-						auto w = Particle::Weight(r, R_e);
+						auto w = Particle::W(r, R_e);
 
 						// 基準粒子数密度に足す
 						n0 += w;
@@ -134,34 +134,34 @@ namespace OpenMps
 		}
 
 		// する
-		inline void SetDt(const double maxU)
+		void SetDt(const double maxU)
 		{
 			dt = (maxU == 0 ? maxDt : std::min(maxDx/maxU, maxDt));
 		}
 		// CFL条件より時間刻みを決定する
 
 		// 時刻を進める
-		inline void SetNextT()
+		void SetNextT()
 		{
 			t += dt;
 		}
 
-		inline double T() const
+		double T() const
 		{
 			return t;
 		}
 
-		inline double Dt() const
+		double Dt() const
 		{
 			return dt;
 		}
 
-		inline double N0() const
+		double N0() const
 		{
 			return n0;
 		}
 
-		inline double Lambda() const
+		double Lambda() const
 		{
 			return lambda;
 		}

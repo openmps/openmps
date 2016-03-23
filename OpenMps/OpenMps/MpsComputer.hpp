@@ -30,7 +30,7 @@ namespace OpenMps
 		typedef boost::numeric::ublas::vector<double> LongVector;
 
 		// 粒子リスト
-		Particle::List particles;
+		std::vector<Particle> particles;
 
 		// 計算空間のパラメーター
 		MpsEnvironment environment;
@@ -69,6 +69,23 @@ namespace OpenMps
 		// 速度修正量
 		std::vector<Vector> du;
 
+		// 2粒子間の距離を計算する
+		// @param p1 粒子1
+		// @param p2 粒子2
+		static double R(const Particle& p1, const Particle& p2)
+		{
+			const auto r = p1.X() - p2.X();
+			return std::sqrt(boost::numeric::ublas::inner_prod(r, r));
+		}
+
+		// 自由表面かどうかの判定
+		// @param n 粒子数密度
+		// @param n0 基準粒子数密度
+		// @param surfaceRatio 自由表面判定係数
+		static bool IsSurface(const double n, const double n0, const double surfaceRatio)
+		{
+			return n / n0 < surfaceRatio;
+		}
 
 		// 時間刻みを決定する
 		void DetermineDt()
@@ -76,14 +93,14 @@ namespace OpenMps
 			namespace ublas = boost::numeric::ublas;
 
 			// 最大速度を取得
-			auto maxUParticle = *std::max_element(particles.cbegin(), particles.cend(),
-				[](const Particle::Ptr& base, const Particle::Ptr& target)
+			const auto maxUParticle = *std::max_element(particles.cbegin(), particles.cend(),
+				[](const Particle& base, const Particle& target)
 			{
-				auto baseU = base->VectorU();
-				auto targetU = target->VectorU();
+				const auto& baseU = base.U();
+				const auto& targetU = target.U();
 				return (ublas::inner_prod(baseU, baseU) < ublas::inner_prod(targetU, targetU));
 			});
-			auto maxU = ublas::norm_2(maxUParticle->VectorU());
+			const auto maxU = ublas::norm_2(maxUParticle.U());
 
 			// 時間刻みを設定
 			environment.SetDt(maxU);
@@ -97,8 +114,17 @@ namespace OpenMps
 			// 全粒子で
 			for (auto& particle : particles)
 			{
-				// 粒子数密度を計算する
-				particle->UpdateNeighborDensity(particles, r_e);
+				// ダミー粒子を除く
+				if(particle.TYPE() != Particle::Type::Dummy)
+				{
+					// 粒子数密度を計算する
+					particle.N() = std::accumulate(particles.cbegin(), particles.cend(), 0.0,
+						[&particle, &r_e](const double sum, const Particle& neighbor)
+					{
+						const double w = Particle::W(R(particle, neighbor), r_e);
+						return sum + w;
+					});
+				}
 			}
 		}
 
@@ -118,23 +144,38 @@ namespace OpenMps
 
 			// 全粒子で
 			for (auto& particle : particles)
-			{
+			{	
 				// 重力の計算
-				Vector d = g;
+				auto d = g;
 
-				// 粘性項の計算
-				auto vis = particle->GetViscosity(particles, n0, r_e, lambda, nu);
-				d += vis;
+				// 水粒子のみ
+				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
+				{
+					// 粘性の計算
+					auto vis = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
+						[&particle, &n0, &r_e, &lambda, &nu](const Vector sum, const Particle& neighbor)
+					{
+						// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
+						const double w = (neighbor.TYPE() == Particle::Type::Dummy) ? 0 : Particle::W(R(particle, neighbor), r_e);
+						const auto du = (w == 0) ? VectorZero : ((nu * 2 * DIM / lambda / n0 * w)*(neighbor.U() - particle.U()));
+						return static_cast<Vector>(sum + du);
+					});
+
+					d += vis;
+				}
 				a.push_back(d);
 			}
 
 			// 全粒子で
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
-				// 位置・速度を修正
-				Vector thisA = a[i];
-				particles[i]->Move(particles[i]->VectorU() * dt + a[i] * dt*dt / 2);
-				particles[i]->Accelerate(a[i] * dt);
+				// 水粒子のみ
+				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
+				{
+					// 位置・速度を修正
+					particles[i].U() += a[i] * dt;
+					particles[i].X() += particles[i].U()* dt;
+				}
 			}
 		}
 
@@ -165,7 +206,11 @@ namespace OpenMps
 			{
 				const auto n0 = environment.N0();
 				const auto surfaceRatio = environment.SurfaceRatio;
-				particles[i]->P(ppe.x(i), n0, surfaceRatio);
+
+				// 負圧であったり自由表面の場合は圧力0
+				const auto p = ppe.x(i);
+				const auto n = particles[i].N();
+				particles[i].P() = ((p < 0) || IsSurface(n, n0, surfaceRatio)) ? 0 : p;
 			}
 #endif
 
@@ -209,6 +254,13 @@ namespace OpenMps
 		// 圧力方程式を設定する
 		void SetPressurePoissonEquation()
 		{
+			const auto n0 = environment.N0();
+			const auto dt = environment.Dt();
+			const auto surfaceRatio = environment.SurfaceRatio;
+			const auto r_e = environment.R_e;
+			const auto rho = environment.Rho;
+			const auto lambda = environment.Lambda();
+
 			// 粒子数を取得
 			const std::size_t n = particles.size();
 
@@ -226,17 +278,25 @@ namespace OpenMps
 			// 全粒子で
 			for (unsigned int i = 0; i < n; i++)
 			{
-				const auto n0 = environment.N0();
-				const auto dt = environment.Dt();
-				const auto surfaceRatio = environment.SurfaceRatio;
+				const auto thisN = particles[i].N();
 
-				// 生成項を計算する
-				const double b_i = particles[i]->Source(n0, dt, surfaceRatio);
-				ppe.b(i) = b_i;
+				// ダミー粒子と自由表面は0
+				if((particles[i].TYPE() == Particle::Type::Dummy) || IsSurface(thisN, n0, surfaceRatio))
+				{
+					ppe.b(i) = 0;
+					ppe.x(i) = 0;
+				}
+				else
+				{
+					// 生成項を計算する
+					// 標準MPS法：b_i = 1/dt^2 * (n_i - n0)/n0
+					const auto b_i = (thisN - n0) / n0 / (dt*dt);
+					ppe.b(i) = b_i;
 
-				// 圧力を未知数ベクトルの初期値にする
-				const double x_i = particles[i]->P();
-				ppe.x(i) = x_i;
+					// 圧力を未知数ベクトルの初期値にする
+					const auto x_i = particles[i].P();
+					ppe.x(i) = x_i;
+				}
 			}
 			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
 
@@ -246,37 +306,42 @@ namespace OpenMps
 			// 全粒子で
 			for (unsigned int i = 0; i < n; i++)
 			{
-				// 対角項を初期化
-				double a_ii = 0;
-
-				// 他の粒子に対して
-				// TODO: 全粒子探索してるので遅い
-				for (unsigned int j = 0; j < particles.size(); j++)
+				// ダミー粒子と自由表面は対角項だけ1
+				if((particles[i].TYPE() == Particle::Type::Dummy) || IsSurface(particles[i].N(), n0, surfaceRatio))
 				{
-					// 自分以外
-					if (i != j)
-					{
-						// 自分以外
-						if (i != j)
-						{
-							const auto n0 = environment.N0();
-							const auto r_e = environment.R_e;
-							const auto rho = environment.Rho;
-							const auto lambda = environment.Lambda();
-							const auto surfaceRatio = environment.SurfaceRatio;
+					ppe.A(i, i) = 1.0;
+				}
+				else
+				{
+					// 対角項を初期化
+					double a_ii = 0;
 
+					// 他の粒子に対して
+					// TODO: 全粒子探索してるので遅い
+					for(unsigned int j = 0; j < particles.size(); j++)
+					{
+						// ダミー粒子と自分以外
+						if((particles[j].TYPE() != Particle::Type::Dummy) && (i != j))
+						{
 							// 非対角項を計算
-							double a_ij = particles[i]->Matrix(*particles[j], n0, r_e, lambda, rho, surfaceRatio);
-							ppe.A(i, j) = a_ij;
+							// 標準MPS法：-2D/ρλ w/n0
+							const auto a_ij = -2 * DIM / (rho*lambda) * Particle::W(R(particles[i], particles[j]), r_e) / n0;
+
+							// 自由表面の場合は非対角項は設定しない
+							if(!IsSurface(particles[j].N(), n0, surfaceRatio))
+							{
+								ppe.A(i, j) = a_ij;
+							}
 
 							// 対角項も設定
 							a_ii -= a_ij;
 						}
-					}
-				}
 
-				// 対角項を設定
-				ppe.A(i, i) = a_ii;
+					}
+
+					// 対角項を設定
+					ppe.A(i, i) = a_ii;
+				}
 			}
 		}
 
@@ -350,6 +415,23 @@ namespace OpenMps
 		};
 #endif
 
+		// 対象の粒子へ与える圧力勾配を計算する
+		// @param particle_i 対象の粒子
+		// @param r_e 影響半径
+		// @param dt 時間刻み
+		// @param rho 密度
+		// @param n0 粒子数密度
+		static Vector PressureGradientTo(const Particle& particle, const Particle& neighbor, const double r_e, const double dt, const double rho, const double n0)
+		{
+			namespace ublas = boost::numeric::ublas;
+
+			// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx（ただし自分自身からは影響を受けない）
+			const auto dx = neighbor.X() - particle.X();
+			const auto r2 = ublas::inner_prod(dx, dx);
+			const auto result = -dt / rho * DIM / n0 * (neighbor.P() + particle.P()) / r2 * Particle::W(R(neighbor, particle), r_e);
+			return r2 == 0 ? VectorZero : (result * dx);
+		}
+
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient()
 		{
@@ -365,7 +447,33 @@ namespace OpenMps
 				const double n0 = environment.N0();
 
 				// 圧力勾配を計算する
-				Vector d = particle->GetPressureGradient(particles, r_e, dt, rho, n0);
+				Vector d;
+				{
+#ifdef PRESSURE_GRADIENT_MIDPOINT
+					// 速度修正量を計算
+					d = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
+						[&particle, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle& neighbor)
+					{
+						auto du = PressureGradientTo(particle, neighbor, r_e, dt, rho, n0);
+						return (Vector)(sum + du);
+					});
+#else
+					// 最小圧力を取得する
+					auto minPparticle = std::min_element(particles.cbegin(), particles.cend(),
+						[](const Particle::Ptr& base, const Particle::Ptr& target)
+					{
+						return base->p < target->p;
+					});
+
+					// 速度修正量を計算
+					d = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
+						[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
+					{
+						auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
+						return (Vector)(sum + du);
+					});
+#endif
+				}
 				du.push_back(d);
 			}
 
@@ -376,8 +484,8 @@ namespace OpenMps
 
 				// 位置・速度を修正
 				Vector thisDu = du[i];
-				particles[i]->Accelerate(thisDu);
-				particles[i]->Move(thisDu * dt);
+				particles[i].U() += thisDu;
+				particles[i].X() += thisDu * dt;
 			}
 		}
 
@@ -395,10 +503,8 @@ namespace OpenMps
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
 #endif
-			const MpsEnvironment& env,
-			const Particle::List& particles)
-			: environment(env),
-			particles(particles)
+			const MpsEnvironment& env)
+			: environment(env)
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -433,14 +539,24 @@ namespace OpenMps
 			environment.SetNextT();
 		}
 
+		// 粒子を追加する
+		void AddParticle(const Particle& particle)
+		{
+			particles.push_back(particle);
+		}
+		void AddParticle(Particle&& particle)
+		{
+			particles.push_back(std::move(particle));
+		}
+
 		// 粒子リストを取得する
-		const Particle::List Particles() const
+		const auto& Particles() const
 		{
 			return this->particles;
 		}
 
 		// 計算空間パラメーターを取得する
-		inline const MpsEnvironment Environment() const
+		const MpsEnvironment& Environment() const
 		{
 			return environment;
 		}
