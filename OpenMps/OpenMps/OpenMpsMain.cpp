@@ -1,14 +1,13 @@
 ﻿#pragma warning(push, 0)
 #include <iostream>
 #include <fstream>
-#include <typeinfo>
 #include <ctime>
 #include <type_traits>
 #include <boost/format.hpp>
-#include <boost/timer.hpp>
 #pragma warning(pop)
 
 #include "MpsComputer.hpp"
+#include "Timer.hpp"
 
 // 計算結果をCSVへ出力する
 static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
@@ -181,8 +180,8 @@ int main()
 	OutputToCsv(computer, 0);
 
 	// 開始時間を保存
-	boost::timer timer;
-	timer.restart();
+	Timer timer;
+	timer.Start();
 	boost::format timeFormat("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
 	// 開始時間を画面表示
@@ -190,7 +189,7 @@ int main()
 	auto tm = std::localtime(&t);
 	std::cout << timeFormat % 0.0 % 0 % 0
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.elapsed() << std::endl;
+				% timer.Time() << std::endl;
 
 	// 計算が終了するまで
 	double nextOutputT = 0;
@@ -218,7 +217,7 @@ int main()
 			tm = std::localtime(&t);
 			std::cout << timeFormat % tComputer % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.elapsed() << std::endl;
+				% timer.Time() << std::endl;
 		}
 		// 計算で例外があったら
 		catch(MpsComputer::Exception ex)
