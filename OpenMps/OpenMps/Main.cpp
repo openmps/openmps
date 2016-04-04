@@ -6,11 +6,11 @@
 #include <boost/format.hpp>
 #pragma warning(pop)
 
-#include "MpsComputer.hpp"
+#include "Computer.hpp"
 #include "Timer.hpp"
 
 // 計算結果をCSVへ出力する
-static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
+static void OutputToCsv(const OpenMps::Computer& computer, const int& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -32,7 +32,7 @@ static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputC
 }
 
 // MPS計算用の計算空間固有パラメータを作成する
-static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
+static OpenMps::Environment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
 {
 	const double g = 9.8;
 	const double rho = 998.20;
@@ -47,7 +47,7 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 	const double tooNearCoefficient = 1.5;
 #endif
 
-	return OpenMps::MpsEnvironment(outputInterval/2, courant,
+	return OpenMps::Environment(outputInterval/2, courant,
 #ifdef MODIFY_TOO_NEAR
 		tooNearRatio, tooNearCoefficient,
 #endif
@@ -59,7 +59,7 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 }
 
 // 粒子を作成する
-static void CreateParticles(OpenMps::MpsComputer& computer, const double l_0)
+static void CreateParticles(OpenMps::Computer& computer, const double l_0)
 {
 	// ダムブレークのモデルを作成
 	{
@@ -167,7 +167,7 @@ int main()
 #endif
 
 	// 計算空間の初期化
-	MpsComputer computer(
+	Computer computer(
 #ifndef PRESSURE_EXPLICIT
 		eps,
 #endif
@@ -220,7 +220,7 @@ int main()
 				% timer.Time() << std::endl;
 		}
 		// 計算で例外があったら
-		catch(MpsComputer::Exception ex)
+		catch(Computer::Exception ex)
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl

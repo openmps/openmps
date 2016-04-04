@@ -1,12 +1,12 @@
-﻿#ifndef MPSENVIRONMENT_INCLUDED
-#define MPSENVIRONMENT_INCLUDED
+﻿#ifndef ENVIRONMENT_INCLUDED
+#define ENVIRONMENT_INCLUDED
 
 #include "Vector.hpp"
 
 namespace OpenMps
 {
 	// MPS計算用の計算空間固有パラメータ
-	class MpsEnvironment
+	class Environment
 	{
 	private:
 		// 現在時刻
@@ -68,7 +68,7 @@ namespace OpenMps
 		// @param surfaceRatio 自由表面判定の係数
 		// @param c 音速
 		// @param l_0 初期粒子間距離
-		MpsEnvironment(
+		Environment(
 			const double maxDt,
 			const double courant,
 #ifdef MODIFY_TOO_NEAR
@@ -168,7 +168,7 @@ namespace OpenMps
 
 		// 代入演算子
 		// @param src 代入元
-		MpsEnvironment& operator=(const MpsEnvironment& src)
+		Environment& operator=(const Environment& src)
 		{	
 			this->t = src.t;
 			this->dt = src.dt;

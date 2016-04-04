@@ -1,5 +1,5 @@
-﻿#ifndef MPSCOMPUTER_INCLUDED
-#define MPSCOMPUTER_INCLUDED
+﻿#ifndef COMPUTER_INCLUDED
+#define COMPUTER_INCLUDED
 #pragma warning(push, 0)
 #include <vector>
 
@@ -15,12 +15,12 @@
 #pragma warning(pop)
 
 #include "Particle.hpp"
-#include "MpsEnvironment.hpp"
+#include "Environment.hpp"
 
 namespace OpenMps
 {
 	// MPS法による計算空間
-	class MpsComputer
+	class Computer
 	{
 	private:
 		// 線形方程式用の疎行列
@@ -33,7 +33,7 @@ namespace OpenMps
 		std::vector<Particle> particles;
 
 		// 計算空間のパラメーター
-		MpsEnvironment environment;
+		Environment environment;
 
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
@@ -499,11 +499,11 @@ namespace OpenMps
 		// @param allowableResidual 圧力方程式の収束判定（許容誤差）
 #endif
 		// @param env MPS計算用の計算空間固有パラメータ
-		MpsComputer(
+		Computer(
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
 #endif
-			const MpsEnvironment& env)
+			const Environment& env)
 			: environment(env)
 		{
 #ifndef PRESSURE_EXPLICIT
@@ -556,14 +556,14 @@ namespace OpenMps
 		}
 
 		// 計算空間パラメーターを取得する
-		const MpsEnvironment& Environment() const
+		const Environment& Environment() const
 		{
 			return environment;
 		}
 
 		// 代入演算子
 		// @param src 代入元
-		MpsComputer& operator=(const MpsComputer& src)
+		Computer& operator=(const Computer& src)
 		{
 			this->particles = src.particles;
 #ifndef PRESSURE_EXPLICIT
