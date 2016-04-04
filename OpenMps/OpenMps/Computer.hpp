@@ -24,10 +24,10 @@ namespace OpenMps
 	{
 	private:
 		// 線形方程式用の疎行列
-		typedef boost::numeric::ublas::compressed_matrix<double> Matrix;
+		using Matrix = boost::numeric::ublas::compressed_matrix<double>;
 
 		// 線形方程式用の多次元ベクトル
-		typedef boost::numeric::ublas::vector<double> LongVector;
+		using LongVector = boost::numeric::ublas::vector<double>;
 
 		// 粒子リスト
 		std::vector<Particle> particles;
