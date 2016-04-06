@@ -112,7 +112,7 @@ namespace OpenMps
 		}
 
 		// 圧力
-		auto P() const
+		const auto& P() const
 		{
 			return p;
 		}
@@ -122,7 +122,7 @@ namespace OpenMps
 		}
 
 		// 粒子数密度
-		auto N() const
+		const auto& N() const
 		{
 			return n;
 		}
@@ -132,7 +132,7 @@ namespace OpenMps
 		}
 
 		// 種類
-		auto TYPE() const
+		const auto& TYPE() const
 		{
 			return type;
 		}
