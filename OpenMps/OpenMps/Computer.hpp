@@ -19,6 +19,140 @@
 
 namespace OpenMps
 {
+	namespace Detail
+	{
+		namespace Field
+		{
+			enum class Name
+			{
+				X,
+				U,
+				P,
+				Type,
+			};
+
+			template<typename T, typename PARTICLES>
+			using Getter = const T& (*)(const PARTICLES& particles, const std::size_t i);
+
+			template<Name NAME>
+			struct GetGetter;
+			template<>
+			struct GetGetter<Name::X>
+			{
+				template<typename PARTICLES>
+				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				{
+					return particles[i].X();
+				}
+			};
+			template<>
+			struct GetGetter<Name::U>
+			{
+				template<typename PARTICLES>
+				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				{
+					return particles[i].U();
+				}
+			};
+			template<>
+			struct GetGetter<Name::P>
+			{
+				template<typename PARTICLES>
+				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				{
+					return particles[i].P();
+				}
+			};
+			template<>
+			struct GetGetter<Name::Type>
+			{
+				template<typename PARTICLES>
+				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				{
+					return particles[i].TYPE();
+				}
+			};
+
+			template<typename PARTICLES, Name NAME>
+			constexpr auto GetGetters()
+			{
+				return std::make_tuple(&GetGetter<NAME>::Get<PARTICLES>);
+			}
+
+			template<typename PARTICLES, Name NAME0, Name NAME1, Name... NAMES>
+			constexpr auto GetGetters()
+			{
+				return std::tuple_cat(
+					GetGetters<PARTICLES, NAME0>(),
+					GetGetters<PARTICLES, NAME1, NAMES...>());
+			}
+
+
+			template<typename TUPLE, std::size_t I = 0, bool IS_END = (I == std::tuple_size<TUPLE>::value)>
+			struct GetArg;
+
+			template<typename TUPLE, std::size_t I>
+			struct GetArg<TUPLE, I, true>
+			{
+				template<typename PARTICLES>
+				static auto Get(const PARTICLES&, const std::size_t, TUPLE)
+				{
+					return std::make_tuple();
+				}
+			};
+			template<typename TUPLE, std::size_t I>
+			struct GetArg<TUPLE, I, false>
+			{
+				template<typename PARTICLES>
+				static auto Get(const PARTICLES& particles, const std::size_t i, TUPLE getters)
+				{
+					return std::tuple_cat(
+						std::make_tuple(std::get<I>(getters)(particles, i)),
+						GetArg<TUPLE, I+1>::Get(particles, i, getters));
+				}
+			};
+
+			template<typename PARTICLES, typename... Ts>
+			auto Get(const PARTICLES& particles, const std::size_t i, std::tuple<Getter<Ts, PARTICLES>...> getters)
+			{
+				return GetArg<decltype(getters)>::Get(particles, i, getters);
+			}
+		}
+
+		template<typename FUNC, typename TUPLE, std::size_t I = 0, bool IS_END = (I == std::tuple_size<TUPLE>::value)>
+		struct Invoker;
+
+		template<typename FUNC, typename TUPLE, std::size_t I>
+		struct Invoker<FUNC, TUPLE, I, true>
+		{
+			template<typename... ARGS>
+			static auto Invoke(TUPLE, FUNC func, ARGS... args)
+			{
+				return func(std::forward<ARGS>(args)...);
+			}
+		};
+		template<typename FUNC, typename TUPLE, std::size_t I>
+		struct Invoker<FUNC, TUPLE, I, false>
+		{
+			template<typename... ARGS>
+			static auto Invoke(TUPLE tuple, FUNC func, ARGS... args)
+			{
+				return Invoker<FUNC, TUPLE, I + 1>::Invoke(tuple, func, std::forward<ARGS>(args)..., std::get<I>(tuple));
+			}
+
+			static auto Invoke(TUPLE tuple, FUNC func)
+			{
+				return Invoker<FUNC, TUPLE, I + 1>::Invoke(tuple, func, std::get<I>(tuple));
+			}
+		};
+
+		template<typename FUNC, typename... ARGS>
+		auto Invoke(std::tuple<ARGS...> tuple, FUNC func)
+		{
+			return Invoker<FUNC, decltype(tuple)>::Invoke(tuple, func);
+		}
+	}
+
 	// MPS法による計算空間
 	class Computer
 	{
@@ -69,13 +203,20 @@ namespace OpenMps
 		// 速度修正量
 		std::vector<Vector> du;
 
+		// 2点間の距離を計算する
+		// @param x1 点1
+		// @param x2 点2
+		static double R(const Vector& x1, const Vector& x2)
+		{
+			const auto r = x1 - x2;
+			return std::sqrt(boost::numeric::ublas::inner_prod(r, r));
+		}
 		// 2粒子間の距離を計算する
 		// @param p1 粒子1
 		// @param p2 粒子2
 		static double R(const Particle& p1, const Particle& p2)
 		{
-			const auto r = p1.X() - p2.X();
-			return std::sqrt(boost::numeric::ublas::inner_prod(r, r));
+			return R(p1.X(), p2.X());
 		}
 
 		// 自由表面かどうかの判定
@@ -86,6 +227,25 @@ namespace OpenMps
 		{
 			return n / n0 < surfaceRatio;
 		}
+
+		// 近傍粒子との相互作用を計算する
+		// @tparam FIELDS 必要な粒子の物理量
+		// @param zero 初期値
+		// @param func 相互作用関数
+		template<Detail::Field::Name... FIELDS, typename FUNC, typename ZERO>
+		auto AccumulateNeighbor(ZERO&& zero, const FUNC func) const
+		{
+			constexpr auto getter = Detail::Field::GetGetters<decltype(particles), FIELDS...>();
+
+			auto sum = std::move(zero);
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				sum += Detail::Invoke(Detail::Field::Get(particles, i, getter), func);
+			}
+			return sum;
+		};
+
 
 		// 時間刻みを決定する
 		void DetermineDt()
@@ -118,11 +278,9 @@ namespace OpenMps
 				if(particle.TYPE() != Particle::Type::Dummy)
 				{
 					// 粒子数密度を計算する
-					particle.N() = std::accumulate(particles.cbegin(), particles.cend(), 0.0,
-						[&particle, &r_e](const double sum, const Particle& neighbor)
+					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(0.0, [&thisX = particle.X(), &r_e](const Vector& x)
 					{
-						const double w = Particle::W(R(particle, neighbor), r_e);
-						return sum + w;
+						return Particle::W(R(thisX, x), r_e);
 					});
 				}
 			}
@@ -152,13 +310,12 @@ namespace OpenMps
 				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
 				{
 					// 粘性の計算
-					auto vis = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
-						[&particle, &n0, &r_e, &lambda, &nu](const Vector sum, const Particle& neighbor)
+					auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(VectorZero,
+					[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
 					{
 						// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
-						const double w = (neighbor.TYPE() == Particle::Type::Dummy) ? 0 : Particle::W(R(particle, neighbor), r_e);
-						const auto du = (w == 0) ? VectorZero : ((nu * 2 * DIM / lambda / n0 * w)*(neighbor.U() - particle.U()));
-						return static_cast<Vector>(sum + du);
+						const double w = (type == Particle::Type::Dummy) ? 0 : Particle::W(R(thisX, x), r_e);
+						return (w == 0) ? VectorZero : ((nu * 2 * DIM / lambda / n0 * w)*(u - thisU));
 					});
 
 					d += vis;
@@ -415,23 +572,6 @@ namespace OpenMps
 		};
 #endif
 
-		// 対象の粒子へ与える圧力勾配を計算する
-		// @param particle_i 対象の粒子
-		// @param r_e 影響半径
-		// @param dt 時間刻み
-		// @param rho 密度
-		// @param n0 粒子数密度
-		static Vector PressureGradientTo(const Particle& particle, const Particle& neighbor, const double r_e, const double dt, const double rho, const double n0)
-		{
-			namespace ublas = boost::numeric::ublas;
-
-			// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx（ただし自分自身からは影響を受けない）
-			const auto dx = neighbor.X() - particle.X();
-			const auto r2 = ublas::inner_prod(dx, dx);
-			const auto result = -dt / rho * DIM / n0 * (neighbor.P() + particle.P()) / r2 * Particle::W(R(neighbor, particle), r_e);
-			return r2 == 0 ? VectorZero : (result * dx);
-		}
-
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient()
 		{
@@ -451,11 +591,16 @@ namespace OpenMps
 				{
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
-					d = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
-						[&particle, &r_e, &dt, &rho, &n0](const Vector& sum, const Particle& neighbor)
+					d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(VectorZero,
+					[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x)
 					{
-						auto du = PressureGradientTo(particle, neighbor, r_e, dt, rho, n0);
-						return (Vector)(sum + du);
+						namespace ublas = boost::numeric::ublas;
+
+						// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx（ただし自分自身からは影響を受けない）
+						const auto dx = x - thisX;
+						const auto r2 = ublas::inner_prod(dx, dx);
+						const auto result = -dt / rho * DIM / n0 * (p + thisP) / r2 * Particle::W(R(x, thisX), r_e);
+						return r2 == 0 ? VectorZero : (result * dx);
 					});
 #else
 					// 最小圧力を取得する
