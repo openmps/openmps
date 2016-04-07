@@ -25,22 +25,33 @@ namespace OpenMps
 		{
 			enum class Name
 			{
+				ID,
 				X,
 				U,
 				P,
+				N,
 				Type,
 			};
 
 			template<typename T, typename PARTICLES>
-			using Getter = const T& (*)(const PARTICLES& particles, const std::size_t i);
+			using Getter = T (*)(const PARTICLES& particles, const std::size_t i);
 
 			template<Name NAME>
 			struct GetGetter;
 			template<>
+			struct GetGetter<Name::ID>
+			{
+				template<typename PARTICLES>
+				static auto Get(const PARTICLES&, const std::size_t i)
+				{
+					return i;
+				}
+			};
+			template<>
 			struct GetGetter<Name::X>
 			{
 				template<typename PARTICLES>
-				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::size_t i)
 				{
 					return particles[i].X();
 				}
@@ -49,7 +60,7 @@ namespace OpenMps
 			struct GetGetter<Name::U>
 			{
 				template<typename PARTICLES>
-				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::size_t i)
 				{
 					return particles[i].U();
 				}
@@ -58,16 +69,25 @@ namespace OpenMps
 			struct GetGetter<Name::P>
 			{
 				template<typename PARTICLES>
-				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::size_t i)
 				{
 					return particles[i].P();
+				}
+			};
+			template<>
+			struct GetGetter<Name::N>
+			{
+				template<typename PARTICLES>
+				static auto Get(const PARTICLES& particles, const std::size_t i)
+				{
+					return particles[i].N();
 				}
 			};
 			template<>
 			struct GetGetter<Name::Type>
 			{
 				template<typename PARTICLES>
-				static const auto& Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::size_t i)
 				{
 					return particles[i].TYPE();
 				}
@@ -239,6 +259,9 @@ namespace OpenMps
 
 			auto sum = std::move(zero);
 			const auto n = particles.size();
+
+			// 他の粒子に対して
+			// TODO: 全粒子探索してるので遅い
 			for(auto i = decltype(n)(0); i < n; i++)
 			{
 				sum += Detail::Invoke(Detail::Field::Get(particles, i, getter), func);
@@ -470,34 +493,30 @@ namespace OpenMps
 				}
 				else
 				{
-					// 対角項を初期化
-					double a_ii = 0;
-
-					// 他の粒子に対して
-					// TODO: 全粒子探索してるので遅い
-					for(unsigned int j = 0; j < particles.size(); j++)
+					// 対角項を設定
+					ppe.A(i, i) = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(0.0,
+					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio, &A = ppe.A](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
 						// ダミー粒子と自分以外
-						if((particles[j].TYPE() != Particle::Type::Dummy) && (i != j))
+						if((type != Particle::Type::Dummy) && (i != j))
 						{
 							// 非対角項を計算
 							// 標準MPS法：-2D/ρλ w/n0
-							const auto a_ij = -2 * DIM / (rho*lambda) * Particle::W(R(particles[i], particles[j]), r_e) / n0;
+							const auto a_ij = -2 * DIM / (rho*lambda) * Particle::W(R(thisX, x), r_e) / n0;
 
 							// 自由表面の場合は非対角項は設定しない
-							if(!IsSurface(particles[j].N(), n0, surfaceRatio))
+							if(!IsSurface(n, n0, surfaceRatio))
 							{
-								ppe.A(i, j) = a_ij;
+								A(i, j) = a_ij;
 							}
 
-							// 対角項も設定
-							a_ii -= a_ij;
+							return -a_ij;
 						}
-
-					}
-
-					// 対角項を設定
-					ppe.A(i, i) = a_ii;
+						else
+						{
+							return 0.0;
+						}
+					});
 				}
 			}
 		}
