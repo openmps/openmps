@@ -4,6 +4,7 @@
 
 #include "Vector.hpp"
 #include "Grid.hpp"
+#include <numeric>
 
 namespace OpenMps
 {
@@ -36,9 +37,6 @@ namespace OpenMps
 		// 対象の粒子の圧力方程式の生成項の寄与分を計算する関数ポインタの型
 		typedef double(Particle::*GetPpeSourceToFunc)(const Particle& particle_i, const double r_e, const double dt, const double n0) const;
 
-		// 各粒子タイプで対象の粒子の圧力方程式の生成項の寄与分を計算する関数
-		static const GetPpeSourceToFunc GetPpeSourceToFuncTable[ParticleTypeMaxCount];
-
 		// 通常粒子を対象とした圧力方程式の生成項の寄与分を計算する
 		double GetPpeSourceToNormal(const Particle& particle_i, const double r_e, const double dt, const double n0) const
 		{
@@ -60,6 +58,14 @@ namespace OpenMps
 			return 0;
 		}
 
+		// 各粒子タイプで対象の粒子の圧力方程式の生成項の寄与分を計算する関数
+		static constexpr GetPpeSourceToFunc GetPpeSourceToFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetPpeSourceToNormal, // 水
+			&Particle::GetPpeSourceToNormal, // 壁
+			&Particle::GetPpeSourceToZero,   // ダミー
+		};
+
 
 		// 自分を対象とした圧力方程式の係数を計算する関数ポインタの型
 		typedef double(Particle::*GetPpeMatrixTargetFunc)(const Particle& source, const double n0, const double r_e,
@@ -67,9 +73,6 @@ namespace OpenMps
 			const double lambda,
 #endif
 			const double rho) const;
-
-		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
-		static const GetPpeMatrixTargetFunc GetPpeMatrixTargetFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子を対象とした圧力方程式の係数を計算する
 		double GetPpeMatrixTargetNormal(const Particle& source, const double n0, const double r_e,
@@ -103,6 +106,13 @@ namespace OpenMps
 			return 0;
 		}
 #endif
+		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
+		static constexpr GetPpeMatrixTargetFunc GetPpeMatrixTargetFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetPpeMatrixTargetNormal, // 水
+			&Particle::GetPpeMatrixTargetNormal, // 壁
+			&Particle::GetPpeMatrixTargetZero,   // ダミー
+		};
 
 
 		// 対象の粒子へ与える粘性項を計算する関数ポインタの型
@@ -111,9 +121,6 @@ namespace OpenMps
 			const double lambda,
 #endif 
 			const double nu) const;
-
-		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
-		static const ViscosityToFunc ViscosityToFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子へ与える粘性項を計算する
 		Vector ViscosityToNormal(const Particle& particle_i, const double n_0, const double r_e,
@@ -147,6 +154,14 @@ namespace OpenMps
 			return VectorZero;
 		}
 
+		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
+		static constexpr ViscosityToFunc ViscosityToFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::ViscosityToNormal, // 水
+			&Particle::ViscosityToNormal, // 壁
+			&Particle::ViscosityToZero,   // ダミー
+		};
+
 		// 対象の粒子へ与える圧力勾配を計算する関数ポインタの型
 		typedef Vector(Particle::*PressureGradientToFunc)(
 			const Particle& particle_i,
@@ -154,9 +169,6 @@ namespace OpenMps
 			const double minP,
 #endif
 			const double r_e, const double dt, const double rho, const double n0) const;
-
-		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
-		static const PressureGradientToFunc PressureGradientToFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子へ与える圧力勾配を計算する
 		Vector PressureGradientToNormal(
@@ -191,12 +203,17 @@ namespace OpenMps
 			return VectorZero;
 		}
 
+		// 各粒子タイプで自分を対象とした圧力方程式の係数を計算する関数
+		static constexpr PressureGradientToFunc PressureGradientToFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::PressureGradientToNormal, // 水
+			&Particle::PressureGradientToNormal, // 壁
+			&Particle::PressureGradientToZero,   // ダミー
+		};
+
 
 		// 粒子を加速（速度を変更）する関数ポインタの型
 		typedef void(Particle::*AccelerateFunc)(const Vector& du);
-
-		// 各粒子タイプで粒子を加速（速度を変更）する関数
-		static const AccelerateFunc AccelerateFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子を加速（速度を変更）する
 		void AccelerateNormal(const Vector& du)
@@ -210,12 +227,17 @@ namespace OpenMps
 			// 動かさない
 		}
 
+		// 各粒子タイプで粒子を加速（速度を変更）する関数
+		static constexpr AccelerateFunc AccelerateFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::AccelerateNormal, // 水
+			&Particle::AccelerateZero,   // 壁
+			&Particle::AccelerateZero,   // ダミー
+		};
+
 
 		// 粒子を移動（位置を変更）する関数ポインタの型
 		typedef void(Particle::*MoveFunc)(const Vector& dx);
-
-		// 各粒子タイプで粒子を移動（位置を変更）する関数
-		static const MoveFunc MoveFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子を移動（位置を変更）する
 		void MoveNormal(const Vector& dx)
@@ -229,6 +251,14 @@ namespace OpenMps
 			// 動かさない
 		}
 
+		// 各粒子タイプで粒子を移動（位置を変更）する関数
+		static constexpr MoveFunc MoveFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::MoveNormal, // 水
+			&Particle::MoveZero,   // 壁
+			&Particle::MoveZero,   // ダミー
+		};
+
 
 		// 粘性項を計算する関数ポインタの型
 		typedef Vector(Particle::*GetViscosityFunc)(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
@@ -237,15 +267,48 @@ namespace OpenMps
 #endif
 			const double nu) const;
 
-		// 各粒子タイプで粘性項を計算する関数
-		static const GetViscosityFunc GetViscosityFuncTable[ParticleTypeMaxCount];
-
 		// 通常粒子の粘性項を計算するする
 		Vector GetViscosityNormal(const Particle::List& particles, const Grid& grid, const double n_0, const double r_e,
 #ifndef MPS_HV
 			const double lambda,
 #endif
-			const double nu) const;
+			const double nu) const
+		{
+			// 粘性項を計算
+			auto vis = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
+				[this, &n_0, &r_e,
+#ifndef MPS_HV
+				&lambda,
+#endif
+				&nu, &particles, &grid](const Vector& sum, const Grid::BlockID block)
+			{
+				// 近傍ブロック内の粒子を取得
+				auto neighbors = grid[block];
+
+				// 近傍ブロック内の粒子に対して計算
+				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
+					[this, &n_0, &r_e,
+#ifndef MPS_HV
+					&lambda,
+#endif
+					&nu, &particles](const Vector& sum2, const int& idd)
+				{
+					const unsigned int id = static_cast<unsigned int>(idd);
+
+					Vector duParticle = particles[id].ViscosityTo(*this, n_0, r_e,
+#ifndef MPS_HV
+						lambda,
+#endif
+						nu);
+					return static_cast<Vector>(sum2 + duParticle);
+				});
+
+				return static_cast<Vector>(sum + duBlock);
+			});
+
+			// 粘性項を返す
+			return vis;
+		}
 
 		// 移動しない粒子の粘性項を計算する
 		Vector GetViscosityZero(const Particle::List&, const Grid&, const double, const double,
@@ -257,12 +320,17 @@ namespace OpenMps
 			return VectorZero;
 		}
 
+		// 各粒子タイプで粘性項を計算する関数
+		static constexpr GetViscosityFunc GetViscosityFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetViscosityNormal, // 水
+			&Particle::GetViscosityZero,   // 壁
+			&Particle::GetViscosityZero,   // ダミー
+		};
+
 
 		// 重み関数を計算する関数ポインタの型
 		typedef double(Particle::*WeightFunc)(const Particle& target, const double r_e) const;
-
-		// 各粒子タイプで重み関数を計算する関数
-		static const WeightFunc WeightFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の重み関数を計算する
 		double WeightNormal(const Particle& target, const double r_e) const
@@ -276,15 +344,40 @@ namespace OpenMps
 			return 0;
 		}
 
+		// 各粒子タイプで重み関数を計算する関数
+		static constexpr WeightFunc WeightFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::WeightNormal, // 水
+			&Particle::WeightNormal, // 壁
+			&Particle::WeightZero,   // ダミー
+		};
+
 
 		// 粘性項を計算する関数ポインタの型
 		typedef void(Particle::*UpdateNeighborDensityFunc)(const Particle::List& particles, const Grid& grid, const double r_e);
 
-		// 各粒子タイプで粘性項を計算する関数
-		static const UpdateNeighborDensityFunc UpdateNeighborDensityFuncTable[ParticleTypeMaxCount];
-
 		// 通常粒子の粘性項を計算する
-		void UpdateNeighborDensityNormal(const Particle::List& particles, const Grid& grid, const double r_e);
+		void UpdateNeighborDensityNormal(const Particle::List& particles, const Grid& grid, const double r_e)
+		{
+			// 重み関数の総和を粒子数密度とする
+			n = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), 0.0,
+				[this, &r_e, &particles, &grid](const double sum, const Grid::BlockID block)
+			{
+				// 近傍ブロック内の粒子を取得
+				auto neighbors = grid[block];
+
+				// 近傍ブロック内の粒子に対して計算
+				return sum + std::accumulate(neighbors.cbegin(), neighbors.cend(), 0.0,
+					[this, &r_e, &particles](const double sum2, const int& idd)
+				{
+					const unsigned int id = static_cast<unsigned int>(idd);
+
+					double w = this->Weight(particles[id], r_e);
+					return sum2 + w;
+				});
+			});
+		}
+
 
 		// 移動しない粒子の粘性項を計算する
 		void UpdateNeighborDensityZero(const Particle::List&, const Grid&, const double)
@@ -293,31 +386,93 @@ namespace OpenMps
 			n = 0;
 		}
 
+		// 各粒子タイプで粘性項を計算する関数
+		static constexpr UpdateNeighborDensityFunc UpdateNeighborDensityFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::UpdateNeighborDensityNormal, // 水
+			&Particle::UpdateNeighborDensityNormal, // 壁
+			&Particle::UpdateNeighborDensityZero,   // ダミー
+		};
+
 
 #ifdef MODIFY_TOO_NEAR
 		// 過剰接近粒子からの速度補正量を計算する関数ポインタの型
 		typedef Vector(Particle::*GetCorrectionByTooNearFunc)(const Particle::List& particles, const Grid& grid, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const;
 
-		// 各粒子タイプで過剰接近粒子からの速度補正量を計算する関数
-		static const GetCorrectionByTooNearFunc GetCorrectionByTooNearFuncTable[ParticleTypeMaxCount];
-
 		// 通常粒子の過剰接近粒子からの速度補正量を計算する
-		Vector GetCorrectionByTooNearNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double rho, const double tooNearRatio, const double tooNearCoefficient) const;
+		Vector GetCorrectionByTooNearNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double rho, const double tooNearLength, const double tooNearCoefficient) const
+		{
+			// 運動量を計算
+			auto p_i = rho * this->u;
+
+			Vector du = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
+				[this, &r_e, &rho, &tooNearLength, &tooNearCoefficient, &p_i, &particles, &grid](const Vector& sum, const Grid::BlockID block)
+			{
+				// 近傍ブロック内の粒子を取得
+				auto neighbors = grid[block];
+
+				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
+					[this, &r_e, &rho, &tooNearLength, &tooNearCoefficient, &p_i, &particles](const Vector& sum2, const int& idd)
+				{
+					const unsigned int id = static_cast<unsigned int>(idd);
+
+					namespace ublas = boost::numeric::ublas;
+
+					// 相対距離を計算
+					auto x_ij = particles[id].x - this->x;
+					double r_ij = ublas::norm_2(x_ij);
+
+					// 相対距離が過剰接近なら
+					Vector d;
+					d(0) = 0;
+					d(1) = 0;
+					if ((0 < r_ij) & (r_ij < tooNearLength))
+					{
+						// 合成運動量を計算
+						auto p = p_i + rho * particles[id].u;
+
+						// 運動量の変化量を計算
+						auto delta_p = p_i - p / 2;
+						auto abs_delta_p = ublas::inner_prod(delta_p, x_ij) / r_ij;
+
+						// 運動量が増加する方向なら
+						if (abs_delta_p > 0)
+						{
+							// 反発率をかける
+							auto p_m = (tooNearCoefficient * abs_delta_p / r_ij) * x_ij;
+
+							// 速度の修正量を計算
+							d = p_m / rho;
+						}
+					}
+
+					return static_cast<Vector>(sum2 - d);
+				});
+
+				return static_cast<Vector>(sum + duBlock);
+			});
+
+			return du;
+		}
 
 		// 移動しない粒子の過剰接近粒子からの速度補正量を計算する
 		Vector GetCorrectionByTooNearZero(const Particle::List&, const Grid&, const double, const double, const double, const double) const
 		{
 			return VectorZero;
 		}
+		// 各粒子タイプで過剰接近粒子からの速度補正量を計算する関数
+		static constexpr GetCorrectionByTooNearFunc GetCorrectionByTooNearFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetCorrectionByTooNearNormal, // 水
+			&Particle::GetCorrectionByTooNearZero,   // 壁
+			&Particle::GetCorrectionByTooNearZero,   // ダミー
+		};
 #endif
 
 
 #ifdef PRESSURE_EXPLICIT
 		// 圧力を計算する関数ポインタの型
 		typedef void(Particle::*UpdatePressureFunc)(const double c, const double rho0, const double n0);
-
-		// 各粒子タイプで圧力を計算する関数
-		static const UpdatePressureFunc UpdatePressureFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の圧力を計算する
 		void UpdatePressureNormal(const double c, const double rho0, const double n0)
@@ -335,6 +490,14 @@ namespace OpenMps
 			// 計算しない
 			p = 0;
 		}
+
+		// 各粒子タイプで圧力を計算する関数
+		static const UpdatePressureFunc UpdatePressureFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::UpdatePressureNormal, // 水
+			&Particle::UpdatePressureNormal, // 壁
+			&Particle::UpdatePressureZero,   // ダミー
+		};
 #else
 
 
@@ -345,15 +508,41 @@ namespace OpenMps
 #endif
 			const double n0, const double dt, const double surfaceRatio) const;
 
-		// 各粒子タイプで圧力方程式の生成項を計算する関数
-		static const GetPpeSourceFunc GetPpeSourceFuncTable[ParticleTypeMaxCount];
-
 		// 通常粒子の圧力方程式の生成項を計算する
 		double GetPpeSourceNormal(
 #ifdef MPS_HS
 			const Particle::List& particles, const Grid& grid, const double r_e,
 #endif
-			const double n0, const double dt, const double surfaceRatio) const;
+			const double n0, const double dt, const double surfaceRatio) const
+		{
+			// 自由表面の場合は0
+			return IsSurface(n0, surfaceRatio) ? 0
+#ifdef MPS_HS
+				// MPS-HS：b_i = Σ-1/dt/n0 r_e/r^3 u・x
+				: std::accumulate(grid.cbegin(this->x), grid.cend(this->x), 0.0,
+					[this, &r_e, &dt, &n0, &particles, &grid](const double& sum, const Grid::BlockID block)
+			{
+				// 近傍ブロック内の粒子を取得
+				auto neighbors = grid[block];
+
+				// 近傍ブロック内の粒子に対して計算
+				const double value = std::accumulate(neighbors.cbegin(), neighbors.cend(), 0.0,
+					[this, &r_e, &dt, &n0, &particles](const double& sum2, const int& idd)
+				{
+					const unsigned int id = static_cast<unsigned int>(idd);
+
+					const double value2 = particles[id].GetPpeSourceTo(*this, r_e, dt, n0);
+
+					return sum2 + value2;
+				});
+
+				return sum + value;
+			});
+#else
+				// 標準MPS法：b_i = 1/dt^2 * (n_i - n0)/n0
+				: (n - n0) / n0 / (dt*dt);
+#endif
+		}
 
 		// 圧力を持たない粒子の圧力方程式の生成項を計算する
 		double GetPpeSourceZero(
@@ -366,6 +555,14 @@ namespace OpenMps
 			return 0;
 		}
 
+		// 各粒子タイプで圧力方程式の生成項を計算する関数
+		static constexpr GetPpeSourceFunc GetPpeSourceFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetPpeSourceNormal, // 水
+			&Particle::GetPpeSourceNormal, // 壁
+			&Particle::GetPpeSourceZero,   // ダミー
+		};
+
 
 		// 圧力方程式の係数を計算する関数ポインタの型
 		typedef double(Particle::*GetPpeMatrixFunc)(const Particle& target, const double n0, const double r_e,
@@ -373,9 +570,6 @@ namespace OpenMps
 			const double lambda,
 #endif
 			const double rho, const double surfaceRatio) const;
-
-		// 各粒子タイプで圧力方程式の係数を計算する関数
-		static const GetPpeMatrixFunc GetPpeMatrixFuncTable[ParticleTypeMaxCount];
 
 		// 通常粒子の圧力方程式の係数を計算する
 		double GetPpeMatrixNormal(const Particle& target, const double n0, const double r_e,
@@ -405,14 +599,59 @@ namespace OpenMps
 		}
 #endif
 
+		// 各粒子タイプで圧力方程式の係数を計算する関数
+		static constexpr GetPpeMatrixFunc GetPpeMatrixFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetPpeMatrixNormal, // 水
+			&Particle::GetPpeMatrixNormal, // 壁
+			&Particle::GetPpeMatrixZero,   // ダミー
+		};
+
 		// 圧力勾配を計算する関数ポインタの型
 		typedef Vector(Particle::*GetPressureGradientFunc)(const Particle::List& particles, const Grid& grid, const double r_e, const double dt, const double rho, const double n0) const;
 
-		// 各粒子タイプで圧力勾配を計算する関数
-		static const GetPressureGradientFunc GetPressureGradientFuncTable[ParticleTypeMaxCount];
-
 		// 通常粒子の圧力勾配を計算する
-		Vector GetPressureGradientNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double dt, const double rho, const double n0) const;
+		Vector GetPressureGradientNormal(const Particle::List& particles, const Grid& grid, const double r_e, const double dt, const double rho, const double n0)  const
+		{
+#ifdef PRESSURE_GRADIENT_MIDPOINT
+			// 速度修正量を計算
+			Vector du = std::accumulate(grid.cbegin(this->x), grid.cend(this->x), VectorZero,
+				[this, &r_e, &dt, &rho, &n0, &particles, &grid](const Vector& sum, const Grid::BlockID block)
+			{
+				// 近傍ブロック内の粒子を取得
+				auto neighbors = grid[block];
+
+				// 近傍ブロック内の粒子に対して計算
+				Vector duBlock = std::accumulate(neighbors.cbegin(), neighbors.cend(), VectorZero,
+					[this, &r_e, &dt, &rho, &n0, &particles](const Vector& sum2, const int& idd)
+				{
+					const unsigned int id = static_cast<unsigned int>(idd);
+
+					auto duParticle = particles[id].PressureGradientTo(*this, r_e, dt, rho, n0);
+					return (Vector)(sum2 + duParticle);
+				});
+
+				return static_cast<Vector>(sum + duBlock);
+			});
+#else
+			// 最小圧力を取得する
+			auto minPparticle = std::min_element(particles.cbegin(), particles.cend(),
+				[](const Particle& base, const Particle& target)
+			{
+				return base.p < target.p;
+			});
+			const double minP = (*minPparticle).p;
+
+			// 速度修正量を計算
+			Vector du = std::accumulate(particles.cbegin(), particles.cend(), zero,
+				[this, &r_e, &dt, &rho, &n0, &minP](const Vector& sum, const Particle& particle)
+			{
+				auto du = particle.PressureGradientTo(*this, minP, r_e, dt, rho, n0);
+				return (Vector)(sum + du);
+			});
+#endif
+			return du;
+		}
 
 		// 移動しない粒子の圧力勾配を計算する
 		Vector GetPressureGradientZero(const Particle::List&, const Grid&, const double, const double, const double, const double) const
@@ -420,6 +659,14 @@ namespace OpenMps
 			// 計算しない
 			return VectorZero;
 		}
+
+		// 各粒子タイプで圧力勾配を計算する関数
+		static constexpr GetPressureGradientFunc GetPressureGradientFuncTable[ParticleTypeMaxCount] =
+		{
+			&Particle::GetPressureGradientNormal, // 水
+			&Particle::GetPressureGradientZero,   // 壁
+			&Particle::GetPressureGradientZero,   // ダミー
+		};
 
 	protected:
 		// 位置ベクトル
@@ -533,7 +780,17 @@ namespace OpenMps
 		// @param w 速度ベクトルの鉛直方向成分
 		// @param p 圧力
 		// @param n 粒子数密度
-		Particle(const ParticleType type, const double x, const double z, const double u, const double w, const double p, const double n);
+		Particle(const ParticleType type, const double x, const double z, const double u, const double w, const double p, const double n)
+			:type(type)
+		{
+			// 各物理値を初期化
+			this->x[0] = x;
+			this->x[1] = z;
+			this->u[0] = u;
+			this->u[1] = w;
+			this->p = p;
+			this->n = n;
+		}
 
 	public:
 		virtual ~Particle()

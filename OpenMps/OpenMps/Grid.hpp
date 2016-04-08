@@ -121,7 +121,10 @@ namespace OpenMps
 		};
 
 		// @param blockSize 1ブロックの大きさ
-		Grid(const double blockSize);
+		Grid(const double blockSize)
+			:blockSize(blockSize)
+		{
+		}
 
 		// その位置が属するブロックの番号を取得する
 		// @param 位置ベクトル

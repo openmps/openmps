@@ -15,17 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MpsComputer.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Particle.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="OpenMpsMain.cpp" />
-    <ClCompile Include="MpsEnvironment.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Grid.cpp">
+    <ClCompile Include="OpenMpsMain.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -45,7 +35,7 @@
     <ClInclude Include="MpsEnvironment.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Grid.hpp">
+    <ClInclude Include="..\..\..\..\..\..\%40student\yoshifuji\repo\OpenMps\OpenMps\OpenMps\Grid.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
