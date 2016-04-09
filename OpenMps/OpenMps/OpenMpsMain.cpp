@@ -263,8 +263,8 @@ int main()
 			OutputToCsv(computer, outputCount);
 
 			// 現在時刻を画面表示
-			auto t = std::time(nullptr);
-			auto tm = std::localtime(&t);
+			t = std::time(nullptr);
+			tm = std::localtime(&t);
 			std::cout << timeFormat % tComputer % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 				% timer.elapsed() << std::endl;
@@ -282,6 +282,5 @@ int main()
 
 	// 終了
 	std::cout << "finished" << std::endl;
-	system("pause");
 	return 0;
 }
