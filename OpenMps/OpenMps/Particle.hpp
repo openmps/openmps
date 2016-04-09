@@ -15,7 +15,6 @@ namespace OpenMps
 		// 粒子リスト
 		typedef std::vector<Particle> List;
 
-	protected:
 		// 粒子タイプ
 		typedef enum
 		{
@@ -569,18 +568,16 @@ namespace OpenMps
 #ifndef MPS_HL
 			const double lambda,
 #endif
-			const double rho, const double surfaceRatio) const;
+			const double rho) const;
 
 		// 通常粒子の圧力方程式の係数を計算する
 		double GetPpeMatrixNormal(const Particle& target, const double n0, const double r_e,
 #ifndef MPS_HL
 			const double lambda,
 #endif
-			const double rho, const double surfaceRatio) const
+			const double rho) const
 		{
-			// 自由表面の場合は0
-			return IsSurface(n0, surfaceRatio) ? 0
-				: target.GetPpeMatrixTarget(*this, n0, r_e,
+			return target.GetPpeMatrixTarget(*this, n0, r_e,
 #ifndef MPS_HL
 					lambda,
 #endif
@@ -592,7 +589,7 @@ namespace OpenMps
 #ifndef MPS_HL
 			const double,
 #endif
-			const double, const double) const
+			const double) const
 		{
 			// 計算しない
 			return 0;
@@ -917,13 +914,13 @@ namespace OpenMps
 #ifndef MPS_HL
 			const double lambda,
 #endif
-			const double rho, const double surfaceRatio) const
+			const double rho) const
 		{
 			return (this->*(Particle::GetPpeMatrixFuncTable[type]))(target, n0, r_e,
 #ifndef MPS_HL
 				lambda,
 #endif
-				rho, surfaceRatio);
+				rho);
 		}
 #endif
 
@@ -989,7 +986,7 @@ namespace OpenMps
 			return n;
 		}
 
-		// 圧力を取得する
+		// 種類を取得する
 		inline ParticleType Type() const
 		{
 			return type;

@@ -377,48 +377,58 @@ namespace OpenMps
 				{
 					const unsigned int i = static_cast<unsigned int>(ii);
 
+					const auto n0 = environment.N0();
+					const auto surfaceRatio = environment.SurfaceRatio;
+
 					// 対角項を初期化
 					double a_ii = 0;
 #ifdef _OPENMP
 					ppe.a_ij[i].clear();
 #endif
 
-					// 全近傍ブロックで
-					for (auto block = grid.cbegin(particles[i].VectorX()); block != grid.cend(particles[i].VectorX()); block++)
+					if ((particles[i].Type() == Particle::ParticleTypeDummy) || particles[i].IsSurface(n0, surfaceRatio))
 					{
-						// 近傍ブロック内の粒子を取得
-						auto neighborBlock = *block;
-						auto neighbors = grid[neighborBlock];
-
-						// 近傍ブロック内の粒子に対して
-						for (auto jj : neighbors)
+						a_ii = 1;
+					}
+					else
+					{
+						// 全近傍ブロックで
+						for (auto block = grid.cbegin(particles[i].VectorX()); block != grid.cend(particles[i].VectorX()); block++)
 						{
-							const unsigned int j = static_cast<unsigned int>(jj);
+							// 近傍ブロック内の粒子を取得
+							auto neighborBlock = *block;
+							auto neighbors = grid[neighborBlock];
 
-							const auto n0 = environment.N0();
-							const auto r_e = environment.R_e;
-							const auto rho = environment.Rho;
-#ifndef MPS_HL
-							const auto lambda = environment.Lambda();
-#endif
-							const auto surfaceRatio = environment.SurfaceRatio;
-							// 自分以外
-							if (i != j)
+							// 近傍ブロック内の粒子に対して
+							for (auto jj : neighbors)
 							{
-								// 非対角項を計算
-								double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e,
+								const unsigned int j = static_cast<unsigned int>(jj);
+
+								const auto r_e = environment.R_e;
+								const auto rho = environment.Rho;
 #ifndef MPS_HL
-									lambda,
+								const auto lambda = environment.Lambda();
 #endif
-									rho, surfaceRatio);
-								if (a_ij != 0)
+								// ダミー粒子と自分以外
+								if ((particles[j].Type() != Particle::ParticleTypeDummy) && (i != j))
 								{
-#ifdef _OPENMP
-									// 非対角項を格納
-									ppe.a_ij[i].push_back(Ppe::A_ij(j, a_ij));
-#else
-									A(i, j) = a_ij;
+									// 非対角項を計算
+									double a_ij = particles[i].GetPpeMatrix(particles[j], n0, r_e,
+#ifndef MPS_HL
+										lambda,
 #endif
+										rho);
+
+									// 自由表面の場合は非対角項は設定しない
+									if (!particles[j].IsSurface(n0, surfaceRatio))
+									{
+#ifdef _OPENMP
+										// 非対角項を格納
+										ppe.a_ij[i].push_back(Ppe::A_ij(j, a_ij));
+#else
+										A(i, j) = a_ij;
+#endif
+									}
 
 									// 対角項も設定
 									a_ii -= a_ij;
