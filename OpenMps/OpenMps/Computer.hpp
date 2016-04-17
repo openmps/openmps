@@ -721,13 +721,12 @@ namespace OpenMps
 		}
 
 		// 粒子を追加する
-		void AddParticle(const Particle& particle)
+		template<typename PARTICLES>
+		void AddParticles(PARTICLES&& src)
 		{
-			particles.push_back(particle);
-		}
-		void AddParticle(Particle&& particle)
-		{
-			particles.push_back(std::move(particle));
+			particles.insert(particles.end(),
+				std::make_move_iterator(src.begin()),
+				std::make_move_iterator(src.end()));
 		}
 
 		// 粒子リストを取得する

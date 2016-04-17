@@ -67,6 +67,8 @@ namespace OpenMps
 			this->p = src.p;
 			this->n = src.n;
 			const_cast<Type&>(this->type) = src.type;
+
+			return *this;
 		}
 
 		Particle& operator=(Particle&& src)
@@ -76,6 +78,8 @@ namespace OpenMps
 			this->p = src.p;
 			this->n = src.n;
 			const_cast<Type&>(this->type) = src.type;
+
+			return *this;
 		}
 
 		// 距離から重み関数を計算する

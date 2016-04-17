@@ -32,7 +32,7 @@ static void OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 }
 
 // MPS計算用の計算空間固有パラメータを作成する
-static OpenMps::Environment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
+static OpenMps::Environment MakeEnvironment(const double l_0, const double courant, const double outputInterval, const std::vector<OpenMps::Particle>& particles)
 {
 	const double g = 9.8;
 	const double rho = 998.20;
@@ -47,6 +47,21 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 	const double tooNearCoefficient = 1.5;
 #endif
 
+	// 計算空間の領域を計算
+	double minX = particles.cbegin()->X()[0];
+	double minZ = particles.cbegin()->X()[1];
+	double maxX = minX;
+	double maxZ = minZ;
+	for (auto& particle : particles)
+	{
+		const auto x = particle.X()[0];
+		const auto z = particle.X()[1];
+		minX = std::min(minX, x);
+		minZ = std::min(minZ, z);
+		maxX = std::min(maxX, x);
+		maxZ = std::min(maxZ, z);
+	}
+
 	return OpenMps::Environment(outputInterval/2, courant,
 #ifdef MODIFY_TOO_NEAR
 		tooNearRatio, tooNearCoefficient,
@@ -55,12 +70,16 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 #ifdef PRESSURE_EXPLICIT
 		c,
 #endif
-		l_0);
+		l_0,
+		minX, minZ,
+		maxX, maxZ);
 }
 
 // 粒子を作成する
-static void CreateParticles(OpenMps::Computer& computer, const double l_0)
+static auto CreateParticles(const double l_0)
 {
+	std::vector<OpenMps::Particle> particles;
+
 	// ダムブレークのモデルを作成
 	{
 		const int L = 10;
@@ -76,7 +95,7 @@ static void CreateParticles(OpenMps::Computer& computer, const double l_0)
 				particle.X()[0] = i*l_0;
 				particle.X()[1] = j*l_0;
 
-				computer.AddParticle(std::move(particle));
+				particles.push_back(std::move(particle));
 			}
 		}
 
@@ -97,10 +116,10 @@ static void CreateParticles(OpenMps::Computer& computer, const double l_0)
 				dummy2.X()[0] = x; dummy2.X()[1] = -l_0 * 3;
 				dummy3.X()[0] = x; dummy3.X()[1] = -l_0 * 4;
 
-				computer.AddParticle(std::move(wall1));
-				computer.AddParticle(std::move(dummy1));
-				computer.AddParticle(std::move(dummy2));
-				computer.AddParticle(std::move(dummy3));
+				particles.push_back(std::move(wall1));
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
 			}
 		}
 
@@ -121,10 +140,10 @@ static void CreateParticles(OpenMps::Computer& computer, const double l_0)
 				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = y;
 				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = y;
 
-				computer.AddParticle(std::move(wall1));
-				computer.AddParticle(std::move(dummy1));
-				computer.AddParticle(std::move(dummy2));
-				computer.AddParticle(std::move(dummy3));
+				particles.push_back(std::move(wall1));
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
 			}
 		}
 
@@ -143,15 +162,17 @@ static void CreateParticles(OpenMps::Computer& computer, const double l_0)
 				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = y - 4 * l_0;
 				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = y - 4 * l_0;
 
-				computer.AddParticle(std::move(dummy1));
-				computer.AddParticle(std::move(dummy2));
-				computer.AddParticle(std::move(dummy3));
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
 			}
 		}
 	}
 
 	// 粒子数を表示
-	std::cout << computer.Particles().size() << " particles" << std::endl;
+	std::cout << particles.size() << " particles" << std::endl;
+
+	return particles;
 }
 // エントリポイント
 int main()
@@ -166,15 +187,18 @@ int main()
 	const double eps = 1e-10;
 #endif
 
+	// 粒子を作成
+	auto particles = CreateParticles(l_0);
+
 	// 計算空間の初期化
 	Computer computer(
 #ifndef PRESSURE_EXPLICIT
 		eps,
 #endif
-		MakeEnvironment(l_0, courant, outputInterval));
+		MakeEnvironment(l_0, courant, outputInterval, particles));
 
-	// 粒子を配置
-	CreateParticles(computer, l_0);
+	// 粒子を追加
+	computer.AddParticles(std::move(particles));
 
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
