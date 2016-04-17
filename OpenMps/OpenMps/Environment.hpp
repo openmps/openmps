@@ -1,12 +1,12 @@
-﻿#ifndef MPSENVIRONMENT_INCLUDED
-#define MPSENVIRONMENT_INCLUDED
+﻿#ifndef ENVIRONMENT_INCLUDED
+#define ENVIRONMENT_INCLUDED
 
 #include "Vector.hpp"
 
 namespace OpenMps
 {
 	// MPS計算用の計算空間固有パラメータ
-	class MpsEnvironment
+	class Environment
 	{
 	private:
 		// 現在時刻
@@ -68,7 +68,7 @@ namespace OpenMps
 		// @param surfaceRatio 自由表面判定の係数
 		// @param c 音速
 		// @param l_0 初期粒子間距離
-		MpsEnvironment(
+		Environment(
 			const double maxDt,
 			const double courant,
 #ifdef MODIFY_TOO_NEAR
@@ -117,7 +117,7 @@ namespace OpenMps
 
 						// 重み関数を計算
 						double r = boost::numeric::ublas::norm_2(x);
-						auto w = Particle::Weight(r, R_e);
+						auto w = Particle::W(r, R_e);
 
 						// 基準粒子数密度に足す
 						n0 += w;
@@ -134,41 +134,41 @@ namespace OpenMps
 		}
 
 		// する
-		inline void SetDt(const double maxU)
+		void SetDt(const double maxU)
 		{
 			dt = (maxU == 0 ? maxDt : std::min(maxDx/maxU, maxDt));
 		}
 		// CFL条件より時間刻みを決定する
 
 		// 時刻を進める
-		inline void SetNextT()
+		void SetNextT()
 		{
 			t += dt;
 		}
 
-		inline double T() const
+		double T() const
 		{
 			return t;
 		}
 
-		inline double Dt() const
+		double Dt() const
 		{
 			return dt;
 		}
 
-		inline double N0() const
+		double N0() const
 		{
 			return n0;
 		}
 
-		inline double Lambda() const
+		double Lambda() const
 		{
 			return lambda;
 		}
 
 		// 代入演算子
 		// @param src 代入元
-		MpsEnvironment& operator=(const MpsEnvironment& src)
+		Environment& operator=(const Environment& src)
 		{	
 			this->t = src.t;
 			this->dt = src.dt;

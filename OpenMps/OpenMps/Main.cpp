@@ -1,23 +1,16 @@
 ﻿#pragma warning(push, 0)
 #include <iostream>
 #include <fstream>
-#include <typeinfo>
 #include <ctime>
+#include <type_traits>
 #include <boost/format.hpp>
-#include <boost/random.hpp>
-#include <boost/timer.hpp>
 #pragma warning(pop)
 
-#include "MpsComputer.hpp"
-
-// 粒子タイプを数値に変換する
-static int GetParticleTypeNum(const OpenMps::Particle& particle)
-{
-	return static_cast<int>(typeid(particle).hash_code());
-}
+#include "Computer.hpp"
+#include "Timer.hpp"
 
 // 計算結果をCSVへ出力する
-static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputCount)
+static void OutputToCsv(const OpenMps::Computer& computer, const int& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -27,21 +20,19 @@ static void OutputToCsv(const OpenMps::MpsComputer& computer, const int& outputC
 	output << "Type, x, z, u, w, p, n" << std::endl;
 
 	// 各粒子を出力
-	for(auto particle : computer.Particles())
+	for(const auto& particle : computer.Particles())
 	{
-		auto typeNum = GetParticleTypeNum(*particle);
-
 		output
-			<< typeNum << ", "
-			<< particle->X() << ", " << particle->Z() << ", "
-			<< particle->U() << ", " << particle->W() << ", "
-			<< particle->P() << ", "
-			<< particle->N() << std::endl;
+			<< static_cast<std::underlying_type_t<OpenMps::Particle::Type>>(particle.TYPE()) << ", "
+			<< particle.X()[0] << ", " << particle.X()[1] << ", "
+			<< particle.U()[0] << ", " << particle.U()[1] << ", "
+			<< particle.P() << ", "
+			<< particle.N() << std::endl;
 	}
 }
 
 // MPS計算用の計算空間固有パラメータを作成する
-static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
+static OpenMps::Environment MakeEnvironment(const double l_0, const double courant, const double outputInterval)
 {
 	const double g = 9.8;
 	const double rho = 998.20;
@@ -56,7 +47,7 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 	const double tooNearCoefficient = 1.5;
 #endif
 
-	return OpenMps::MpsEnvironment(outputInterval/2, courant,
+	return OpenMps::Environment(outputInterval/2, courant,
 #ifdef MODIFY_TOO_NEAR
 		tooNearRatio, tooNearCoefficient,
 #endif
@@ -68,17 +59,9 @@ static OpenMps::MpsEnvironment MakeEnvironment(const double l_0, const double co
 }
 
 // 粒子を作成する
-static OpenMps::Particle::List CreateParticles(const double l_0, const double courant)
+static void CreateParticles(OpenMps::Computer& computer, const double l_0)
 {
-	using namespace OpenMps;
-
-	// 乱数生成器
-	boost::minstd_rand gen(42);
-	boost::uniform_real<> dst(0, l_0*0.1);
-	boost::variate_generator< boost::minstd_rand&, boost::uniform_real<> > make_rand(gen, dst);
-
 	// ダムブレークのモデルを作成
-	Particle::List particles;
 	{
 		const int L = 10;
 		const int H = 20;
@@ -88,78 +71,87 @@ static OpenMps::Particle::List CreateParticles(const double l_0, const double co
 		{
 			for(int j = 0; j < H/1.5; j++)
 			{
-				double x = i*l_0;
-				double y = j*l_0;
+				auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 
-				double u = make_rand()*courant;
-				double v = make_rand()*courant;
+				particle.X()[0] = i*l_0;
+				particle.X()[1] = j*l_0;
 
-				std::shared_ptr<Particle> particle(new ParticleIncompressibleNewton(x, y, u, v, 0, 0));
-				particles.push_back(particle);
+				computer.AddParticle(std::move(particle));
 			}
 		}
 
 		// 床を追加
 		for(int i = -1; i < L+1; i++)
 		{
-			double x = i*l_0;
+			const double x = i*l_0;
 
 			// 床
 			{
-				// 粒子を作成して追加
-				std::shared_ptr<Particle> wall1(new ParticleWall(x, -l_0*1, 0, 0));
-				std::shared_ptr<Particle> dummy1(new ParticleDummy(x, -l_0*2));
-				std::shared_ptr<Particle> dummy2(new ParticleDummy(x, -l_0*3));
-				std::shared_ptr<Particle> dummy3(new ParticleDummy(x, -l_0*4));
-				particles.push_back(wall1);
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
+				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				
+				wall1.X()[0]  = x; wall1.X()[1]  = -l_0 * 1;
+				dummy1.X()[0] = x; dummy1.X()[1] = -l_0 * 2;
+				dummy2.X()[0] = x; dummy2.X()[1] = -l_0 * 3;
+				dummy3.X()[0] = x; dummy3.X()[1] = -l_0 * 4;
+
+				computer.AddParticle(std::move(wall1));
+				computer.AddParticle(std::move(dummy1));
+				computer.AddParticle(std::move(dummy2));
+				computer.AddParticle(std::move(dummy3));
 			}
 		}
 
 		// 側壁の追加
 		for(int j = 0; j < H+1; j++)
 		{
-			double y = j*l_0;
+			const double y = j*l_0;
 
 			// 左壁
 			{
-				// 粒子を作成して追加
-				std::shared_ptr<Particle> wall1(new ParticleWall(-l_0*1, y, 0, 0));
-				std::shared_ptr<Particle> dummy1(new ParticleDummy(-l_0*2, y));
-				std::shared_ptr<Particle> dummy2(new ParticleDummy(-l_0*3, y));
-				std::shared_ptr<Particle> dummy3(new ParticleDummy(-l_0*4, y));
-				particles.push_back(wall1);
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
+				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				
+				wall1.X()[0]  = -l_0 * 1; wall1.X()[1]  = y;
+				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = y;
+				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = y;
+				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = y;
+
+				computer.AddParticle(std::move(wall1));
+				computer.AddParticle(std::move(dummy1));
+				computer.AddParticle(std::move(dummy2));
+				computer.AddParticle(std::move(dummy3));
 			}
 		}
 
 		// 四隅
-		// 側壁の追加
 		for(int j = 0; j < 4; j++)
 		{
-			double y = j*l_0;
+			const double y = j*l_0;
 
 			// 左下
 			{
-				// 粒子を作成して追加
-				std::shared_ptr<Particle> dummy1(new ParticleDummy(-l_0*2, y-4*l_0));
-				std::shared_ptr<Particle> dummy2(new ParticleDummy(-l_0*3, y-4*l_0));
-				std::shared_ptr<Particle> dummy3(new ParticleDummy(-l_0*4, y-4*l_0));
-				particles.push_back(dummy1);
-				particles.push_back(dummy2);
-				particles.push_back(dummy3);
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+
+				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = y - 4 * l_0;
+				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = y - 4 * l_0;
+				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = y - 4 * l_0;
+
+				computer.AddParticle(std::move(dummy1));
+				computer.AddParticle(std::move(dummy2));
+				computer.AddParticle(std::move(dummy3));
 			}
 		}
 	}
 
 	// 粒子数を表示
-	std::cout << particles.size() << " particles" << std::endl;
-
-	return particles;
+	std::cout << computer.Particles().size() << " particles" << std::endl;
 }
 // エントリポイント
 int main()
@@ -174,24 +166,22 @@ int main()
 	const double eps = 1e-10;
 #endif
 
-	// 粒子リストと計算空間パラメーターの作成
-	const Particle::List particles = CreateParticles(l_0, courant);
-	const MpsEnvironment environment = MakeEnvironment(l_0, courant, outputInterval);
-
 	// 計算空間の初期化
-	MpsComputer computer(
+	Computer computer(
 #ifndef PRESSURE_EXPLICIT
 		eps,
 #endif
-		environment,
-		particles);
+		MakeEnvironment(l_0, courant, outputInterval));
+
+	// 粒子を配置
+	CreateParticles(computer, l_0);
 
 	// 初期状態を出力
 	OutputToCsv(computer, 0);
 
 	// 開始時間を保存
-	boost::timer timer;
-	timer.restart();
+	Timer timer;
+	timer.Start();
 	boost::format timeFormat("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
 	// 開始時間を画面表示
@@ -199,7 +189,7 @@ int main()
 	auto tm = std::localtime(&t);
 	std::cout << timeFormat % 0.0 % 0 % 0
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.elapsed() << std::endl;
+				% timer.Time() << std::endl;
 
 	// 計算が終了するまで
 	double nextOutputT = 0;
@@ -227,10 +217,10 @@ int main()
 			tm = std::localtime(&t);
 			std::cout << timeFormat % tComputer % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.elapsed() << std::endl;
+				% timer.Time() << std::endl;
 		}
 		// 計算で例外があったら
-		catch(MpsComputer::Exception ex)
+		catch(Computer::Exception ex)
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl

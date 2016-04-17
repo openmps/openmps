@@ -2,7 +2,7 @@
 #define DEFINE_INCLUDED
 
 // 次元数
-static const int DIM = 2;
+static constexpr int DIM = 2;
 
 /////////////////////////////////////////////
 // 以下は計算手法についての選択肢          //

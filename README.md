@@ -25,10 +25,12 @@ When you check out this project first, you need to
 
 ### Build
 
-0. Build codes. It is recommended to use Visual Studio 2012.
+0. Build codes. It is recommended to use Visual Studio 2015.
 
 ### Execution
-0. Run the program (Developers expect execution on Windows). Results will be output as CSV in "result" folder.0. Visualize results by visualizer. If you use ParaView,
+0. Run the program (Developers expect execution on Windows). Results will be output as CSV in "result" folder.
+0. Visualize results. If you use ParaView,
+    1. Enable PointSprite plugin on [Tools]-[Plugin Manager]-[Local Plugins]-[PointSprite_Plugin]-[Load Selected]
 	1. Open "particle_****.csv"s
 	1. Add "TablesToPoints" filter
 		* X Column = x

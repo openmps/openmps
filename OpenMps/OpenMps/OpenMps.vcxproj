@@ -79,14 +79,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="OpenMpsMain.cpp" />
+    <ClInclude Include="Computer.hpp" />
+    <ClInclude Include="defines.hpp" />
+    <ClInclude Include="Environment.hpp" />
+    <ClInclude Include="Particle.hpp" />
+    <ClInclude Include="Timer.hpp" />
+    <ClInclude Include="Vector.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="defines.hpp" />
-    <ClInclude Include="MpsComputer.hpp" />
-    <ClInclude Include="MpsEnvironment.hpp" />
-    <ClInclude Include="Particle.hpp" />
-    <ClInclude Include="Vector.hpp" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
