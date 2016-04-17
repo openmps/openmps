@@ -271,7 +271,11 @@ namespace OpenMps
 			// TODO: 全粒子探索してるので遅い
 			for(auto i = decltype(n)(0); i < n; i++)
 			{
-				sum += Detail::Invoke(Detail::Field::Get(particles, i, getter), func);
+				// 無効粒子を計算に含めることがないはず
+				if (particles[i].TYPE() != Particle::Type::Disabled)
+				{
+					sum += Detail::Invoke(Detail::Field::Get(particles, i, getter), func);
+				}
 			}
 			return sum;
 		};
@@ -304,8 +308,8 @@ namespace OpenMps
 			// 全粒子で
 			for (auto& particle : particles)
 			{
-				// ダミー粒子を除く
-				if(particle.TYPE() != Particle::Type::Dummy)
+				// ダミー粒子と無効粒子を除く
+				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
 					// 粒子数密度を計算する
 					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(0.0, [&thisX = particle.X(), &r_e](const Vector& x)
@@ -391,8 +395,8 @@ namespace OpenMps
 			// 得た圧力を代入する
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
-				// ダミー粒子は除く
-				if (particles[i].TYPE() != Particle::Type::Dummy)
+				// ダミー粒子と無効粒子は除く
+				if ((particles[i].TYPE() != Particle::Type::Dummy) && (particles[i].TYPE() != Particle::Type::Disabled))
 				{
 					const auto n0 = environment.N0();
 					const auto surfaceRatio = environment.SurfaceRatio;
@@ -471,8 +475,8 @@ namespace OpenMps
 			{
 				const auto thisN = particles[i].N();
 
-				// ダミー粒子と自由表面は0
-				if((particles[i].TYPE() == Particle::Type::Dummy) || IsSurface(thisN, n0, surfaceRatio))
+				// ダミー粒子と無効粒子と自由表面は0
+				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(thisN, n0, surfaceRatio))
 				{
 					ppe.b(i) = 0;
 					ppe.x(i) = 0;
@@ -497,8 +501,8 @@ namespace OpenMps
 			// 全粒子で
 			for (unsigned int i = 0; i < n; i++)
 			{
-				// ダミー粒子と自由表面は対角項だけ1
-				if((particles[i].TYPE() == Particle::Type::Dummy) || IsSurface(particles[i].N(), n0, surfaceRatio))
+				// ダミー粒子と無効粒子と自由表面は対角項だけ1
+				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(particles[i].N(), n0, surfaceRatio))
 				{
 					ppe.A(i, i) = 1.0;
 				}
@@ -669,6 +673,34 @@ namespace OpenMps
 				}
 			}
 		}
+		
+		// 領域外に出た粒子を無効化する
+		void DisableOutOfRange()
+		{
+			// 全粒子で
+			for(auto& particle: particles)
+			{
+				// 水粒子のみ
+				if (particle.TYPE() == Particle::Type::IncompressibleNewton)
+				{
+					const auto minX = environment.MinX;
+					const auto maxX = environment.MaxX;
+
+					const auto x = particle.X();
+
+					// 領域外なら無効化
+					if (!(
+						(minX[0] < x[0]) && (x[0] < maxX[0]) &&
+						(minX[1] < x[1]) && (x[1] < maxX[1])
+						))
+					{
+						particle.Disable();
+					}
+				}
+			}
+
+		}
+
 
 	public:
 		struct Exception
@@ -715,6 +747,9 @@ namespace OpenMps
 
 			// 第二段階の計算
 			ComputeImplicitForces();
+
+			// 領域外の粒子を無効化する
+			DisableOutOfRange();
 
 			// 時間を進める
 			environment.SetNextT();

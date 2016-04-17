@@ -10,7 +10,7 @@
 #include "Timer.hpp"
 
 // 計算結果をCSVへ出力する
-static void OutputToCsv(const OpenMps::Computer& computer, const int& outputCount)
+static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -20,6 +20,7 @@ static void OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 	output << "Type, x, z, u, w, p, n" << std::endl;
 
 	// 各粒子を出力
+	std::size_t nonDisalbeCount = 0;
 	for(const auto& particle : computer.Particles())
 	{
 		output
@@ -28,7 +29,14 @@ static void OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 			<< particle.U()[0] << ", " << particle.U()[1] << ", "
 			<< particle.P() << ", "
 			<< particle.N() << std::endl;
+
+		if (particle.TYPE() != OpenMps::Particle::Type::Disabled)
+		{
+			nonDisalbeCount++;
+		}
 	}
+
+	return nonDisalbeCount;
 }
 
 // MPS計算用の計算空間固有パラメータを作成する
@@ -58,8 +66,8 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 		const auto z = particle.X()[1];
 		minX = std::min(minX, x);
 		minZ = std::min(minZ, z);
-		maxX = std::min(maxX, x);
-		maxZ = std::min(maxZ, z);
+		maxX = std::max(maxX, x);
+		maxZ = std::max(maxZ, z);
 	}
 
 	return OpenMps::Environment(outputInterval/2, courant,
@@ -200,20 +208,23 @@ int main()
 	// 粒子を追加
 	computer.AddParticles(std::move(particles));
 
-	// 初期状態を出力
-	OutputToCsv(computer, 0);
-
 	// 開始時間を保存
 	Timer timer;
 	timer.Start();
-	boost::format timeFormat("#%3$05d: t=%1$8.4lf (%2$05d) @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
+	boost::format timeFormat("#%3$05d: t=%1$8.4lf (%2$05d), %10$12d particles, @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
-	// 開始時間を画面表示
-	auto t = std::time(nullptr);
-	auto tm = std::localtime(&t);
-	std::cout << timeFormat % 0.0 % 0 % 0
-				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.Time() << std::endl;
+	{
+		// 初期状態を出力
+		const auto count = OutputToCsv(computer, 0);
+
+		// 開始時間を画面表示
+		const auto t = std::time(nullptr);
+		const auto tm = std::localtime(&t);
+		std::cout << timeFormat % 0.0 % 0 % 0
+			% (tm->tm_mon + 1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
+			% timer.Time() % count
+			<< std::endl;
+	}
 
 	// 計算が終了するまで
 	double nextOutputT = 0;
@@ -234,14 +245,15 @@ int main()
 			}
 
 			// CSVに結果を出力
-			OutputToCsv(computer, outputCount);
+			const auto count = OutputToCsv(computer, outputCount);
 
 			// 現在時刻を画面表示
-			t = std::time(nullptr);
-			tm = std::localtime(&t);
+			const auto t = std::time(nullptr);
+			const auto tm = std::localtime(&t);
 			std::cout << timeFormat % tComputer % iteration % outputCount
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.Time() << std::endl;
+				% timer.Time() % count
+				<< std::endl;
 		}
 		// 計算で例外があったら
 		catch(Computer::Exception ex)
