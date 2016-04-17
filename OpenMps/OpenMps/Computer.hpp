@@ -391,13 +391,17 @@ namespace OpenMps
 			// 得た圧力を代入する
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
-				const auto n0 = environment.N0();
-				const auto surfaceRatio = environment.SurfaceRatio;
+				// ダミー粒子は除く
+				if (particles[i].TYPE() != Particle::Type::Dummy)
+				{
+					const auto n0 = environment.N0();
+					const auto surfaceRatio = environment.SurfaceRatio;
 
-				// 負圧であったり自由表面の場合は圧力0
-				const auto p = ppe.x(i);
-				const auto n = particles[i].N();
-				particles[i].P() = ((p < 0) || IsSurface(n, n0, surfaceRatio)) ? 0 : p;
+					// 負圧であったり自由表面の場合は圧力0
+					const auto p = ppe.x(i);
+					const auto n = particles[i].N();
+					particles[i].P() = ((p < 0) || IsSurface(n, n0, surfaceRatio)) ? 0 : p;
+				}
 			}
 #endif
 
@@ -607,14 +611,16 @@ namespace OpenMps
 			// 全粒子で
 			for (auto& particle : particles)
 			{
-				const double r_e = environment.R_e;
-				const double dt = environment.Dt();
-				const double rho = environment.Rho;
-				const double n0 = environment.N0();
-
-				// 圧力勾配を計算する
-				Vector d;
+				// 水粒子のみ
+				Vector d = VectorZero;
+				if (particle.TYPE() == Particle::Type::IncompressibleNewton)
 				{
+					const double r_e = environment.R_e;
+					const double dt = environment.Dt();
+					const double rho = environment.Rho;
+					const double n0 = environment.N0();
+
+					// 圧力勾配を計算する
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
 					d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(VectorZero,
@@ -651,12 +657,16 @@ namespace OpenMps
 			// 全粒子で
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
-				const double dt = environment.Dt();
+				// 水粒子のみ
+				if (particles[i].TYPE() == Particle::Type::IncompressibleNewton)
+				{
+					const double dt = environment.Dt();
 
-				// 位置・速度を修正
-				Vector thisDu = du[i];
-				particles[i].U() += thisDu;
-				particles[i].X() += thisDu * dt;
+					// 位置・速度を修正
+					Vector thisDu = du[i];
+					particles[i].U() += thisDu;
+					particles[i].X() += thisDu * dt;
+				}
 			}
 		}
 
