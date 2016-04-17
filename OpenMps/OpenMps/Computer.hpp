@@ -255,7 +255,14 @@ namespace OpenMps
 		template<Detail::Field::Name... FIELDS, typename FUNC, typename ZERO>
 		auto AccumulateNeighbor(ZERO&& zero, const FUNC func) const
 		{
-			constexpr auto getter = Detail::Field::GetGetters<decltype(particles), FIELDS...>();
+			// VS2015 Update2だとなぜか定数式だと評価できないと言われるので・・・
+			// c.f. https://connect.microsoft.com/VisualStudio/feedback/details/2599450
+#if _MSC_FULL_VER == 190023918
+			const
+#else
+			constexpr
+#endif
+				auto getter = Detail::Field::GetGetters<decltype(particles), FIELDS...>();
 
 			auto sum = std::move(zero);
 			const auto n = particles.size();
