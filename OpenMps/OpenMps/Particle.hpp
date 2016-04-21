@@ -8,7 +8,7 @@
 namespace OpenMps
 {
 	// 粒子
-	class Particle
+	class Particle final
 	{
 	public:
 		// 粒子の種類

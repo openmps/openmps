@@ -6,7 +6,7 @@
 namespace OpenMps
 {
 	// MPS計算用の計算空間固有パラメータ
-	class Environment
+	class Environment final
 	{
 	private:
 		// 現在時刻

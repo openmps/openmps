@@ -10,7 +10,7 @@
 namespace OpenMps
 {
 	// 近傍粒子探索用グリッド
-	class Grid
+	class Grid final
 	{
 	private:
 		// 1ブロックの長さ（影響半径に等しい）

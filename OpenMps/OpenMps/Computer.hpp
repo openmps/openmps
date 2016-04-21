@@ -40,7 +40,7 @@ namespace OpenMps
 			template<Name NAME>
 			struct GetGetter;
 			template<>
-			struct GetGetter<Name::ID>
+			struct GetGetter<Name::ID> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES&, const std::size_t i)
@@ -49,7 +49,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::X>
+			struct GetGetter<Name::X> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -58,7 +58,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::U>
+			struct GetGetter<Name::U> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -67,7 +67,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::P>
+			struct GetGetter<Name::P> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -76,7 +76,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::N>
+			struct GetGetter<Name::N> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -85,7 +85,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::Type>
+			struct GetGetter<Name::Type> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -113,7 +113,7 @@ namespace OpenMps
 			struct GetArg;
 
 			template<typename TUPLE, std::size_t I>
-			struct GetArg<TUPLE, I, true>
+			struct GetArg<TUPLE, I, true> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES&, const std::size_t, TUPLE)
@@ -122,7 +122,7 @@ namespace OpenMps
 				}
 			};
 			template<typename TUPLE, std::size_t I>
-			struct GetArg<TUPLE, I, false>
+			struct GetArg<TUPLE, I, false> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i, TUPLE getters)
@@ -144,7 +144,7 @@ namespace OpenMps
 		struct Invoker;
 
 		template<typename FUNC, typename TUPLE, std::size_t I>
-		struct Invoker<FUNC, TUPLE, I, true>
+		struct Invoker<FUNC, TUPLE, I, true> final
 		{
 			template<typename... ARGS>
 			static auto Invoke(TUPLE, FUNC func, ARGS... args)
@@ -153,7 +153,7 @@ namespace OpenMps
 			}
 		};
 		template<typename FUNC, typename TUPLE, std::size_t I>
-		struct Invoker<FUNC, TUPLE, I, false>
+		struct Invoker<FUNC, TUPLE, I, false> final
 		{
 			template<typename... ARGS>
 			static auto Invoke(TUPLE tuple, FUNC func, ARGS... args)
@@ -175,7 +175,7 @@ namespace OpenMps
 	}
 
 	// MPS法による計算空間
-	class Computer
+	class Computer final
 	{
 	private:
 		// 粒子リスト
