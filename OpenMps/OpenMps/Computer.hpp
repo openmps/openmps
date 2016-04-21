@@ -16,6 +16,7 @@
 
 #include "Particle.hpp"
 #include "Environment.hpp"
+#include "Grid.hpp"
 
 namespace OpenMps
 {
@@ -177,22 +178,25 @@ namespace OpenMps
 	class Computer
 	{
 	private:
-		// 線形方程式用の疎行列
-		using Matrix = boost::numeric::ublas::compressed_matrix<double>;
-
-		// 線形方程式用の多次元ベクトル
-		using LongVector = boost::numeric::ublas::vector<double>;
-
 		// 粒子リスト
 		std::vector<Particle> particles;
 
 		// 計算空間のパラメーター
 		Environment environment;
 
+		// 近傍粒子探索用のグリッド
+		Grid grid;
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
 		{
+			// 線形方程式用の疎行列
+			using Matrix = boost::numeric::ublas::compressed_matrix<double>;
+
+			// 線形方程式用の多次元ベクトル
+			using LongVector = boost::numeric::ublas::vector<double>;
+
 			// 係数行列
 			Matrix A;
 
@@ -280,6 +284,24 @@ namespace OpenMps
 			return sum;
 		};
 
+		// 近傍粒子探索
+		void SearchNeighbor()
+		{
+			// 全消去（TODO: 全消去じゃない形に）
+			grid.Clear();
+
+			// グリッドに格納
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				// 格納に失敗した時は領域外なので無効化する
+				const bool ok = grid.Store(particles[i].X(), i);
+				if(!ok)
+				{
+					particles[i].Disable();
+				}
+			}
+		}
 
 		// 時間刻みを決定する
 		void DetermineDt()
@@ -463,12 +485,12 @@ namespace OpenMps
 			if (n != ppe.b.size())
 			{
 				// サイズを変えて作り直し
-				ppe.A = Matrix(n, n);
-				ppe.x = LongVector(n);
-				ppe.b = LongVector(n);
-				ppe.cg.r = LongVector(n);
-				ppe.cg.p = LongVector(n);
-				ppe.cg.Ap = LongVector(n);
+				ppe.A = Ppe::Matrix(n, n);
+				ppe.x = Ppe::LongVector(n);
+				ppe.b = Ppe::LongVector(n);
+				ppe.cg.r = Ppe::LongVector(n);
+				ppe.cg.p = Ppe::LongVector(n);
+				ppe.cg.Ap = Ppe::LongVector(n);
 			}
 			// 全粒子で
 			for (unsigned int i = 0; i < n; i++)
@@ -673,34 +695,6 @@ namespace OpenMps
 				}
 			}
 		}
-		
-		// 領域外に出た粒子を無効化する
-		void DisableOutOfRange()
-		{
-			// 全粒子で
-			for(auto& particle: particles)
-			{
-				// 水粒子のみ
-				if (particle.TYPE() == Particle::Type::IncompressibleNewton)
-				{
-					const auto minX = environment.MinX;
-					const auto maxX = environment.MaxX;
-
-					const auto x = particle.X();
-
-					// 領域外なら無効化
-					if (!(
-						(minX[0] < x[0]) && (x[0] < maxX[0]) &&
-						(minX[1] < x[1]) && (x[1] < maxX[1])
-						))
-					{
-						particle.Disable();
-					}
-				}
-			}
-
-		}
-
 
 	public:
 		struct Exception
@@ -717,7 +711,8 @@ namespace OpenMps
 			const double allowableResidual,
 #endif
 			const Environment& env)
-			: environment(env)
+			: environment(env),
+			grid(env.R_e, env.L_0, env.MinX, env.MaxX)
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -735,6 +730,9 @@ namespace OpenMps
 			// 時間刻みを設定
 			DetermineDt();
 
+			// 近傍粒子探索
+			SearchNeighbor();
+
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
@@ -751,9 +749,6 @@ namespace OpenMps
 
 			// 第二段階の計算
 			ComputeImplicitForces();
-
-			// 領域外の粒子を無効化する
-			DisableOutOfRange();
 
 			// 時間を進める
 			environment.SetNextT();

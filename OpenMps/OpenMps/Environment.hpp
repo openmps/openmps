@@ -29,6 +29,9 @@ namespace OpenMps
 
 	public:
 
+		// 初期粒子間距離
+		const double L_0;
+
 		// 影響半径
 		const double R_e;
 
@@ -96,7 +99,7 @@ namespace OpenMps
 			const double l_0,
 			const double minX, const double minZ,
 			const double maxX, const double maxZ)
-			:t(0), dt(0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
+			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
 
 #ifdef MODIFY_TOO_NEAR
 			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
