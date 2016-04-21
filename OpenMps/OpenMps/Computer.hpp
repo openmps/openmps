@@ -725,6 +725,10 @@ namespace OpenMps
 #endif
 		}
 
+		Computer(const Computer&) = delete;
+		Computer(Computer&&) = delete;
+		Computer& operator=(const Computer&) = delete;
+
 		// 時間を進める
 		void ForwardTime()
 		{
@@ -774,19 +778,6 @@ namespace OpenMps
 		const Environment& Environment() const
 		{
 			return environment;
-		}
-
-		// 代入演算子
-		// @param src 代入元
-		Computer& operator=(const Computer& src)
-		{
-			this->particles = src.particles;
-#ifndef PRESSURE_EXPLICIT
-			this->ppe = src.ppe;
-#endif
-			this->environment = src.environment;
-			this->du = src.du;
-			return *this;
 		}
 	};
 }
