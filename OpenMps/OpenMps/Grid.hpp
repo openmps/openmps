@@ -2,6 +2,7 @@
 #define GRID_INCLUDED
 
 #pragma warning(push, 0)
+#include <iterator>
 #include <boost/multi_array.hpp>
 #pragma warning(pop)
 
@@ -12,6 +13,12 @@ namespace OpenMps
 	// 近傍粒子探索用グリッド
 	class Grid final
 	{
+	public:
+		using ParticleID = std::size_t;
+
+		// 探索対象ブロックの総数
+		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3; // 2次元なので
+
 	private:
 		// 1ブロックの長さ（影響半径に等しい）
 		const double blockLength;
@@ -20,13 +27,17 @@ namespace OpenMps
 		const Vector origin;
 
 		// 各ブロックの粒子番号
-		boost::multi_array<std::size_t, DIM + 1> data;
+		boost::multi_array<ParticleID, DIM + 1> data;
 
 		using Index = decltype(data)::index;
 
 		static auto Ceil(const double a, const double b)
 		{
 			return static_cast<Index>(std::ceil(a / b));
+		}
+		static auto Floor(const double a, const double b)
+		{
+			return static_cast<Index>(std::floor(a / b));
 		}
 
 		// 水平方向の最大ブロック数
@@ -39,18 +50,9 @@ namespace OpenMps
 		{
 			return static_cast<Index>(data.shape()[1]);
 		}
-		// 1ブロック内の最大粒子数
-		auto MaxParticles() const
-		{
-			return static_cast<Index>(data.shape()[2]) - 1; // 先頭の粒子数の格納分を除く
-		}
 
 		// 各ブロック内の粒子数
 		auto& ParticleCount(const Index i, const Index j)
-		{
-			return data[i][j][0]; // 先頭は粒子数を格納してある
-		}
-		auto ParticleCount(const Index i, const Index j) const
 		{
 			return data[i][j][0]; // 先頭は粒子数を格納してある
 		}
@@ -67,6 +69,14 @@ namespace OpenMps
 
 	public:
 
+		struct Exception : public std::runtime_error
+		{
+		public:
+			Exception(std::string&& msg)
+				: std::runtime_error(msg)
+			{}
+		};
+
 		// @param r_e 影響半径
 		// @param l_0 初期粒子間距離
 		// @param minX 計算空間の最小座標
@@ -75,8 +85,8 @@ namespace OpenMps
 			const Vector& minX, const Vector& maxX)
 			: blockLength(r_e), origin(minX),
 			data(boost::extents
-				[Ceil(maxX[0] - minX[0], r_e)+2] // 水平方向の最大ブロック数（少し大きめにとっておく）
-				[Ceil(maxX[1] - minX[1], r_e)+2] // 鉛直方向の最大ブロック数（少し大きめにとっておく）
+				[Ceil(maxX[0] - minX[0], r_e)+2] // 水平方向の最大ブロック数（近傍粒子探索の分を含める）
+				[Ceil(maxX[1] - minX[1], r_e)+2] // 鉛直方向の最大ブロック数（近傍粒子探索の分を含める）
 				[1 + (Ceil(r_e, l_0)+1)*(Ceil(r_e, l_0) + 1)]) // 1ブロック内の最大粒子数＋存在する粒子数
 		{}
 
@@ -98,19 +108,35 @@ namespace OpenMps
 			}
 		}
 
-		struct Exception : public std::runtime_error
+		// 対象の位置を含むブロックの水平方向の番号
+		auto BlockX(const Vector& x) const
 		{
-		public:
-			Exception(std::string&& msg)
-				: std::runtime_error(msg)
-			{}
-		};
+			return Floor(x[0] - origin[0], blockLength);
+		}
+
+		// 対象の位置を含むブロックの鉛直方向の番号
+		auto BlockZ(const Vector& x) const
+		{
+			return Floor(x[1] - origin[1], blockLength);
+		}
+
+		// 各ブロック内の粒子数
+		auto ParticleCount(const Index i, const Index j) const
+		{
+			return data[i][j][0]; // 先頭は粒子数を格納してある
+		}
+
+		// 1ブロック内の最大粒子数
+		auto MaxParticles() const
+		{
+			return static_cast<Index>(data.shape()[2]) - 1; // 先頭の粒子数の格納分を除く
+		}
 
 		// 粒子を格納する
-		bool Store(const Vector& x, const std::size_t index)
+		bool Store(const Vector& x, const ParticleID particle)
 		{
-			const auto i = Ceil(x[0] - origin[0], blockLength);
-			const auto j = Ceil(x[1] - origin[1], blockLength);
+			const auto i = BlockX(x);
+			const auto j = BlockZ(x);
 			const auto n = GridSizeX();
 			const auto m = GridSizeZ();
 
@@ -121,11 +147,12 @@ namespace OpenMps
 			{
 				const auto k = static_cast<Index>(ParticleCount(i, j));
 				const auto maxCount = MaxParticles();
-				if(k > maxCount)
+				if(k >= maxCount)
 				{
 					throw Exception("Too many particle in a block");
 				}
-				Particle(i, j, k) = index;
+				Particle(i, j, k) = particle;
+				ParticleCount(i, j) = static_cast<ParticleID>(k + 1);
 
 				return true;
 			}
@@ -133,6 +160,167 @@ namespace OpenMps
 			{
 				return false;
 			}
+		}
+
+		// 近傍粒子イテレーター
+		struct Iterator final : public std::iterator<std::input_iterator_tag, ParticleID>
+		{
+		private:
+			using Block = std::tuple<Index, Index>;
+
+			// 末尾の近傍ブロック番号（探索対象ブロックの総数）
+			static constexpr std::size_t LAST_NEIGHBOR = MAX_NEIGHBOR_BLOCK;
+
+			// 末尾も含めた近傍ブロックの総数
+			static constexpr auto MAX_NEIGHBOR = LAST_NEIGHBOR + 1;
+
+			// 今のイテレーターの遷移状態 = 粒子番号*LAST_NEIGHBOR_ID + 近傍ブロック番号
+			std::size_t index;
+
+			// 探索対象ブロック
+			const std::array<Block, LAST_NEIGHBOR> neighbor;
+
+			// 参照先のグリッド
+			const Grid& grid;
+
+			// begin用
+			// @param g 参照先のグリッド
+			// @param x 探索対象の位置
+			// @param idx 遷移状態
+			Iterator(const Grid& g, const Vector& x, const decltype(index) idx)
+				: grid(g), neighbor{
+				std::make_tuple(g.BlockX(x) - 1, g.BlockZ(x) - 1),
+				std::make_tuple(g.BlockX(x) - 1, g.BlockZ(x) + 0),
+				std::make_tuple(g.BlockX(x) - 1, g.BlockZ(x) + 1),
+				std::make_tuple(g.BlockX(x) + 0, g.BlockZ(x) - 1),
+				std::make_tuple(g.BlockX(x) + 0, g.BlockZ(x) + 0),
+				std::make_tuple(g.BlockX(x) + 0, g.BlockZ(x) + 1),
+				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) - 1),
+				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) + 0),
+				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) + 1), },
+				index(idx)
+			{
+				// 先頭ブロックが空なら次のブロックに移動しておく
+				const auto neighborIndex = index%MAX_NEIGHBOR;
+				const auto neighborBlock = neighbor[neighborIndex];
+				const auto i = std::get<0>(neighborBlock);
+				const auto j = std::get<1>(neighborBlock);
+				auto count = grid.ParticleCount(i, j);
+				if(count == 0)
+				{
+					Increment();
+				}
+			}
+
+			// end用
+			// @param g 参照先のグリッド
+			// @param idx 遷移状態
+			Iterator(const Grid& g, const decltype(index) idx)
+				: grid(g), neighbor{}, index(idx)
+			{}
+
+			void Increment()
+			{
+				const auto neighborIndex = index%MAX_NEIGHBOR;
+				const auto neighborBlock = neighbor[neighborIndex];
+				const auto i = std::get<0>(neighborBlock);
+				const auto j = std::get<1>(neighborBlock);
+				const auto k = index / MAX_NEIGHBOR;
+
+				const auto count = grid.ParticleCount(i, j);
+				if(k + 1 >= count)
+				{
+					if(neighborIndex == LAST_NEIGHBOR - 1)
+					{
+						// 次が最終ブロックなら最終ブロックに移動するだけ
+						index = LAST_NEIGHBOR;
+					}
+					else
+					{
+						// 最終ブロック以外なら、次の有効なブロックまで移動
+						const auto n = grid.GridSizeX();
+						const auto m = grid.GridSizeZ();
+						bool isValid = false;
+						for(index = neighborIndex; !isValid && (index + 1 < LAST_NEIGHBOR); index++)
+						{
+							const auto nextNeighborBlock = neighbor[index + 1];
+							const auto nextI = std::get<0>(nextNeighborBlock);
+							const auto nextJ = std::get<1>(nextNeighborBlock);
+
+							// 範囲内かつ粒子数が存在するところのみ有効
+							isValid =
+								(0 <= nextI) && (nextI < n) &&
+								(0 <= nextJ) && (nextJ < m);
+							if(isValid)
+							{
+								const auto nextCount = grid.ParticleCount(nextI, nextJ);
+								isValid = (nextCount > 0);
+							}
+						}
+					}
+				}
+				else
+				{
+					index += MAX_NEIGHBOR; // 次の粒子に移動
+				}
+			}
+
+		public:
+
+			// 先頭イテレーターを作成
+			// @param g 参照先のグリッド
+			// @param x 探索対象の位置
+			static auto CreateBegin(const Grid& g, const Vector& x)
+			{
+				return Iterator(g, x, decltype(index)(0) +
+					((g.BlockX(x) == 0) ? 3 : 0) +
+					((g.BlockZ(x) == 0) ? 1 : 0));
+			}
+
+			// 末尾イテレーターを作成
+			// @param g 参照先のグリッド
+			// @param x 探索対象の位置
+			static auto CreateEnd(const Grid& g)
+			{
+				return Iterator(g, LAST_NEIGHBOR);
+			}
+
+			Iterator& operator=(const Iterator&) = delete;
+
+			ParticleID operator*() const
+			{
+				const auto neighborIndex = index%MAX_NEIGHBOR;
+				const auto neighborBlock = neighbor[neighborIndex];
+				const auto i = std::get<0>(neighborBlock);
+				const auto j = std::get<1>(neighborBlock);
+				const auto k = static_cast<Index>(index / MAX_NEIGHBOR);
+
+				return grid.Particle(i, j, k);
+			}
+
+			Iterator& operator++()
+			{
+				Increment();
+				return *this;
+			}
+
+			bool operator==(const Iterator& it)
+			{
+				// 遷移状態が同じなら同じイテレーターとする
+				return this->index == it.index;
+			}
+		};
+
+		// 先頭イテレーターを作成
+		auto cbegin(const Vector& x) const
+		{
+			return Iterator::CreateBegin(*this, x);
+		}
+
+		// 末尾イテレーターを作成
+		auto cend() const
+		{
+			return Iterator::CreateEnd(*this);
 		}
 	};
 }

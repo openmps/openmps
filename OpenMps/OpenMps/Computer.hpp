@@ -187,6 +187,9 @@ namespace OpenMps
 		// 近傍粒子探索用のグリッド
 		Grid grid;
 
+		// 近傍粒子リスト
+		boost::multi_array<std::size_t, 2> neighbor;
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
@@ -284,6 +287,20 @@ namespace OpenMps
 			return sum;
 		};
 
+		// 近傍粒子数
+		// @param i 対象の粒子番号
+		auto& NeighborCount(const std::size_t i)
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+		}
+
+		// 近傍粒子番号
+		// @param i 対象の粒子番号
+		auto& Neighbor(const std::size_t i, const std::size_t idx)
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+		}
+
 		// 近傍粒子探索
 		void SearchNeighbor()
 		{
@@ -294,11 +311,40 @@ namespace OpenMps
 			const auto n = particles.size();
 			for(auto i = decltype(n)(0); i < n; i++)
 			{
-				// 格納に失敗した時は領域外なので無効化する
-				const bool ok = grid.Store(particles[i].X(), i);
-				if(!ok)
+				// 無効粒子は格納しない
+				if(particles[i].TYPE() != Particle::Type::Disabled)
 				{
-					particles[i].Disable();
+					// 格納に失敗した時は領域外なので無効化する
+					const bool ok = grid.Store(particles[i].X(), i);
+					if(!ok)
+					{
+						particles[i].Disable();
+					}
+				}
+			}
+
+			// 近傍粒子を格納
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				// 無効粒子は除く
+				if(particles[i].TYPE() != Particle::Type::Disabled)
+				{
+					NeighborCount(i) = 0; // 近傍粒子を消去
+
+					const auto&& begin = grid.cbegin(particles[i].X());
+					const auto&& end = grid.cend();
+					for(auto it = std::move(begin); !(it == end); ++it)
+					{
+						const auto j = *it;
+
+						// 自分自身と無効粒子は除外
+						if((j != i) && (particles[j].TYPE() != Particle::Type::Disabled))
+						{
+							const auto k = NeighborCount(i);
+							Neighbor(i, k) = j;
+							NeighborCount(i) = k + 1;
+						}
+					}
 				}
 			}
 		}
@@ -712,7 +758,8 @@ namespace OpenMps
 #endif
 			const Environment& env)
 			: environment(env),
-			grid(env.R_e, env.L_0, env.MinX, env.MaxX)
+			grid(env.R_e, env.L_0, env.MinX, env.MaxX),
+			neighbor()
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -761,6 +808,10 @@ namespace OpenMps
 			particles.insert(particles.end(),
 				std::make_move_iterator(src.begin()),
 				std::make_move_iterator(src.end()));
+
+			neighbor.resize(boost::extents
+				[static_cast<decltype(neighbor)::index>(particles.size())]
+				[1 + static_cast<decltype(neighbor)::index>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
 		}
 
 		// 粒子リストを取得する
