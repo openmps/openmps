@@ -4,7 +4,7 @@
 #include <chrono>
 
 // 時間計測
-class Timer
+class Timer final
 {
 private:
 	std::chrono::time_point<std::chrono::system_clock> begin;

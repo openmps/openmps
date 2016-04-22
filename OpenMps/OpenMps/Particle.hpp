@@ -8,15 +8,23 @@
 namespace OpenMps
 {
 	// 粒子
-	class Particle
+	class Particle final
 	{
 	public:
 		// 粒子の種類
 		enum class Type
 		{
+			// 非圧縮性ニュートン流体（水など）
 			IncompressibleNewton,
+
+			// 壁面
 			Wall,
+
+			// ダミー粒子
 			Dummy,
+
+			// 無効粒子
+			Disabled,
 		};
 
 	private:
@@ -33,7 +41,7 @@ namespace OpenMps
 		double n;
 
 		// 粒子の種類
-		const Type type;
+		Type type;
 
 	public:
 		Particle(const Type t)
@@ -66,7 +74,9 @@ namespace OpenMps
 			this->u = src.u;
 			this->p = src.p;
 			this->n = src.n;
-			const_cast<Type&>(this->type) = src.type;
+			this->type = src.type;
+
+			return *this;
 		}
 
 		Particle& operator=(Particle&& src)
@@ -75,7 +85,15 @@ namespace OpenMps
 			this->u = std::move(src.u);
 			this->p = src.p;
 			this->n = src.n;
-			const_cast<Type&>(this->type) = src.type;
+			this->type = src.type;
+
+			return *this;
+		}
+
+		// 粒子を無効化する
+		void Disable()
+		{
+			this->type = Type::Disabled;
 		}
 
 		// 距離から重み関数を計算する

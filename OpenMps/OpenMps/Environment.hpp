@@ -6,7 +6,7 @@
 namespace OpenMps
 {
 	// MPS計算用の計算空間固有パラメータ
-	class Environment
+	class Environment final
 	{
 	private:
 		// 現在時刻
@@ -28,6 +28,9 @@ namespace OpenMps
 		const double maxDx;
 
 	public:
+
+		// 初期粒子間距離
+		const double L_0;
 
 		// 影響半径
 		const double R_e;
@@ -57,6 +60,15 @@ namespace OpenMps
 		const double C;
 #endif
 
+		// 計算空間の最小座標
+		const Vector MinX;
+
+		// 計算空間の最大座標
+		const Vector MaxX;
+
+		// 近傍粒子として保持する距離
+		const double NeighborLength;
+
 		// @param maxDt 最大時間刻み（出力時間刻み以下など）
 		// @param courant クーラン数
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
@@ -68,6 +80,10 @@ namespace OpenMps
 		// @param surfaceRatio 自由表面判定の係数
 		// @param c 音速
 		// @param l_0 初期粒子間距離
+		// @param minX 計算空間の最小X座標
+		// @param minZ 計算空間の最小Z座標
+		// @param maxX 計算空間の最大X座標
+		// @param maxZ 計算空間の最大Z座標
 		Environment(
 			const double maxDt,
 			const double courant,
@@ -83,8 +99,10 @@ namespace OpenMps
 #ifdef PRESSURE_EXPLICIT
 			const double c,
 #endif
-			const double l_0)
-			:t(0), dt(0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
+			const double l_0,
+			const double minX, const double minZ,
+			const double maxX, const double maxZ)
+			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
 
 #ifdef MODIFY_TOO_NEAR
 			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
@@ -93,31 +111,31 @@ namespace OpenMps
 			C(c),
 
 			// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
-			maxDt(std::min(maxDt, (courant*l_0) / c))
+			maxDt(std::min(maxDt, (courant*l_0) / c)),
 #else
 			// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
-			maxDt(std::min(maxDt, std::sqrt(2 * (courant*l_0) / g)))
+			maxDt(std::min(maxDt, std::sqrt(2 * (courant*l_0) / g))),
 #endif
+			MinX(CreateVector(minX, minZ)), MaxX(CreateVector(maxX, maxZ)),
+			NeighborLength(r_eByl_0 * l_0 * (1 + courant*2)) // 計算の安定化のためクーラン数の2倍の距離までを近傍粒子として保持する
 		{
 			// 基準粒子数密度とλの計算
-			int range = (int)std::ceil(r_eByl_0);
+			const auto range = static_cast<int>(std::ceil(r_eByl_0));
 			n0 = 0;
 			lambda = 0;
-			for (int i = -range; i < range; i++)
+			for (auto i = -range; i < range; i++)
 			{
-				for (int j = -range; j < range; j++)
+				for (auto j = -range; j < range; j++)
 				{
 					// 自分以外との
 					if (!((i == 0) && (j == 0)))
 					{
 						// 相対位置を計算
-						Vector x;
-						x[0] = i*l_0;
-						x[1] = j*l_0;
+						const auto x = CreateVector(i*l_0, j*l_0);
 
 						// 重み関数を計算
-						double r = boost::numeric::ublas::norm_2(x);
-						auto w = Particle::W(r, R_e);
+						const auto r = boost::numeric::ublas::norm_2(x);
+						const auto w = Particle::W(r, R_e);
 
 						// 基準粒子数密度に足す
 						n0 += w;

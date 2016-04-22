@@ -20,7 +20,7 @@ namespace OpenMps
 	using Vector = boost::numeric::ublas::c_vector<double, DIM>;
 
 	// 2次元ベクトルを作成する
-	static inline Vector CreateVector(const double v1, const double v2)
+	static Vector CreateVector(const double v1, const double v2)
 	{
 		Vector vec;
 		vec[0] = v1;

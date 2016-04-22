@@ -16,6 +16,7 @@
 
 #include "Particle.hpp"
 #include "Environment.hpp"
+#include "Grid.hpp"
 
 namespace OpenMps
 {
@@ -39,7 +40,7 @@ namespace OpenMps
 			template<Name NAME>
 			struct GetGetter;
 			template<>
-			struct GetGetter<Name::ID>
+			struct GetGetter<Name::ID> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES&, const std::size_t i)
@@ -48,7 +49,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::X>
+			struct GetGetter<Name::X> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -57,7 +58,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::U>
+			struct GetGetter<Name::U> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -66,7 +67,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::P>
+			struct GetGetter<Name::P> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -75,7 +76,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::N>
+			struct GetGetter<Name::N> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -84,7 +85,7 @@ namespace OpenMps
 				}
 			};
 			template<>
-			struct GetGetter<Name::Type>
+			struct GetGetter<Name::Type> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i)
@@ -112,7 +113,7 @@ namespace OpenMps
 			struct GetArg;
 
 			template<typename TUPLE, std::size_t I>
-			struct GetArg<TUPLE, I, true>
+			struct GetArg<TUPLE, I, true> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES&, const std::size_t, TUPLE)
@@ -121,7 +122,7 @@ namespace OpenMps
 				}
 			};
 			template<typename TUPLE, std::size_t I>
-			struct GetArg<TUPLE, I, false>
+			struct GetArg<TUPLE, I, false> final
 			{
 				template<typename PARTICLES>
 				static auto Get(const PARTICLES& particles, const std::size_t i, TUPLE getters)
@@ -143,7 +144,7 @@ namespace OpenMps
 		struct Invoker;
 
 		template<typename FUNC, typename TUPLE, std::size_t I>
-		struct Invoker<FUNC, TUPLE, I, true>
+		struct Invoker<FUNC, TUPLE, I, true> final
 		{
 			template<typename... ARGS>
 			static auto Invoke(TUPLE, FUNC func, ARGS... args)
@@ -152,7 +153,7 @@ namespace OpenMps
 			}
 		};
 		template<typename FUNC, typename TUPLE, std::size_t I>
-		struct Invoker<FUNC, TUPLE, I, false>
+		struct Invoker<FUNC, TUPLE, I, false> final
 		{
 			template<typename... ARGS>
 			static auto Invoke(TUPLE tuple, FUNC func, ARGS... args)
@@ -174,25 +175,31 @@ namespace OpenMps
 	}
 
 	// MPS法による計算空間
-	class Computer
+	class Computer final
 	{
 	private:
-		// 線形方程式用の疎行列
-		using Matrix = boost::numeric::ublas::compressed_matrix<double>;
-
-		// 線形方程式用の多次元ベクトル
-		using LongVector = boost::numeric::ublas::vector<double>;
-
 		// 粒子リスト
 		std::vector<Particle> particles;
 
 		// 計算空間のパラメーター
 		Environment environment;
 
+		// 近傍粒子探索用のグリッド
+		Grid grid;
+
+		// 近傍粒子リスト
+		boost::multi_array<std::size_t, 2> neighbor;
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
 		{
+			// 線形方程式用の疎行列
+			using Matrix = boost::numeric::ublas::compressed_matrix<double>;
+
+			// 線形方程式用の多次元ベクトル
+			using LongVector = boost::numeric::ublas::vector<double>;
+
 			// 係数行列
 			Matrix A;
 
@@ -253,7 +260,7 @@ namespace OpenMps
 		// @param zero 初期値
 		// @param func 相互作用関数
 		template<Detail::Field::Name... FIELDS, typename FUNC, typename ZERO>
-		auto AccumulateNeighbor(ZERO&& zero, const FUNC func) const
+		auto AccumulateNeighbor(const std::size_t i, ZERO&& zero, const FUNC func) const
 		{
 			// VS2015 Update2だとなぜか定数式だと評価できないと言われるので・・・
 			// c.f. https://connect.microsoft.com/VisualStudio/feedback/details/2599450
@@ -265,17 +272,95 @@ namespace OpenMps
 				auto getter = Detail::Field::GetGetters<decltype(particles), FIELDS...>();
 
 			auto sum = std::move(zero);
-			const auto n = particles.size();
 
 			// 他の粒子に対して
-			// TODO: 全粒子探索してるので遅い
-			for(auto i = decltype(n)(0); i < n; i++)
+			const auto n = NeighborCount(i);
+			for(auto idx = decltype(n)(0); idx < n; idx++)
 			{
-				sum += Detail::Invoke(Detail::Field::Get(particles, i, getter), func);
+				const auto j = Neighbor(i, idx);
+
+				// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
+				sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
 			}
+
 			return sum;
 		};
 
+		// 近傍粒子数
+		// @param i 対象の粒子番号
+		auto& NeighborCount(const std::size_t i)
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+		}
+		auto NeighborCount(const std::size_t i) const
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+		}
+
+		// 近傍粒子番号
+		// @param i 対象の粒子番号
+		auto& Neighbor(const std::size_t i, const std::size_t idx)
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+		}
+		auto Neighbor(const std::size_t i, const std::size_t idx) const
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+		}
+
+		// 近傍粒子探索
+		void SearchNeighbor()
+		{
+			// 全消去（TODO: 全消去じゃない形に）
+			grid.Clear();
+
+			// グリッドに格納
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				// 無効粒子は格納しない
+				if(particles[i].TYPE() != Particle::Type::Disabled)
+				{
+					// 格納に失敗した時は領域外なので無効化する
+					const bool ok = grid.Store(particles[i].X(), i);
+					if(!ok)
+					{
+						particles[i].Disable();
+					}
+				}
+			}
+
+			// 近傍粒子を格納
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				// 無効粒子は除く
+				if(particles[i].TYPE() != Particle::Type::Disabled)
+				{
+					auto idx = 0;
+
+					const auto&& begin = grid.cbegin(particles[i].X());
+					const auto&& end = grid.cend();
+					for(auto it = std::move(begin); !(it == end); ++it)
+					{
+						const auto j = *it;
+
+						// 自分自身と無効粒子は除外
+						if((j != i) && (particles[j].TYPE() != Particle::Type::Disabled))
+						{
+							// 半径内なら近傍粒子とする
+							const auto r = R(particles[i], particles[j]);
+							if(r < environment.NeighborLength)
+							{
+								Neighbor(i, idx) = j;
+								idx++;
+							}
+						}
+					}
+
+					NeighborCount(i) = idx;
+				}
+			}
+		}
 
 		// 時間刻みを決定する
 		void DetermineDt()
@@ -302,13 +387,16 @@ namespace OpenMps
 			const double r_e = environment.R_e;
 
 			// 全粒子で
-			for (auto& particle : particles)
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
 			{
-				// ダミー粒子を除く
-				if(particle.TYPE() != Particle::Type::Dummy)
+				auto& particle = particles[i];
+
+				// ダミー粒子と無効粒子を除く
+				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
 					// 粒子数密度を計算する
-					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(0.0, [&thisX = particle.X(), &r_e](const Vector& x)
+					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(i, 0.0, [&thisX = particle.X(), &r_e](const Vector& x)
 					{
 						return Particle::W(R(thisX, x), r_e);
 					});
@@ -331,8 +419,11 @@ namespace OpenMps
 			a.clear();
 
 			// 全粒子で
-			for (auto& particle : particles)
-			{	
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				auto& particle = particles[i];
+
 				// 重力の計算
 				auto d = g;
 
@@ -340,7 +431,7 @@ namespace OpenMps
 				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
 				{
 					// 粘性の計算
-					auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(VectorZero,
+					auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 					[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
 					{
 						// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
@@ -391,8 +482,8 @@ namespace OpenMps
 			// 得た圧力を代入する
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
-				// ダミー粒子は除く
-				if (particles[i].TYPE() != Particle::Type::Dummy)
+				// ダミー粒子と無効粒子は除く
+				if ((particles[i].TYPE() != Particle::Type::Dummy) && (particles[i].TYPE() != Particle::Type::Disabled))
 				{
 					const auto n0 = environment.N0();
 					const auto surfaceRatio = environment.SurfaceRatio;
@@ -459,20 +550,20 @@ namespace OpenMps
 			if (n != ppe.b.size())
 			{
 				// サイズを変えて作り直し
-				ppe.A = Matrix(n, n);
-				ppe.x = LongVector(n);
-				ppe.b = LongVector(n);
-				ppe.cg.r = LongVector(n);
-				ppe.cg.p = LongVector(n);
-				ppe.cg.Ap = LongVector(n);
+				ppe.A = Ppe::Matrix(n, n);
+				ppe.x = Ppe::LongVector(n);
+				ppe.b = Ppe::LongVector(n);
+				ppe.cg.r = Ppe::LongVector(n);
+				ppe.cg.p = Ppe::LongVector(n);
+				ppe.cg.Ap = Ppe::LongVector(n);
 			}
 			// 全粒子で
 			for (unsigned int i = 0; i < n; i++)
 			{
 				const auto thisN = particles[i].N();
 
-				// ダミー粒子と自由表面は0
-				if((particles[i].TYPE() == Particle::Type::Dummy) || IsSurface(thisN, n0, surfaceRatio))
+				// ダミー粒子と無効粒子と自由表面は0
+				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(thisN, n0, surfaceRatio))
 				{
 					ppe.b(i) = 0;
 					ppe.x(i) = 0;
@@ -495,17 +586,17 @@ namespace OpenMps
 			ppe.A.clear();
 
 			// 全粒子で
-			for (unsigned int i = 0; i < n; i++)
+			for(auto i = decltype(n)(0); i < n; i++)
 			{
-				// ダミー粒子と自由表面は対角項だけ1
-				if((particles[i].TYPE() == Particle::Type::Dummy) || IsSurface(particles[i].N(), n0, surfaceRatio))
+				// ダミー粒子と無効粒子と自由表面は対角項だけ1
+				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(particles[i].N(), n0, surfaceRatio))
 				{
 					ppe.A(i, i) = 1.0;
 				}
 				else
 				{
 					// 対角項を設定
-					ppe.A(i, i) = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(0.0,
+					ppe.A(i, i) = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
 					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio, &A = ppe.A](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
 						// ダミー粒子と自分以外
@@ -609,8 +700,11 @@ namespace OpenMps
 			du.clear();
 
 			// 全粒子で
-			for (auto& particle : particles)
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
 			{
+				auto& particle = particles[i];
+
 				// 水粒子のみ
 				Vector d = VectorZero;
 				if (particle.TYPE() == Particle::Type::IncompressibleNewton)
@@ -623,7 +717,7 @@ namespace OpenMps
 					// 圧力勾配を計算する
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
-					d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(VectorZero,
+					d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(i, VectorZero,
 					[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x)
 					{
 						namespace ublas = boost::numeric::ublas;
@@ -685,7 +779,9 @@ namespace OpenMps
 			const double allowableResidual,
 #endif
 			const Environment& env)
-			: environment(env)
+			: environment(env),
+			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
+			neighbor()
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -693,11 +789,19 @@ namespace OpenMps
 #endif
 		}
 
+		Computer(const Computer&) = delete;
+		Computer(Computer&&) = delete;
+		Computer& operator=(const Computer&) = delete;
+
 		// 時間を進める
 		void ForwardTime()
 		{
 			// 時間刻みを設定
 			DetermineDt();
+
+			// 近傍粒子探索
+			// ※近傍粒子半径を大きめにとっているので1回で良い
+			SearchNeighbor();
 
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
@@ -721,13 +825,16 @@ namespace OpenMps
 		}
 
 		// 粒子を追加する
-		void AddParticle(const Particle& particle)
+		template<typename PARTICLES>
+		void AddParticles(PARTICLES&& src)
 		{
-			particles.push_back(particle);
-		}
-		void AddParticle(Particle&& particle)
-		{
-			particles.push_back(std::move(particle));
+			particles.insert(particles.end(),
+				std::make_move_iterator(src.begin()),
+				std::make_move_iterator(src.end()));
+
+			neighbor.resize(boost::extents
+				[static_cast<decltype(neighbor)::index>(particles.size())]
+				[1 + static_cast<decltype(neighbor)::index>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
 		}
 
 		// 粒子リストを取得する
@@ -740,19 +847,6 @@ namespace OpenMps
 		const Environment& Environment() const
 		{
 			return environment;
-		}
-
-		// 代入演算子
-		// @param src 代入元
-		Computer& operator=(const Computer& src)
-		{
-			this->particles = src.particles;
-#ifndef PRESSURE_EXPLICIT
-			this->ppe = src.ppe;
-#endif
-			this->environment = src.environment;
-			this->du = src.du;
-			return *this;
 		}
 	};
 }
