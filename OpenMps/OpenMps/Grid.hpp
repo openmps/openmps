@@ -77,17 +77,17 @@ namespace OpenMps
 			{}
 		};
 
-		// @param r_e 影響半径
+		// @param neighborLength 近傍粒子半径
 		// @param l_0 初期粒子間距離
 		// @param minX 計算空間の最小座標
 		// @param maxX 計算空間の最大座標
-		Grid(const double r_e, const double l_0,
+		Grid(const double neighborLength, const double l_0,
 			const Vector& minX, const Vector& maxX)
-			: blockLength(r_e), origin(minX),
+			: blockLength(neighborLength), origin(minX),
 			data(boost::extents
-				[Ceil(maxX[0] - minX[0], r_e)+2] // 水平方向の最大ブロック数（近傍粒子探索の分を含める）
-				[Ceil(maxX[1] - minX[1], r_e)+2] // 鉛直方向の最大ブロック数（近傍粒子探索の分を含める）
-				[1 + (Ceil(r_e, l_0)+1)*(Ceil(r_e, l_0) + 1)]) // 1ブロック内の最大粒子数＋存在する粒子数
+				[Ceil(maxX[0] - minX[0], neighborLength)+2] // 水平方向の最大ブロック数（近傍粒子探索の分を含める）
+				[Ceil(maxX[1] - minX[1], neighborLength)+2] // 鉛直方向の最大ブロック数（近傍粒子探索の分を含める）
+				[1 + (Ceil(neighborLength, l_0)+1)*(Ceil(neighborLength, l_0) + 1)]) // 1ブロック内の最大粒子数＋存在する粒子数
 		{}
 
 		Grid(const Grid&) = delete;
@@ -256,6 +256,10 @@ namespace OpenMps
 								const auto nextCount = grid.ParticleCount(nextI, nextJ);
 								isValid = (nextCount > 0);
 							}
+						}
+						if(!isValid) // 最後まで空のブロックが続くなら末尾に移動
+						{
+							index = LAST_NEIGHBOR;
 						}
 					}
 				}
