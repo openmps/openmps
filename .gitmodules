@@ -1,0 +1,3 @@
+[submodule "OpenMps/FDPS"]
+	path = OpenMps/FDPS
+	url = https://github.com/aokomoriuta/FDPS.git
