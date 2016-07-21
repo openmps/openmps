@@ -22,6 +22,6 @@ static constexpr int DIM = 2;
 // 圧力の計算に陽解法を用いる場合に指定する
 // 　長所：1ステップの計算が陰解法に比べて非常に高速
 // 　短所：時間刻みが小さくなる・弱圧縮を許容する
-// #define PRESSURE_EXPLICIT
+#define PRESSURE_EXPLICIT
 
 #endif

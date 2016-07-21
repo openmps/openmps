@@ -461,16 +461,20 @@ namespace OpenMps
 		void ComputeImplicitForces()
 		{
 #ifdef PRESSURE_EXPLICIT
-			// 得た圧力を計算する
+			// 圧力を計算する
 			for(unsigned int i = 0; i < particles.size(); i++)
 			{
 				const auto c = environment.C;
 				const auto n0 = environment.N0();
-				const auto rho = environment.Rho;
+				const auto rho0 = environment.Rho;
 
 				auto& particle = particles[i];
 
-				particle->UpdatePressure(c, rho, n0);
+				// 仮想的な密度：ρ0/n0 * n
+				const auto rho = rho0 / n0 * particle.N();
+
+				// 圧力の計算：c^2 (ρ-ρ0)（基準密度以下なら圧力は発生しない）
+				particle.P() = (rho <= rho0) ? 0 : c*c*(rho - rho0);
 			}
 #else
 			// 圧力方程式を設定

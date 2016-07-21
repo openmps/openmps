@@ -90,8 +90,8 @@ static auto CreateParticles(const double l_0)
 
 	// ダムブレークのモデルを作成
 	{
-		const int L = 10;
-		const int H = 20;
+		const int L = 20;
+		const int H = 40;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)
