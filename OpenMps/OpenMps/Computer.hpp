@@ -336,7 +336,7 @@ namespace OpenMps
 				// 無効粒子は除く
 				if(particles[i].TYPE() != Particle::Type::Disabled)
 				{
-					auto idx = 0;
+					auto idx = decltype(i)(0);
 
 					const auto&& begin = grid.cbegin(particles[i].X());
 					const auto&& end = grid.cend();
