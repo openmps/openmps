@@ -32,6 +32,9 @@ namespace OpenMps
 		// 粒子数密度の計算機
 		ParticleSimulator::TreeForForceShort<ParticleNumberDensity, Particle, Particle>::Gather particleNumberDensity;
 
+		// 陽的計算による力の計算機
+		ParticleSimulator::TreeForForceShort<Force, Particle, Particle>::Gather explicitForce;
+
 		// 計算空間のパラメーター
 		Environment environment;
 
@@ -134,7 +137,8 @@ namespace OpenMps
 			{
 				for(auto i = decltype(nTarget)(0); i < nTarget; i++)
 				{
-					if((targets[i].TYPE() != Particle::Type::Disabled) && (targets[i].TYPE() != Particle::Type::Dummy)) // 無効粒子とダミー粒子以外
+					// 無効粒子とダミー粒子以外
+					if((targets[i].TYPE() != Particle::Type::Disabled) && (targets[i].TYPE() != Particle::Type::Dummy))
 					{
 						const auto r_e = targets[i].R_e();
 						const auto x = targets[i].X();
@@ -142,73 +146,77 @@ namespace OpenMps
 						double sum = 0;
 						for(auto j = decltype(nNeighbors)(0); j < nNeighbors; j++)
 						{
-							if(neighbors[j].TYPE() != Particle::Type::Disabled) // 無効粒子以外
+							// 無効粒子以外
+							if(neighbors[j].TYPE() != Particle::Type::Disabled)
 							{
 								const auto dr = (neighbors[j].X() - x);
 								const auto r = std::sqrt(dr*dr);
 								sum += Particle::W(r, r_e);
 							}
 						}
-						pnd[i] = sum;
+						pnd[i].val = sum;
 					}
 				}
 			}, particles, domain);
 		}
 
-#if 0
-		// 陽的にで解く部分（第一段階）を計算する
+		// 陽的に解く部分（第一段階）を計算する
 		void ComputeExplicitForces()
 		{
-			const auto n0 = environment.N0();
-			const auto r_e = environment.R_e;
-			const auto lambda = environment.Lambda();
-			const auto nu = environment.Nu;
-			const auto dt = environment.Dt();
-			const auto g = environment.G;
-
-			// 加速度を全初期化
-			auto& a = du;
-			a.clear();
-
-			// 全粒子で
-			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+			explicitForce.calcForceAllAndWriteBack([
+				n0 = environment.N0(),
+				g = environment.G,
+				nu = environment.Nu,
+				dt = environment.Dt(),
+				lambda = environment.Lambda()](
+				const Particle targets[], const std::int32_t nTarget,
+				const Particle neighbors[], const std::int32_t nNeighbors,
+				Force force[])
 			{
-				auto& particle = particles[i];
-
-				// 重力の計算
-				auto d = g;
-
-				// 水粒子のみ
-				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
+				for(auto i = decltype(nTarget)(0); i < nTarget; i++)
 				{
-					// 粘性の計算
-					auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-					[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
+					// 水粒子のみ
+					if(targets[i].TYPE() == Particle::Type::IncompressibleNewton)
 					{
-						// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
-						const double w = (type == Particle::Type::Dummy) ? 0 : Particle::W(R(thisX, x), r_e);
-						return (w == 0) ? VectorZero : ((nu * 2 * DIM / lambda / n0 * w)*(u - thisU));
-					});
+						auto f = g;
 
-					d += vis;
+						const auto r_e = targets[i].R_e();
+						const auto x = targets[i].X();
+						const auto u = targets[i].U();
+
+						for(auto j = decltype(nNeighbors)(0); j < nNeighbors; j++)
+						{
+							// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
+							if((neighbors[j].TYPE() != Particle::Type::Disabled) && (neighbors[j].TYPE() != Particle::Type::Disabled))
+							{
+								const auto dr = (neighbors[j].X() - x);
+								const auto r = std::sqrt(dr*dr);
+								const double w = Particle::W(r, r_e);
+
+								f += ((nu * 2 * DIM / lambda / n0 * w)*(neighbors[j].U() - u));
+							}
+						}
+						force[i].val = f;
+					}
 				}
-				a.push_back(d);
-			}
+			}, particles, domain);
 
 			// 全粒子で
-			for (unsigned int i = 0; i < particles.size(); i++)
+			const auto dt = environment.Dt();
+			const auto n = particles.getNumberOfParticleGlobal();
+			for (unsigned int i = 0; i < n; i++)
 			{
 				// 水粒子のみ
 				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
 				{
 					// 位置・速度を修正
-					particles[i].U() += a[i] * dt;
-					particles[i].X() += particles[i].U()* dt;
+					particles[i].U() += particles[i].A() * dt;
+					particles[i].X() += particles[i].U() * dt;
 				}
 			}
 		}
 
+#if 0
 		// 陰的にで解く部分（第ニ段階）を計算する
 		void ComputeImplicitForces()
 		{
@@ -561,7 +569,6 @@ namespace OpenMps
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
-			/*
 			// 第一段階の計算
 			ComputeExplicitForces();
 
@@ -573,6 +580,7 @@ namespace OpenMps
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
+			/*
 			// 第二段階の計算
 			ComputeImplicitForces();
 			*/
@@ -598,6 +606,7 @@ namespace OpenMps
 				ParticleSimulator::F64vec(10, 10)); // 開放条件の場合呼ぶ必要はないが後のことも考えて一応
 
 			particleNumberDensity.initialize(n);
+			explicitForce.initialize(n);
 
 			for(auto i = decltype(n)(0); i < n; i++)
 			{

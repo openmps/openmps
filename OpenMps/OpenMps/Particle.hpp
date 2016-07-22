@@ -37,13 +37,16 @@ namespace OpenMps
 		double p;
 
 		// 粒子数密度
-		ParticleNumberDensity n;
+		double n;
 
 		// 粒子の種類
 		Type type;
 
 		// 影響半径
 		double r_e;
+
+		// 作業バッファー
+		Force force;
 
 	public:
 		Particle()
@@ -147,11 +150,11 @@ namespace OpenMps
 		// 速度ベクトル
 		const auto& U() const
 		{
-			return x;
+			return u;
 		}
 		auto& U()
 		{
-			return x;
+			return u;
 		}
 
 		// 圧力
@@ -175,7 +178,7 @@ namespace OpenMps
 		}
 		void copyFromForce(const ParticleNumberDensity& src)
 		{
-			n.val = src.val;
+			n = src.val;
 		}
 
 		// 種類
@@ -192,6 +195,20 @@ namespace OpenMps
 		auto getRSearch() const
 		{
 			return R_e();
+		}
+
+		// 力
+		const auto& A() const
+		{
+			return force.val;
+		}
+		const auto& Du() const
+		{
+			return force.val;
+		}
+		void copyFromForce(const Force& src)
+		{
+			force.val = src.val;
 		}
 	};
 }

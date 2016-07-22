@@ -23,7 +23,7 @@ static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 	output << "Type, x, z, u, w, p, n" << std::endl;
 
 	// 各粒子を出力
-	std::size_t nonDisalbeCount = 0;
+	std::size_t nonDisableCount = 0;
 	const auto n = computer.Particles().getNumberOfParticleGlobal();
 	for(auto i = decltype(n)(0); i < n; i++)
 	{
@@ -34,15 +34,15 @@ static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 			<< particle.X().x << ", " << particle.X().y << ", "
 			<< particle.U().x << ", " << particle.U().y << ", "
 			<< particle.P() << ", "
-			<< particle.N().val << std::endl;
+			<< particle.N() << std::endl;
 
 		if(particle.TYPE() != OpenMps::Particle::Type::Disabled)
 		{
-			nonDisalbeCount++;
+			nonDisableCount++;
 		}
 	}
 
-	return nonDisalbeCount;
+	return nonDisableCount;
 }
 
 // MPS計算用の計算空間固有パラメータを作成する
@@ -112,6 +112,7 @@ static auto CreateParticles(const double l_0, const double r_e)
 			}
 		}
 
+		/*
 		// 床を追加
 		for(int i = -1; i < L + 1; i++)
 		{
@@ -135,6 +136,7 @@ static auto CreateParticles(const double l_0, const double r_e)
 				particles.push_back(std::move(dummy3));
 			}
 		}
+		*/
 
 		// 側壁の追加
 		for(int j = 0; j < H + 1; j++)

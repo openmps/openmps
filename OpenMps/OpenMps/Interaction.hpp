@@ -16,13 +16,21 @@ namespace OpenMps
 			: val(0)
 		{}
 
-		ParticleNumberDensity(const double v)
-			: val(v)
-		{}
-
 		void clear()
 		{
 			val = 0;
+		}
+	};
+
+	// 力
+	struct Force
+	{
+		PS::F64vec val;
+
+		void clear()
+		{
+			val.x = 0;
+			val.y = 0;
 		}
 	};
 }
