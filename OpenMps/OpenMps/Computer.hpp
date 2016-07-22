@@ -1,12 +1,15 @@
 ﻿#ifndef COMPUTER_INCLUDED
 #define COMPUTER_INCLUDED
-#pragma warning(push, 0)
-#include <vector>
 
+#include "Particle.hpp"
+#include "Environment.hpp"
+
+#pragma warning(push, 0)
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #endif
+#include <vector>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #ifdef __clang__
@@ -14,181 +17,23 @@
 #endif
 #pragma warning(pop)
 
-#include "Particle.hpp"
-#include "Environment.hpp"
-#include "Grid.hpp"
-
 namespace OpenMps
 {
-	namespace Detail
-	{
-		namespace Field
-		{
-			enum class Name
-			{
-				ID,
-				X,
-				U,
-				P,
-				N,
-				Type,
-			};
-
-			template<typename T, typename PARTICLES>
-			using Getter = T (*)(const PARTICLES& particles, const std::size_t i);
-
-			template<Name NAME>
-			struct GetGetter;
-			template<>
-			struct GetGetter<Name::ID> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES&, const std::size_t i)
-				{
-					return i;
-				}
-			};
-			template<>
-			struct GetGetter<Name::X> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
-				{
-					return particles[i].X();
-				}
-			};
-			template<>
-			struct GetGetter<Name::U> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
-				{
-					return particles[i].U();
-				}
-			};
-			template<>
-			struct GetGetter<Name::P> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
-				{
-					return particles[i].P();
-				}
-			};
-			template<>
-			struct GetGetter<Name::N> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
-				{
-					return particles[i].N();
-				}
-			};
-			template<>
-			struct GetGetter<Name::Type> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
-				{
-					return particles[i].TYPE();
-				}
-			};
-
-			template<typename PARTICLES, Name NAME>
-			constexpr auto GetGetters()
-			{
-				return std::make_tuple(&GetGetter<NAME>::Get<PARTICLES>);
-			}
-
-			template<typename PARTICLES, Name NAME0, Name NAME1, Name... NAMES>
-			constexpr auto GetGetters()
-			{
-				return std::tuple_cat(
-					GetGetters<PARTICLES, NAME0>(),
-					GetGetters<PARTICLES, NAME1, NAMES...>());
-			}
-
-
-			template<typename TUPLE, std::size_t I = 0, bool IS_END = (I == std::tuple_size<TUPLE>::value)>
-			struct GetArg;
-
-			template<typename TUPLE, std::size_t I>
-			struct GetArg<TUPLE, I, true> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES&, const std::size_t, TUPLE)
-				{
-					return std::make_tuple();
-				}
-			};
-			template<typename TUPLE, std::size_t I>
-			struct GetArg<TUPLE, I, false> final
-			{
-				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i, TUPLE getters)
-				{
-					return std::tuple_cat(
-						std::make_tuple(std::get<I>(getters)(particles, i)),
-						GetArg<TUPLE, I+1>::Get(particles, i, getters));
-				}
-			};
-
-			template<typename PARTICLES, typename... Ts>
-			auto Get(const PARTICLES& particles, const std::size_t i, std::tuple<Getter<Ts, PARTICLES>...> getters)
-			{
-				return GetArg<decltype(getters)>::Get(particles, i, getters);
-			}
-		}
-
-		template<typename FUNC, typename TUPLE, std::size_t I = 0, bool IS_END = (I == std::tuple_size<TUPLE>::value)>
-		struct Invoker;
-
-		template<typename FUNC, typename TUPLE, std::size_t I>
-		struct Invoker<FUNC, TUPLE, I, true> final
-		{
-			template<typename... ARGS>
-			static auto Invoke(TUPLE, FUNC func, ARGS... args)
-			{
-				return func(std::forward<ARGS>(args)...);
-			}
-		};
-		template<typename FUNC, typename TUPLE, std::size_t I>
-		struct Invoker<FUNC, TUPLE, I, false> final
-		{
-			template<typename... ARGS>
-			static auto Invoke(TUPLE tuple, FUNC func, ARGS... args)
-			{
-				return Invoker<FUNC, TUPLE, I + 1>::Invoke(tuple, func, std::forward<ARGS>(args)..., std::get<I>(tuple));
-			}
-
-			static auto Invoke(TUPLE tuple, FUNC func)
-			{
-				return Invoker<FUNC, TUPLE, I + 1>::Invoke(tuple, func, std::get<I>(tuple));
-			}
-		};
-
-		template<typename FUNC, typename... ARGS>
-		auto Invoke(std::tuple<ARGS...> tuple, FUNC func)
-		{
-			return Invoker<FUNC, decltype(tuple)>::Invoke(tuple, func);
-		}
-	}
-
 	// MPS法による計算空間
 	class Computer final
 	{
 	private:
-		// 粒子リスト
-		std::vector<Particle> particles;
+		// 粒子群
+		ParticleSimulator::ParticleSystem<Particle> particles;
+
+		// 領域
+		ParticleSimulator::DomainInfo domain;
+
+		// 粒子数密度の計算機
+		ParticleSimulator::TreeForForceShort<ParticleNumberDensity, Particle, Particle>::Gather particleNumberDensity;
 
 		// 計算空間のパラメーター
 		Environment environment;
-
-		// 近傍粒子探索用のグリッド
-		Grid grid;
-
-		// 近傍粒子リスト
-		boost::multi_array<std::size_t, 2> neighbor;
 
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
@@ -227,16 +72,13 @@ namespace OpenMps
 		} ppe;
 #endif
 
-		// 速度修正量
-		std::vector<Vector> du;
-
 		// 2点間の距離を計算する
 		// @param x1 点1
 		// @param x2 点2
-		static double R(const Vector& x1, const Vector& x2)
+		static double R(const PS::F64vec& x1, const PS::F64vec& x2)
 		{
 			const auto r = x1 - x2;
-			return std::sqrt(boost::numeric::ublas::inner_prod(r, r));
+			return std::sqrt(r*r);
 		}
 		// 2粒子間の距離を計算する
 		// @param p1 粒子1
@@ -255,111 +97,12 @@ namespace OpenMps
 			return n / n0 < surfaceRatio;
 		}
 
-		// 近傍粒子との相互作用を計算する
-		// @tparam FIELDS 必要な粒子の物理量
-		// @param zero 初期値
-		// @param func 相互作用関数
-		template<Detail::Field::Name... FIELDS, typename FUNC, typename ZERO>
-		auto AccumulateNeighbor(const std::size_t i, ZERO&& zero, const FUNC func) const
-		{
-			// VS2015 Update2だとなぜか定数式だと評価できないと言われるので・・・
-			// c.f. https://connect.microsoft.com/VisualStudio/feedback/details/2599450
-#if _MSC_FULL_VER == 190023918
-			const
-#else
-			constexpr
-#endif
-				auto getter = Detail::Field::GetGetters<decltype(particles), FIELDS...>();
-
-			auto sum = std::move(zero);
-
-			// 他の粒子に対して
-			const auto n = NeighborCount(i);
-			for(auto idx = decltype(n)(0); idx < n; idx++)
-			{
-				const auto j = Neighbor(i, idx);
-
-				// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
-				sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
-			}
-
-			return sum;
-		};
-
-		// 近傍粒子数
-		// @param i 対象の粒子番号
-		auto& NeighborCount(const std::size_t i)
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
-		}
-		auto NeighborCount(const std::size_t i) const
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
-		}
-
-		// 近傍粒子番号
-		// @param i 対象の粒子番号
-		auto& Neighbor(const std::size_t i, const std::size_t idx)
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
-		}
-		auto Neighbor(const std::size_t i, const std::size_t idx) const
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
-		}
-
 		// 近傍粒子探索
 		void SearchNeighbor()
 		{
-			// 全消去（TODO: 全消去じゃない形に）
-			grid.Clear();
+			domain.decomposeDomainAll(particles);
 
-			// グリッドに格納
-			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
-			{
-				// 無効粒子は格納しない
-				if(particles[i].TYPE() != Particle::Type::Disabled)
-				{
-					// 格納に失敗した時は領域外なので無効化する
-					const bool ok = grid.Store(particles[i].X(), i);
-					if(!ok)
-					{
-						particles[i].Disable();
-					}
-				}
-			}
-
-			// 近傍粒子を格納
-			for(auto i = decltype(n)(0); i < n; i++)
-			{
-				// 無効粒子は除く
-				if(particles[i].TYPE() != Particle::Type::Disabled)
-				{
-					auto idx = decltype(i)(0);
-
-					const auto&& begin = grid.cbegin(particles[i].X());
-					const auto&& end = grid.cend();
-					for(auto it = std::move(begin); !(it == end); ++it)
-					{
-						const auto j = *it;
-
-						// 自分自身と無効粒子は除外
-						if((j != i) && (particles[j].TYPE() != Particle::Type::Disabled))
-						{
-							// 半径内なら近傍粒子とする
-							const auto r = R(particles[i], particles[j]);
-							if(r < environment.NeighborLength)
-							{
-								Neighbor(i, idx) = j;
-								idx++;
-							}
-						}
-					}
-
-					NeighborCount(i) = idx;
-				}
-			}
+			particles.exchangeParticle(domain);
 		}
 
 		// 時間刻みを決定する
@@ -367,15 +110,15 @@ namespace OpenMps
 		{
 			namespace ublas = boost::numeric::ublas;
 
-			// 最大速度を取得
-			const auto maxUParticle = *std::max_element(particles.cbegin(), particles.cend(),
-				[](const Particle& base, const Particle& target)
+			const auto n = particles.getNumberOfParticleGlobal();
+			double max = 0;
+			for(auto i = decltype(n)(0); i < n; i++)
 			{
-				const auto& baseU = base.U();
-				const auto& targetU = target.U();
-				return (ublas::inner_prod(baseU, baseU) < ublas::inner_prod(targetU, targetU));
-			});
-			const auto maxU = ublas::norm_2(maxUParticle.U());
+				const auto u = particles[i].U();
+				const auto val = u*u;
+				max = std::max(max, val);
+			}
+			const double maxU = std::sqrt(max);
 
 			// 時間刻みを設定
 			environment.SetDt(maxU);
@@ -384,26 +127,35 @@ namespace OpenMps
 		// 粒子数密度を計算する
 		void ComputeNeighborDensities()
 		{
-			const double r_e = environment.R_e;
-
-			// 全粒子で
-			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+			particleNumberDensity.calcForceAllAndWriteBack([](
+				const Particle targets[], const std::int32_t nTarget,
+				const Particle neighbors[], const std::int32_t nNeighbors,
+				ParticleNumberDensity pnd[])
 			{
-				auto& particle = particles[i];
-
-				// ダミー粒子と無効粒子を除く
-				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
+				for(auto i = decltype(nTarget)(0); i < nTarget; i++)
 				{
-					// 粒子数密度を計算する
-					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(i, 0.0, [&thisX = particle.X(), &r_e](const Vector& x)
+					if((targets[i].TYPE() != Particle::Type::Disabled) && (targets[i].TYPE() != Particle::Type::Dummy)) // 無効粒子とダミー粒子以外
 					{
-						return Particle::W(R(thisX, x), r_e);
-					});
+						const auto r_e = targets[i].R_e();
+						const auto x = targets[i].X();
+
+						double sum = 0;
+						for(auto j = decltype(nNeighbors)(0); j < nNeighbors; j++)
+						{
+							if(neighbors[j].TYPE() != Particle::Type::Disabled) // 無効粒子以外
+							{
+								const auto dr = (neighbors[j].X() - x);
+								const auto r = std::sqrt(dr*dr);
+								sum += Particle::W(r, r_e);
+							}
+						}
+						pnd[i] = sum;
+					}
 				}
-			}
+			}, particles, domain);
 		}
 
+#if 0
 		// 陽的にで解く部分（第一段階）を計算する
 		void ComputeExplicitForces()
 		{
@@ -767,6 +519,7 @@ namespace OpenMps
 				}
 			}
 		}
+#endif
 
 	public:
 		struct Exception
@@ -783,9 +536,7 @@ namespace OpenMps
 			const double allowableResidual,
 #endif
 			const Environment& env)
-			: environment(env),
-			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
-			neighbor()
+			: environment(env)
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -810,6 +561,7 @@ namespace OpenMps
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
+			/*
 			// 第一段階の計算
 			ComputeExplicitForces();
 
@@ -823,6 +575,7 @@ namespace OpenMps
 
 			// 第二段階の計算
 			ComputeImplicitForces();
+			*/
 
 			// 時間を進める
 			environment.SetNextT();
@@ -830,15 +583,26 @@ namespace OpenMps
 
 		// 粒子を追加する
 		template<typename PARTICLES>
-		void AddParticles(PARTICLES&& src)
+		void Initialize(PARTICLES&& src)
 		{
-			particles.insert(particles.end(),
-				std::make_move_iterator(src.begin()),
-				std::make_move_iterator(src.end()));
+			const auto n = src.size();
 
-			neighbor.resize(boost::extents
-				[static_cast<decltype(neighbor)::index>(particles.size())]
-				[1 + static_cast<decltype(neighbor)::index>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
+			particles.initialize();
+			particles.setNumberOfParticleLocal(n);
+
+			domain.initialize();
+
+			domain.setBoundaryCondition(ParticleSimulator::BOUNDARY_CONDITION_OPEN);
+			domain.setPosRootDomain(
+				ParticleSimulator::F64vec(environment.MinX[0], 0),
+				ParticleSimulator::F64vec(10, 10)); // 開放条件の場合呼ぶ必要はないが後のことも考えて一応
+
+			particleNumberDensity.initialize(n);
+
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				particles[i] = src[i];
+			}
 		}
 
 		// 粒子リストを取得する

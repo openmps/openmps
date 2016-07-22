@@ -18,9 +18,6 @@
     <ClInclude Include="Particle.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Vector.hpp">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="defines.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -33,7 +30,7 @@
     <ClInclude Include="Environment.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Grid.hpp">
+    <ClInclude Include="Interaction.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

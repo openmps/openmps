@@ -1,7 +1,7 @@
 ﻿#ifndef ENVIRONMENT_INCLUDED
 #define ENVIRONMENT_INCLUDED
 
-#include "Vector.hpp"
+#include <particle_simulator.hpp>
 
 namespace OpenMps
 {
@@ -36,7 +36,7 @@ namespace OpenMps
 		const double R_e;
 
 		// 重力加速度
-		const Vector G;
+		const PS::F64vec G;
 
 		// 密度
 		const double Rho;
@@ -61,10 +61,10 @@ namespace OpenMps
 #endif
 
 		// 計算空間の最小座標
-		const Vector MinX;
+		const PS::F64vec MinX;
 
 		// 計算空間の最大座標
-		const Vector MaxX;
+		const PS::F64vec MaxX;
 
 		// 近傍粒子として保持する距離
 		const double NeighborLength;
@@ -102,7 +102,7 @@ namespace OpenMps
 			const double l_0,
 			const double minX, const double minZ,
 			const double maxX, const double maxZ)
-			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
+			:t(0), dt(0), L_0(l_0), G(0, -g), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
 
 #ifdef MODIFY_TOO_NEAR
 			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
@@ -116,7 +116,7 @@ namespace OpenMps
 			// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
 			maxDt(std::min(maxDt, std::sqrt(2 * (courant*l_0) / g))),
 #endif
-			MinX(CreateVector(minX, minZ)), MaxX(CreateVector(maxX, maxZ)),
+			MinX(minX, minZ), MaxX(maxX, maxZ),
 			NeighborLength(r_eByl_0 * l_0 * (1 + courant*2)) // 計算の安定化のためクーラン数の2倍の距離までを近傍粒子として保持する
 		{
 			// 基準粒子数密度とλの計算
@@ -131,10 +131,10 @@ namespace OpenMps
 					if (!((i == 0) && (j == 0)))
 					{
 						// 相対位置を計算
-						const auto x = CreateVector(i*l_0, j*l_0);
+						const auto x = PS::F64vec(i*l_0, j*l_0);
 
 						// 重み関数を計算
-						const auto r = boost::numeric::ublas::norm_2(x);
+						const auto r = std::sqrt(x*x);
 						const auto w = Particle::W(r, R_e);
 
 						// 基準粒子数密度に足す
@@ -195,7 +195,7 @@ namespace OpenMps
 			const_cast<double&>(this->maxDt) = src.maxDt;
 			const_cast<double&>(this->maxDx) = src.maxDx;
 			const_cast<double&>(this->R_e) = src.R_e;
-			const_cast<Vector&>(this->G) = src.G;
+			const_cast<std::remove_const_t<decltype(this->G)>&>(this->G) = src.G;
 			const_cast<double&>(this->Rho) = src.Rho;
 			const_cast<double&>(this->Nu) = src.Nu;
 			const_cast<double&>(this->SurfaceRatio) = src.SurfaceRatio;

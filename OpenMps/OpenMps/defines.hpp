@@ -4,6 +4,8 @@
 // 次元数
 static constexpr int DIM = 2;
 
+#define PARTICLE_SIMULATOR_TWO_DIMENSION
+
 /////////////////////////////////////////////
 // 以下は計算手法についての選択肢          //
 // 何も指定しなければ標準MPS法が採用される //

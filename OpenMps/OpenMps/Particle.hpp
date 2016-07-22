@@ -2,8 +2,7 @@
 #define PARTICLE_INCLUDED
 
 #include "defines.hpp"
-#include "Vector.hpp"
-#include <numeric>
+#include "Interaction.hpp"
 
 namespace OpenMps
 {
@@ -29,27 +28,40 @@ namespace OpenMps
 
 	private:
 		// 位置ベクトル
-		Vector x;
+		PS::F64vec x;
 
 		// 速度ベクトル
-		Vector u;
+		PS::F64vec u;
 
 		// 圧力
 		double p;
 
 		// 粒子数密度
-		double n;
+		ParticleNumberDensity n;
 
 		// 粒子の種類
 		Type type;
 
+		// 影響半径
+		double r_e;
+
 	public:
-		Particle(const Type t)
-			: x(VectorZero),
-			u(VectorZero),
+		Particle()
+			: x(0, 0),
+			u(0, 0),
 			p(0),
 			n(0),
-			type(t)
+			type(Type::Disabled),
+			r_e(0)
+		{}
+
+		Particle(const Type t, const double re)
+			: x(0, 0),
+			u(0, 0),
+			p(0),
+			n(0),
+			type(t),
+			r_e(re)
 		{}
 
 		Particle(const Particle& src)
@@ -57,7 +69,8 @@ namespace OpenMps
 			u(src.u),
 			p(src.p),
 			n(src.n),
-			type(src.type)
+			type(src.type),
+			r_e(src.r_e)
 		{}
 
 		Particle(Particle&& src)
@@ -65,17 +78,13 @@ namespace OpenMps
 			u(std::move(src.u)),
 			p(src.p),
 			n(src.n),
-			type(src.type)
+			type(src.type),
+			r_e(src.r_e)
 		{}
 
 		Particle& operator=(const Particle& src)
 		{
-			this->x = src.x;
-			this->u = src.u;
-			this->p = src.p;
-			this->n = src.n;
-			this->type = src.type;
-
+			Copy(src);
 			return *this;
 		}
 
@@ -86,23 +95,31 @@ namespace OpenMps
 			this->p = src.p;
 			this->n = src.n;
 			this->type = src.type;
+			this->r_e = src.r_e;
 
 			return *this;
 		}
 
-		// 粒子を無効化する
-		void Disable()
-		{
-			this->type = Type::Disabled;
-		}
-
 		// 距離から重み関数を計算する
 		// @param r 距離
-		// @param r_e 影響半径
 		static double W(const double r, const double r_e)
 		{
 			// 影響半径内ならr_e/r-1を返す（ただし距離0の場合は0）
 			return ((0 < r) && (r < r_e)) ? (r_e / r - 1) : 0;
+		}
+
+		void Copy(const Particle& src)
+		{
+			this->x = src.x;
+			this->u = src.u;
+			this->p = src.p;
+			this->n = src.n;
+			this->type = src.type;
+			this->r_e = src.r_e;
+		}
+		void copyFromFP(const Particle& src)
+		{
+			Copy(src);
 		}
 
 		////////////////
@@ -118,15 +135,23 @@ namespace OpenMps
 		{
 			return x;
 		}
+		auto getPos() const
+		{
+			return X();
+		}
+		void setPos(const decltype(x)& src)
+		{
+			x = src;
+		}
 
 		// 速度ベクトル
 		const auto& U() const
 		{
-			return u;
+			return x;
 		}
 		auto& U()
 		{
-			return u;
+			return x;
 		}
 
 		// 圧力
@@ -148,11 +173,25 @@ namespace OpenMps
 		{
 			return n;
 		}
+		void copyFromForce(const ParticleNumberDensity& src)
+		{
+			n.val = src.val;
+		}
 
 		// 種類
 		const auto& TYPE() const
 		{
 			return type;
+		}
+
+		// 影響半径
+		const auto& R_e() const
+		{
+			return r_e;
+		}
+		auto getRSearch() const
+		{
+			return R_e();
 		}
 	};
 }
