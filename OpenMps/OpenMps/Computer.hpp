@@ -33,7 +33,7 @@ namespace OpenMps
 		ParticleSimulator::TreeForForceShort<ParticleNumberDensity, Particle, Particle>::Gather particleNumberDensity;
 
 		// 陽的計算による力の計算機
-		ParticleSimulator::TreeForForceShort<Force, Particle, Particle>::Gather explicitForce;
+		ParticleSimulator::TreeForForceShort<Force, Particle, Particle>::Gather force;
 
 		// 計算空間のパラメーター
 		Environment environment;
@@ -149,8 +149,8 @@ namespace OpenMps
 							// 無効粒子以外
 							if(neighbors[j].TYPE() != Particle::Type::Disabled)
 							{
-								const auto dr = (neighbors[j].X() - x);
-								const auto r = std::sqrt(dr*dr);
+								const auto dx = (neighbors[j].X() - x);
+								const auto r = std::sqrt(dx*dx);
 								sum += Particle::W(r, r_e);
 							}
 						}
@@ -163,7 +163,7 @@ namespace OpenMps
 		// 陽的に解く部分（第一段階）を計算する
 		void ComputeExplicitForces()
 		{
-			explicitForce.calcForceAllAndWriteBack([
+			force.calcForceAllAndWriteBack([
 				n0 = environment.N0(),
 				g = environment.G,
 				nu = environment.Nu,
@@ -171,14 +171,14 @@ namespace OpenMps
 				lambda = environment.Lambda()](
 				const Particle targets[], const std::int32_t nTarget,
 				const Particle neighbors[], const std::int32_t nNeighbors,
-				Force force[])
+				Force f[])
 			{
 				for(auto i = decltype(nTarget)(0); i < nTarget; i++)
 				{
 					// 水粒子のみ
 					if(targets[i].TYPE() == Particle::Type::IncompressibleNewton)
 					{
-						auto f = g;
+						auto a = g;
 
 						const auto r_e = targets[i].R_e();
 						const auto x = targets[i].X();
@@ -186,17 +186,17 @@ namespace OpenMps
 
 						for(auto j = decltype(nNeighbors)(0); j < nNeighbors; j++)
 						{
-							// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
 							if((neighbors[j].TYPE() != Particle::Type::Disabled) && (neighbors[j].TYPE() != Particle::Type::Disabled))
 							{
-								const auto dr = (neighbors[j].X() - x);
-								const auto r = std::sqrt(dr*dr);
+								const auto dx = (neighbors[j].X() - x);
+								const auto r = std::sqrt(dx*dx);
 								const double w = Particle::W(r, r_e);
 
-								f += ((nu * 2 * DIM / lambda / n0 * w)*(neighbors[j].U() - u));
+								// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
+								a += ((nu * 2 * DIM / lambda / n0 * w)*(neighbors[j].U() - u));
 							}
 						}
-						force[i].val = f;
+						f[i].val = a;
 					}
 				}
 			}, particles, domain);
@@ -204,7 +204,7 @@ namespace OpenMps
 			// 全粒子で
 			const auto dt = environment.Dt();
 			const auto n = particles.getNumberOfParticleGlobal();
-			for (unsigned int i = 0; i < n; i++)
+			for (auto i = decltype(n)(0); i < n; i++)
 			{
 				// 水粒子のみ
 				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
@@ -216,13 +216,13 @@ namespace OpenMps
 			}
 		}
 
-#if 0
 		// 陰的にで解く部分（第ニ段階）を計算する
 		void ComputeImplicitForces()
 		{
 #ifdef PRESSURE_EXPLICIT
 			// 圧力を計算する
-			for(unsigned int i = 0; i < particles.size(); i++)
+			const auto n = particles.getNumberOfParticleGlobal();
+			for(auto i = decltype(n)(0); i < n; i++)
 			{
 				const auto c = environment.C;
 				const auto n0 = environment.N0();
@@ -460,74 +460,83 @@ namespace OpenMps
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient()
 		{
-			// 速度修正量を全初期化
-			du.clear();
+
+			force.calcForceAllAndWriteBack([
+				n0 = environment.N0(),
+					g = environment.G,
+					rho = environment.Rho,
+					dt = environment.Dt(),
+					lambda = environment.Lambda()](
+						const Particle targets[], const std::int32_t nTarget,
+						const Particle neighbors[], const std::int32_t nNeighbors,
+						Force f[])
+				{
+					for(auto i = decltype(nTarget)(0); i < nTarget; i++)
+					{
+						// 水粒子のみ
+						if(targets[i].TYPE() == Particle::Type::IncompressibleNewton)
+						{
+							auto du = PS::F64vec(0, 0);
+
+							const auto r_e = targets[i].R_e();
+							const auto x = targets[i].X();
+							const auto p = targets[i].P();
+							
+							for(auto j = decltype(nNeighbors)(0); j < nNeighbors; j++)
+							{
+								// 圧力勾配を計算する
+#ifdef PRESSURE_GRADIENT_MIDPOINT
+								// 速度修正量を計算
+								if((neighbors[j].TYPE() != Particle::Type::Disabled) && (neighbors[j].TYPE() != Particle::Type::Disabled))
+								{
+									const auto dx = (neighbors[j].X() - x);
+									const auto r2 = dx*dx;
+
+									if(r2 > 0)
+									{
+										const auto r = std::sqrt(r2);
+										const double w = Particle::W(r, r_e);
+
+										// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx（ただし自分自身からは影響を受けない）
+										du += (-dt / rho * DIM / n0 * (neighbors[j].P() + p) / r2 * w) * dx;
+									}
+								}
+#else
+								// 最小圧力を取得する
+								auto minPparticle = std::min_element(particles.cbegin(), particles.cend(),
+									[](const Particle::Ptr& base, const Particle::Ptr& target)
+								{
+									return base->p < target->p;
+								});
+
+								// 速度修正量を計算
+								d = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
+									[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
+								{
+									auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
+									return (Vector)(sum + du);
+								});
+#endif
+							}
+							f[i].val = du;
+						}
+					}
+				}, particles, domain);
 
 			// 全粒子で
-			const auto n = particles.size();
+			const auto dt = environment.Dt();
+			const auto n = particles.getNumberOfParticleGlobal();
 			for(auto i = decltype(n)(0); i < n; i++)
 			{
-				auto& particle = particles[i];
-
 				// 水粒子のみ
-				Vector d = VectorZero;
-				if (particle.TYPE() == Particle::Type::IncompressibleNewton)
+				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
 				{
-					const double r_e = environment.R_e;
-					const double dt = environment.Dt();
-					const double rho = environment.Rho;
-					const double n0 = environment.N0();
-
-					// 圧力勾配を計算する
-#ifdef PRESSURE_GRADIENT_MIDPOINT
-					// 速度修正量を計算
-					d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(i, VectorZero,
-					[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x)
-					{
-						namespace ublas = boost::numeric::ublas;
-
-						// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx（ただし自分自身からは影響を受けない）
-						const auto dx = x - thisX;
-						const auto r2 = ublas::inner_prod(dx, dx);
-						const auto result = -dt / rho * DIM / n0 * (p + thisP) / r2 * Particle::W(R(x, thisX), r_e);
-						return r2 == 0 ? VectorZero : (result * dx);
-					});
-#else
-					// 最小圧力を取得する
-					auto minPparticle = std::min_element(particles.cbegin(), particles.cend(),
-						[](const Particle::Ptr& base, const Particle::Ptr& target)
-					{
-						return base->p < target->p;
-					});
-
-					// 速度修正量を計算
-					d = std::accumulate(particles.cbegin(), particles.cend(), VectorZero,
-						[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
-					{
-						auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
-						return (Vector)(sum + du);
-					});
-#endif
-				}
-				du.push_back(d);
-			}
-
-			// 全粒子で
-			for (unsigned int i = 0; i < particles.size(); i++)
-			{
-				// 水粒子のみ
-				if (particles[i].TYPE() == Particle::Type::IncompressibleNewton)
-				{
-					const double dt = environment.Dt();
-
 					// 位置・速度を修正
-					Vector thisDu = du[i];
-					particles[i].U() += thisDu;
-					particles[i].X() += thisDu * dt;
+					particles[i].U() += particles[i].Du();
+					particles[i].X() += particles[i].Du() * dt;
 				}
 			}
 		}
-#endif
 
 	public:
 		struct Exception
@@ -563,7 +572,6 @@ namespace OpenMps
 			DetermineDt();
 
 			// 近傍粒子探索
-			// ※近傍粒子半径を大きめにとっているので1回で良い
 			SearchNeighbor();
 
 			// 粒子数密度を計算する
@@ -576,14 +584,14 @@ namespace OpenMps
 			// 過剰接近粒子の補正
 			ModifyTooNear();
 #endif
+			// 近傍粒子探索
+			SearchNeighbor();
 
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
-			/*
 			// 第二段階の計算
 			ComputeImplicitForces();
-			*/
 
 			// 時間を進める
 			environment.SetNextT();
@@ -606,7 +614,7 @@ namespace OpenMps
 				ParticleSimulator::F64vec(10, 10)); // 開放条件の場合呼ぶ必要はないが後のことも考えて一応
 
 			particleNumberDensity.initialize(n);
-			explicitForce.initialize(n);
+			force.initialize(n);
 
 			for(auto i = decltype(n)(0); i < n; i++)
 			{

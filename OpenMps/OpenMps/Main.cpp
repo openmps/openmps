@@ -112,7 +112,6 @@ static auto CreateParticles(const double l_0, const double r_e)
 			}
 		}
 
-		/*
 		// 床を追加
 		for(int i = -1; i < L + 1; i++)
 		{
@@ -136,7 +135,6 @@ static auto CreateParticles(const double l_0, const double r_e)
 				particles.push_back(std::move(dummy3));
 			}
 		}
-		*/
 
 		// 側壁の追加
 		for(int j = 0; j < H + 1; j++)
