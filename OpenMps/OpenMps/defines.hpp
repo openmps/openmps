@@ -24,4 +24,9 @@ static constexpr int DIM = 2;
 // 　短所：時間刻みが小さくなる・弱圧縮を許容する
 // #define PRESSURE_EXPLICIT
 
+// HS法（高精度生成項）, Khayyer and Gotoh (2009)
+//   長所：高精度化
+//   短所：なし
+#define MPS_HS
+
 #endif
