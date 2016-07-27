@@ -26,7 +26,7 @@ static constexpr int DIM = 2;
 
 // HS法（高精度生成項）, Khayyer and Gotoh (2009)
 //   長所：高精度化
-//   短所：なし
+//   短所：計算負荷の微増
 #define MPS_HS
 
 // HL法（高精度ラプラシアン）, Khayyer and Gotoh (2010)

@@ -408,7 +408,41 @@ namespace OpenMps
 			}
 		}
 
-		// 陽的にで解く部分（第一段階）を計算する
+#ifndef PRESSURE_EXPLICIT
+		// 粒子数密度の瞬間増加速度(Dn/Dt)を計算する
+		// @param i 対象の粒子番号
+		auto NeighborDensitiyVariationSpeed(const std::size_t i)
+		{
+#ifdef MPS_HS
+			const auto r_e = environment.R_e;
+
+			// HS法（高精度生成項）：-r_eΣ r・u / |r|^3
+			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U, Detail::Field::Name::Type>(i, 0.0,
+				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u, const Particle::Type type)
+			{
+				// ダミー粒子以外
+				if(type != Particle::Type::Dummy)
+				{
+					const Vector dx = x - thisX;
+					const Vector du = u - thisU;
+					const auto r = boost::numeric::ublas::norm_2(dx);
+					return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
+				}
+				else
+				{
+					return 0.0;
+				}
+			});
+#else
+			const auto n0 = environment.N0();
+			// 標準MPS法：b_i = (n_i - n0)/Δt
+			const auto result = rho / (n0 * dt) * (thisN - n0) / dt;
+#endif
+			return result;
+		}
+#endif
+
+		// 陽的に解く部分（第一段階）を計算する
 		void ComputeExplicitForces()
 		{
 			const auto n0 = environment.N0();
@@ -476,7 +510,7 @@ namespace OpenMps
 			}
 		}
 
-		// 陰的にで解く部分（第ニ段階）を計算する
+		// 陰的に解く部分（第ニ段階）を計算する
 		void ComputeImplicitForces()
 		{
 #ifdef PRESSURE_EXPLICIT
@@ -593,29 +627,8 @@ namespace OpenMps
 				}
 				else
 				{
-					// 生成項を計算する
-#ifdef MPS_HS
-					// HS法（高精度生成項）：b_i = - ρ r_e/(n0 Δt) Σ r・u / |r|^3
-					const auto b_i = - rho * r_e / (n0 * dt) * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U, Detail::Field::Name::Type>(i, 0.0,
-						[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u, const Particle::Type type)
-					{
-						// ダミー粒子以外
-						if(type != Particle::Type::Dummy)
-						{
-							const Vector dx = x - thisX;
-							const Vector du = u - thisU;
-							const auto r = boost::numeric::ublas::norm_2(dx);
-							return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
-						}
-						else
-						{
-							return 0.0;
-						}
-					});
-#else
-					// 標準MPS法：b_i = ρ/dt^2 * (n_i - n0)/n0
-					const auto b_i = rho/(dt*dt) * (thisN - n0) / n0;
-#endif
+					// 生成項を計算する：ρ/n0 Δt Dn/Dt
+					const auto b_i = rho / (n0 * dt) * NeighborDensitiyVariationSpeed(i);
 					ppe.b(i) = b_i;
 
 					// 圧力を未知数ベクトルの初期値にする
