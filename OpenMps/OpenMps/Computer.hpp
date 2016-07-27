@@ -278,8 +278,11 @@ namespace OpenMps
 
 			auto sum = std::move(zero);
 
+			const auto r_e2 = environment.R_e * environment.R_e;
+
 			// 他の粒子に対して
 			const auto n = NeighborCount(i);
+			const auto thisX = particles[i].X();
 			for(auto idx = decltype(n)(0); idx < n; idx++)
 			{
 				const auto j = Neighbor(i, idx);
@@ -287,8 +290,14 @@ namespace OpenMps
 				// 自分は近傍粒子に含まない
 				if(j != i)
 				{
-					// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
-					sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
+					// 影響半径内のみ
+					const auto dx = particles[j].X() - thisX;
+					const auto r2 = boost::numeric::ublas::inner_prod(dx, dx);
+					if(r2 < r_e2)
+					{
+						// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
+						sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
+					}
 				}
 			}
 

@@ -133,15 +133,19 @@ namespace OpenMps
 						// 相対位置を計算
 						const auto x = CreateVector(i*l_0, j*l_0);
 
-						// 重み関数を計算
+						// 影響半径内なら
 						const auto r = boost::numeric::ublas::norm_2(x);
-						const auto w = Particle::W(r, R_e);
+						if(r < R_e)
+						{
+							// 重み関数を計算
+							const auto w = Particle::W(r, R_e);
 
-						// 基準粒子数密度に足す
-						n0 += w;
+							// 基準粒子数密度に足す
+							n0 += w;
 
-						// λに足す
-						lambda += r*r * w;
+							// λに足す
+							lambda += r*r * w;
+						}
 					}
 				}
 			}
