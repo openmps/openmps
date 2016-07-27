@@ -588,8 +588,28 @@ namespace OpenMps
 				else
 				{
 					// 生成項を計算する
-					// 標準MPS法：b_i = 1/dt^2 * (n_i - n0)/n0
-					const auto b_i = (thisN - n0) / n0 / (dt*dt);
+#ifdef MPS_HS
+					// HS法（高精度生成項）：b_i = - ρ r_e/(n0 Δt) Σ r・u / |r|^3
+					const auto b_i = - rho * r_e / (n0 * dt) * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U, Detail::Field::Name::Type>(i, 0.0,
+						[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u, const Particle::Type type)
+					{
+						// ダミー粒子以外
+						if(type != Particle::Type::Dummy)
+						{
+							const Vector dx = x - thisX;
+							const Vector du = u - thisU;
+							const auto r = boost::numeric::ublas::norm_2(dx);
+							return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
+						}
+						else
+						{
+							return 0.0;
+						}
+					});
+#else
+					// 標準MPS法：b_i = ρ/dt^2 * (n_i - n0)/n0
+					const auto b_i = rho/(dt*dt) * (thisN - n0) / n0;
+#endif
 					ppe.b(i) = b_i;
 
 					// 圧力を未知数ベクトルの初期値にする
@@ -620,8 +640,8 @@ namespace OpenMps
 						if(type != Particle::Type::Dummy)
 						{
 							// 非対角項を計算
-							// 標準MPS法：-2D/ρλ w/n0
-							const auto a_ij = -2 * DIM / (rho*lambda) * Particle::W(R(thisX, x), r_e) / n0;
+							// 標準MPS法：-2D/λ w/n0
+							const auto a_ij = -2 * DIM / lambda * Particle::W(R(thisX, x), r_e) / n0;
 
 							// 自由表面の場合は非対角項は設定しない
 							if(!IsSurface(n, n0, surfaceRatio))
