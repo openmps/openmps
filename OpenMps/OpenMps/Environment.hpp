@@ -69,7 +69,7 @@ namespace OpenMps
 		// 近傍粒子として保持する距離
 		const double NeighborLength;
 
-		// @param maxDt 最大時間刻み（出力時間刻み以下など）
+		// @param maxDt_ 最大時間刻み（出力時間刻み以下など）
 		// @param courant クーラン数
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
@@ -85,7 +85,7 @@ namespace OpenMps
 		// @param maxX 計算空間の最大X座標
 		// @param maxZ 計算空間の最大Z座標
 		Environment(
-			const double maxDt,
+			const double maxDt_,
 			const double courant,
 #ifdef MODIFY_TOO_NEAR
 			const double tooNearRatio,
@@ -111,10 +111,10 @@ namespace OpenMps
 			C(c),
 
 			// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
-			maxDt(std::min(maxDt, (courant*l_0) / c)),
+			maxDt(std::min(maxDt_, (courant*l_0) / c)),
 #else
 			// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
-			maxDt(std::min(maxDt, std::sqrt(2 * (courant*l_0) / g))),
+			maxDt(std::min(maxDt_, std::sqrt(2 * (courant*l_0) / g))),
 #endif
 			MinX(CreateVector(minX, minZ)), MaxX(CreateVector(maxX, maxZ)),
 			NeighborLength(r_eByl_0 * l_0 * (1 + courant*2)) // 計算の安定化のためクーラン数の2倍の距離までを近傍粒子として保持する
