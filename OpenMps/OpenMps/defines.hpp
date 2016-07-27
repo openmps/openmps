@@ -26,12 +26,17 @@ static constexpr int DIM = 2;
 
 // HS法（高精度生成項）, Khayyer and Gotoh (2009)
 //   長所：高精度化
-//   短所：なし
+//   短所：計算負荷の微増
 #define MPS_HS
 
 // HL法（高精度ラプラシアン）, Khayyer and Gotoh (2010)
 //   長所：高精度化
 //   短所：なし
 #define MPS_HL
+
+// ECS法（誤差修正項）, Khayyer and Gotoh (2011)
+//   長所：高精度化
+//   短所：計算負荷・メモリ使用量の微増
+#define MPS_ECS
 
 #endif
