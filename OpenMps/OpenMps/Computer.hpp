@@ -279,8 +279,12 @@ namespace OpenMps
 			{
 				const auto j = Neighbor(i, idx);
 
-				// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
-				sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
+				// 自分は近傍粒子に含まない
+				if(j != i)
+				{
+					// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
+					sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
+				}
 			}
 
 			return sum;
@@ -434,9 +438,18 @@ namespace OpenMps
 					auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 					[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
 					{
-						// 標準MPS法：ν*2D/λn0 (u_j - u_i) w（ただし自分自身からは影響を受けない）
-						const double w = (type == Particle::Type::Dummy) ? 0 : Particle::W(R(thisX, x), r_e);
-						return (w == 0) ? VectorZero : ((nu * 2 * DIM / lambda / n0 * w)*(u - thisU));
+						// ダミー粒子以外
+						if(type != Particle::Type::Dummy)
+						{
+							// 標準MPS法：ν*2D/λn0 (u_j - u_i) w
+							const double w = Particle::W(R(thisX, x), r_e);
+							const Vector result = (nu * 2 * DIM / lambda / n0 * w)*(u - thisU);
+							return result;
+						}
+						else
+						{
+							return VectorZero;
+						}
 					});
 
 					d += vis;
@@ -603,8 +616,8 @@ namespace OpenMps
 					ppe.A(i, i) = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
 					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio, &A = ppe.A](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
-						// ダミー粒子と自分以外
-						if((type != Particle::Type::Dummy) && (i != j))
+						// ダミー粒子以外
+						if(type != Particle::Type::Dummy)
 						{
 							// 非対角項を計算
 							// 標準MPS法：-2D/ρλ w/n0
@@ -726,11 +739,11 @@ namespace OpenMps
 					{
 						namespace ublas = boost::numeric::ublas;
 
-						// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx（ただし自分自身からは影響を受けない）
+						// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
 						const auto dx = x - thisX;
 						const auto r2 = ublas::inner_prod(dx, dx);
-						const auto result = -dt / rho * DIM / n0 * (p + thisP) / r2 * Particle::W(R(x, thisX), r_e);
-						return r2 == 0 ? VectorZero : (result * dx);
+						const Vector result = (-dt / rho * DIM / n0 * (p + thisP) / r2 * Particle::W(R(x, thisX), r_e)) * dx;
+						return result;
 					});
 #else
 					// 最小圧力を取得する
