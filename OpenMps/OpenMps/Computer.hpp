@@ -230,6 +230,11 @@ namespace OpenMps
 		// 速度修正量
 		std::vector<Vector> du;
 
+#ifdef MPS_ECS
+		// 誤差修正量
+		std::vector<double> ecs;
+#endif
+
 		// 2点間の距離を計算する
 		// @param x1 点1
 		// @param x2 点2
@@ -436,9 +441,35 @@ namespace OpenMps
 #else
 			const auto n0 = environment.N0();
 			// 標準MPS法：b_i = (n_i - n0)/Δt
-			const auto result = rho / (n0 * dt) * (thisN - n0) / dt;
+			const auto result = (thisN - n0) / dt;
 #endif
 			return result;
+		}
+#endif
+
+#ifdef MPS_ECS
+		// 誤差修正量を計算する
+		void ComputeErrorCorrection()
+		{
+			const auto n0 = environment.N0();
+
+			// 全粒子で
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				const auto& particle = particles[i];
+
+				// ダミー粒子と無効粒子以外
+				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
+				{
+					// ECS法の誤差修正項：α Dn/Dt + β (n-n0)/n0
+					// α=|(n-n0)/n0|
+					// β=|Dn/Dt|
+					const auto speed = NeighborDensitiyVariationSpeed(i);
+					const auto error = (particle.N() - n0) / n0;
+					ecs[i] = std::abs(error) * speed + std::abs(speed) * error;
+				}
+			}
 		}
 #endif
 
@@ -624,8 +655,14 @@ namespace OpenMps
 				else
 				{
 					// 生成項を計算する：ρ/n0 Δt Dn/Dt
-					const auto b_i = rho / (n0 * dt) * NeighborDensitiyVariationSpeed(i);
-					ppe.b(i) = b_i;
+					const auto speed = NeighborDensitiyVariationSpeed(i);
+#ifdef MPS_ECS
+					const auto e = ecs[i];
+					ppe.b(i) = rho / (n0 * dt) * (speed + e);
+#else
+					ppe.b(i) = rho / (n0 * dt) * speed;
+#endif
+
 
 					// 圧力を未知数ベクトルの初期値にする
 					const auto x_i = particles[i].P();
@@ -860,6 +897,10 @@ namespace OpenMps
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
+#ifdef MPS_ECS
+			ComputeErrorCorrection();
+#endif
+
 			// 第一段階の計算
 			ComputeExplicitForces();
 
@@ -886,11 +927,16 @@ namespace OpenMps
 				std::make_move_iterator(src.begin()),
 				std::make_move_iterator(src.end()));
 
+			const auto n = particles.size();
+
 			neighbor.resize(boost::extents
-				[static_cast<decltype(neighbor)::index>(particles.size())]
+				[static_cast<decltype(neighbor)::index>(n)]
 				[1 + static_cast<decltype(neighbor)::index>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
 
-			du.resize(particles.size());
+			du.resize(n);
+#ifdef MPS_ECS
+			ecs.resize(n);
+#endif
 		}
 
 		// 粒子リストを取得する
