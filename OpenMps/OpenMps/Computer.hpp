@@ -452,9 +452,8 @@ namespace OpenMps
 			const auto dt = environment.Dt();
 			const auto g = environment.G;
 
-			// 加速度を全初期化
+			// 加速度
 			auto& a = du;
-			a.clear();
 
 			// 全粒子で
 			const auto n = particles.size();
@@ -462,15 +461,12 @@ namespace OpenMps
 			{
 				auto& particle = particles[i];
 
-				// 重力の計算
-				auto d = g;
-
 				// 水粒子のみ
 				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
 				{
 					// 粘性の計算
-					auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-					[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
+					const auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+						[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -492,9 +488,9 @@ namespace OpenMps
 						}
 					});
 
-					d += vis;
+					// 重力 + 粘性
+					a[i] = g + vis;
 				}
-				a.push_back(d);
 			}
 
 			// 全粒子で
@@ -758,9 +754,6 @@ namespace OpenMps
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient()
 		{
-			// 速度修正量を全初期化
-			du.clear();
-
 			// 全粒子で
 			const auto n = particles.size();
 			for(auto i = decltype(n)(0); i < n; i++)
@@ -768,7 +761,6 @@ namespace OpenMps
 				auto& particle = particles[i];
 
 				// 水粒子のみ
-				Vector d = VectorZero;
 				if (particle.TYPE() == Particle::Type::IncompressibleNewton)
 				{
 					const double r_e = environment.R_e;
@@ -779,7 +771,7 @@ namespace OpenMps
 					// 圧力勾配を計算する
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
-					d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(i, VectorZero,
+					const auto d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X>(i, VectorZero,
 					[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x)
 					{
 						namespace ublas = boost::numeric::ublas;
@@ -806,8 +798,8 @@ namespace OpenMps
 						return (Vector)(sum + du);
 					});
 #endif
+					du[i] = d;
 				}
-				du.push_back(d);
 			}
 
 			// 全粒子で
@@ -897,6 +889,8 @@ namespace OpenMps
 			neighbor.resize(boost::extents
 				[static_cast<decltype(neighbor)::index>(particles.size())]
 				[1 + static_cast<decltype(neighbor)::index>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
+
+			du.resize(particles.size());
 		}
 
 		// 粒子リストを取得する
