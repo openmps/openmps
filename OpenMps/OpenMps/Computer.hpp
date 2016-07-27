@@ -441,9 +441,15 @@ namespace OpenMps
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
 						{
+							const auto r = R(thisX, x);
+#ifdef MPS_HL
+							// HL法（高精度ラプラシアン）: ν(5-D)r_e/n0 (u_j - u_i) / r^3
+							const Vector result = (nu * (5 - DIM) * r_e / n0 / (r*r*r)) * (u - thisU);
+#else
 							// 標準MPS法：ν*2D/λn0 (u_j - u_i) w
-							const double w = Particle::W(R(thisX, x), r_e);
+							const double w = Particle::W(r, r_e);
 							const Vector result = (nu * 2 * DIM / lambda / n0 * w)*(u - thisU);
+#endif
 							return result;
 						}
 						else
@@ -639,9 +645,15 @@ namespace OpenMps
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
 						{
+							const auto r = R(thisX, x);
 							// 非対角項を計算
-							// 標準MPS法：-2D/λ w/n0
-							const auto a_ij = -2 * DIM / lambda * Particle::W(R(thisX, x), r_e) / n0;
+#ifdef MPS_HL
+							// HL法（高精度ラプラシアン）: -(5-D)r_e/n0 / r^3
+							const auto a_ij = -(5 - DIM) * r_e / n0 / (r*r*r);
+#else
+							// 標準MPS法：-2D/(λn0) w
+							const auto a_ij = (-2 * DIM / lambda * n0) * Particle::W(r, r_e);
+#endif
 
 							// 自由表面の場合は非対角項は設定しない
 							if(!IsSurface(n, n0, surfaceRatio))
