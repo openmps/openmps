@@ -949,11 +949,11 @@ namespace OpenMps
 #ifdef MPS_GC
 					// 勾配修正行列を計算
 					auto invC = AccumulateNeighbor<Detail::Field::Name::X>(i, Detail::MatrixZero,
-						[&thisX = particle.X(), r_e, n0](const Vector& x)
+						[&thisX = particle.X(), r_e](const Vector& x)
 					{
 						namespace ublas = boost::numeric::ublas;
 
-						// C = (r⊗r/r^2 * w)^-1
+						// C = (1/n Σr⊗r/r^2 * w)^-1
 						const Vector dx = x - thisX;
 						const auto r2 = ublas::inner_prod(dx, dx);
 						const auto w = Particle::W(R(x, thisX), r_e);
@@ -962,8 +962,8 @@ namespace OpenMps
 					});
 
 					// 速度修正量を計算
-					const auto d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisP = particle.P(), &thisX = particle.X(), r_e, dt, rho, n0, C = Detail::InvertMatrix(std::move(invC))](const double p, const Vector& x, const Particle::Type type)
+					const Vector d = (-dt * particle.N() / (rho * n0)) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+						[&thisP = particle.P(), &thisX = particle.X(), r_e, C = Detail::InvertMatrix(std::move(invC))](const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -978,7 +978,7 @@ namespace OpenMps
 							// GC法：-Δt/ρ p_ij/r^2 w * C dx
 							const Vector dx = x - thisX;
 							const auto r2 = ublas::inner_prod(dx, dx);
-							const Vector result = (-dt / rho * p_ij / r2 * Particle::W(R(x, thisX), r_e)) * ublas::prod(C, dx);
+							const Vector result = (p_ij / r2 * Particle::W(R(x, thisX), r_e)) * ublas::prod(C, dx);
 							return result;
 						}
 						else
