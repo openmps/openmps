@@ -44,4 +44,9 @@ static constexpr int DIM = 2;
 //   短所：計算負荷の微増
 #define MPS_GC
 
+// DS法（動的人工斥力）, Tsuruta et al. (2013)
+//   長所：安定化
+//   短所：運動量がやや不正確になる（剛体球衝突のモデルよりは低減されている）
+#define MPS_DS
+
 #endif

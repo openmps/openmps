@@ -24,10 +24,10 @@ namespace OpenMps
 		// 最大時間刻み
 		const double maxDt;
 
-		// 1ステップの最大移動距離
-		const double maxDx;
-
 	public:
+
+		// 1ステップの最大移動距離
+		const double MaxDx;
 
 		// 初期粒子間距離
 		const double L_0;
@@ -102,7 +102,7 @@ namespace OpenMps
 			const double l_0,
 			const double minX, const double minZ,
 			const double maxX, const double maxZ)
-			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
+			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), MaxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
 
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
@@ -158,7 +158,7 @@ namespace OpenMps
 		// する
 		void SetDt(const double maxU)
 		{
-			dt = (maxU == 0 ? maxDt : std::min(maxDx/maxU, maxDt));
+			dt = (maxU == 0 ? maxDt : std::min(MaxDx/maxU, maxDt));
 		}
 		// CFL条件より時間刻みを決定する
 
@@ -197,7 +197,7 @@ namespace OpenMps
 			this->n0 = src.n0;
 			this->lambda = src.lambda;
 			const_cast<double&>(this->maxDt) = src.maxDt;
-			const_cast<double&>(this->maxDx) = src.maxDx;
+			const_cast<double&>(this->MaxDx) = src.MaxDx;
 			const_cast<double&>(this->R_e) = src.R_e;
 			const_cast<Vector&>(this->G) = src.G;
 			const_cast<double&>(this->Rho) = src.Rho;

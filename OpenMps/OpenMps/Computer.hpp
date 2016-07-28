@@ -342,6 +342,11 @@ namespace OpenMps
 		std::vector<double> ecs;
 #endif
 
+#ifdef MPS_DS
+		// 移動前の位置
+		std::vector<Vector> originalX;
+#endif
+
 		// 2点間の距離を計算する
 		// @param x1 点1
 		// @param x2 点2
@@ -652,6 +657,25 @@ namespace OpenMps
 				}
 			}
 		}
+
+#ifdef MPS_DS
+		// 移動前の位置を保存しておく
+		void SaveX()
+		{
+			// 全粒子で
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				auto& particle = particles[i];
+
+				// ダミー粒子と無効粒子を除く
+				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
+				{
+					originalX[i] = particle.X();
+				}
+			}
+		}
+#endif
 
 		// 陰的に解く部分（第ニ段階）を計算する
 		void ComputeImplicitForces()
@@ -1021,6 +1045,82 @@ namespace OpenMps
 			}
 		}
 
+#ifdef MPS_DS
+		// DS法による人工斥力を追加
+		void DynamicStabilize()
+		{
+			const double r_e = environment.R_e;
+			const double dt = environment.Dt();
+			const double rho = environment.Rho;
+			const double n0 = environment.N0();
+			const double d = environment.L_0 - environment.MaxDx;
+
+			// 全粒子で
+			const auto n = particles.size();
+			for(auto i = decltype(n)(0); i < n; i++)
+			{
+				const auto& particle = particles[i];
+
+				// 水粒子のみ
+				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
+				{
+					// DS法：Λ = -1/(2 n0 Δt) Σ(√(d^2 - r⊥^2) - r||) x/r
+					const Vector result = -1.0/(2 * dt * n0) * AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+						[&x0 = originalX[i], &originalX = this->originalX, &thisX = particle.X(), r_e, dt, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
+					{
+						// ダミー粒子以外
+						if(type != Particle::Type::Dummy)
+						{
+							namespace ublas = boost::numeric::ublas;
+
+							// 過剰接近（初期粒子間距離から1ステップで許容できる距離より接近）していたら
+							const Vector dx = x - thisX;
+							const auto r2 = ublas::inner_prod(dx, dx);
+							if(r2 < d2)
+							{
+								// 元の相対位置の方向に力を発生させるので
+								const auto xx0 = originalX[j];
+								const Vector dx0 = xx0 - x0;
+								const Vector e = dx0 / ublas::norm_2(dx0);
+
+								// 力の発生方向に対して並行・垂直方向の大きさ
+								const auto r_parallel = ublas::inner_prod(dx, e);
+								const Vector dx_perpendicular = dx - r_parallel * e;
+								const auto r_perpendicular2 = ublas::inner_prod(dx_perpendicular, dx_perpendicular);
+								
+								const Vector result = (std::sqrt(d2 - r_perpendicular2) - r_parallel) * e;
+								return result;
+							}
+							else
+							{
+								return VectorZero;
+							}
+						}
+						else
+						{
+							return VectorZero;
+						}
+					});
+
+					du[i] = result;
+				}
+			}
+
+			// 全粒子で
+			for(unsigned int i = 0; i < particles.size(); i++)
+			{
+				// 水粒子のみ
+				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
+				{
+					// 位置・速度を修正
+					const auto thisDu = du[i];
+					particles[i].U() += thisDu;
+					particles[i].X() += thisDu * dt;
+				}
+			}
+		}
+#endif
+
 	public:
 		struct Exception
 		{
@@ -1078,8 +1178,18 @@ namespace OpenMps
 			// 粒子数密度を計算する
 			ComputeNeighborDensities();
 
+#ifdef MPS_DS
+			// 圧力勾配の前の位置を保存
+			SaveX();
+#endif
+
 			// 第二段階の計算
 			ComputeImplicitForces();
+
+#ifdef MPS_DS
+			// DS法による人工斥力の追加
+			DynamicStabilize();
+#endif
 
 			// 時間を進める
 			environment.SetNextT();
@@ -1102,6 +1212,9 @@ namespace OpenMps
 			du.resize(n);
 #ifdef MPS_ECS
 			ecs.resize(n);
+#endif
+#ifdef MPS_DS
+			originalX.resize(n);
 #endif
 		}
 
