@@ -20,6 +20,7 @@
 
 namespace OpenMps
 {
+	// 近傍粒子との相互作用
 	namespace Detail
 	{
 		namespace Field
@@ -173,6 +174,112 @@ namespace OpenMps
 			return Invoker<FUNC, decltype(tuple)>::Invoke(tuple, func);
 		}
 	}
+
+#ifdef MPS_GC
+	// GC向け
+	namespace Detail
+	{
+		// 修正行列
+		using CorrectiveMatrix = boost::numeric::ublas::c_matrix<double, DIM, DIM>;
+
+		namespace Detail
+		{
+			template<int D>
+			struct CreateMatrix;
+
+			template<>
+			struct CreateMatrix<2>
+			{
+				static auto Get(const std::tuple<
+					double, double,
+					double, double> val)
+				{
+					CorrectiveMatrix mat;
+					mat(0, 0) = std::get<0>(val);
+					mat(0, 1) = std::get<1>(val);
+					mat(1, 0) = std::get<2>(val);
+					mat(1, 1) = std::get<3>(val);
+					return mat;
+				}
+
+				static auto Get(const double val)
+				{
+					return Get(std::make_tuple(val, val, val, val));
+				}
+			};
+
+			template<>
+			struct CreateMatrix<3>
+			{
+				static auto Get(const std::tuple<
+					double, double, double,
+					double, double, double,
+					double, double, double> val)
+				{
+					CorrectiveMatrix mat;
+					mat(0, 0) = std::get<0>(val);
+					mat(0, 1) = std::get<1>(val);
+					mat(0, 2) = std::get<2>(val);
+					mat(1, 0) = std::get<3>(val);
+					mat(1, 1) = std::get<4>(val);
+					mat(1, 2) = std::get<5>(val);
+					mat(2, 0) = std::get<6>(val);
+					mat(2, 1) = std::get<7>(val);
+					mat(2, 2) = std::get<8>(val);
+					return mat;
+				}
+
+				static auto Get(const double val)
+				{
+					return Get(std::make_tuple(val, val, val, val, val, val, val, val, val));
+				}
+			};
+
+			template<int D>
+			struct InvertMatrix;
+
+			template<>
+			struct InvertMatrix<2>
+			{
+				static auto Get(CorrectiveMatrix&& mat)
+				{
+					const auto a = mat(0, 0); const auto b = mat(0, 1);
+					const auto c = mat(1, 0); const auto d = mat(1, 1);
+
+					const auto det = a*d - b*c;
+					mat(0, 0) =  d/det; mat(0, 1) = -b/det;
+					mat(1, 0) = -c/det; mat(1, 1) =  a/det;
+					return mat;
+				}
+			};
+
+			// TODO: 3次元版
+			template<>
+			struct InvertMatrix<3>;
+		}
+
+		// 修正行列を作成する
+		template<typename T, typename... ARGS>
+		static auto CreateMatrix(const T val, const ARGS... args)
+		{
+			return Detail::CreateMatrix<DIM>::Get(std::make_tuple(val, args...));
+		}
+		template<typename T>
+		static auto CreateMatrix(const T val)
+		{
+			return Detail::CreateMatrix<DIM>::Get(val);
+		}
+
+		// ゼロ行列
+		static const auto MatrixZero = CreateMatrix(0);
+
+		// 逆行列を求める
+		static auto InvertMatrix(CorrectiveMatrix&& mat)
+		{
+			return Detail::InvertMatrix<DIM>::Get(std::move(mat));
+		}
+	}
+#endif
 
 	// MPS法による計算空間
 	class Computer final
@@ -815,10 +922,51 @@ namespace OpenMps
 					const double n0 = environment.N0();
 
 					// 圧力勾配を計算する
+#ifdef MPS_GC
+					// 勾配修正行列を計算
+					auto invC = AccumulateNeighbor<Detail::Field::Name::X>(i, Detail::MatrixZero,
+						[&thisX = particle.X(), r_e, n0](const Vector& x)
+					{
+						namespace ublas = boost::numeric::ublas;
+
+						// C = (r⊗r/r^2 * w)^-1
+						const Vector dx = x - thisX;
+						const auto r2 = ublas::inner_prod(dx, dx);
+						const auto w = Particle::W(R(x, thisX), r_e);
+						const Detail::CorrectiveMatrix result = (w / r2 / n0 * DIM) * ublas::outer_prod(dx, dx);
+						return result;
+					});
+
+					// 速度修正量を計算
+					const auto d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+						[&thisP = particle.P(), &thisX = particle.X(), r_e, dt, rho, n0, C = Detail::InvertMatrix(std::move(invC))](const double p, const Vector& x, const Particle::Type type)
+					{
+						// ダミー粒子以外
+						if(type != Particle::Type::Dummy)
+						{
+							namespace ublas = boost::numeric::ublas;
+
+#ifdef PRESSURE_GRADIENT_MIDPOINT
+							const auto p_ij = p + thisP;
+#else
+							const auto p_ij = p - thisP;
+#endif
+							// GC法：-Δt/ρ p_ij/r^2 w * C dx
+							const Vector dx = x - thisX;
+							const auto r2 = ublas::inner_prod(dx, dx);
+							const Vector result = (-dt / rho * p_ij / r2 * Particle::W(R(x, thisX), r_e)) * ublas::prod(C, dx);
+							return result;
+						}
+						else
+						{
+							return VectorZero;
+						}
+					});
+#else
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
 					const auto d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-					[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x, const Particle::Type type)
+						[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -851,6 +999,7 @@ namespace OpenMps
 						auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
 						return (Vector)(sum + du);
 					});
+#endif
 #endif
 					du[i] = d;
 				}
