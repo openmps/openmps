@@ -16,19 +16,63 @@
 
 namespace OpenMps
 {
-	// 2次元ベクトル
+	// ベクトル
 	using Vector = boost::numeric::ublas::c_vector<double, DIM>;
 
-	// 2次元ベクトルを作成する
-	static Vector CreateVector(const double v1, const double v2)
+	namespace Detail
 	{
-		Vector vec;
-		vec[0] = v1;
-		vec[1] = v2;
-		return vec;
+		template<int D>
+		struct CreateVector;
+
+		template<>
+		struct CreateVector<2>
+		{
+			static auto Get(const std::tuple<double, double> val)
+			{
+				Vector vec;
+				vec[0] = std::get<0>(val);
+				vec[1] = std::get<1>(val);
+				return vec;
+			}
+
+			static auto Get(const double val)
+			{
+				return Get(std::make_tuple(val, val));
+			}
+		};
+
+		template<>
+		struct CreateVector<3>
+		{
+			static auto Get(const std::tuple<double, double, double> val)
+			{
+				Vector vec;
+				vec[0] = std::get<0>(val);
+				vec[1] = std::get<1>(val);
+				vec[2] = std::get<2>(val);
+				return vec;
+			}
+
+			static auto Get(const double val)
+			{
+				return Get(std::make_tuple(val, val, val));
+			}
+		};
+	}
+
+	// ベクトルを作成する
+	template<typename T, typename... ARGS>
+	static auto CreateVector(const T val, const ARGS... args)
+	{
+		return Detail::CreateVector<DIM>::Get(std::make_tuple(val, args...));
+	}
+	template<typename T>
+	static auto CreateVector(const T val)
+	{
+		return Detail::CreateVector<DIM>::Get(val);
 	}
 
 	// ゼロベクトル
-	static const auto VectorZero = CreateVector(0, 0);
+	static const auto VectorZero = CreateVector(0);
 }
 #endif
