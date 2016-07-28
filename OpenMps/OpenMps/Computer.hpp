@@ -957,7 +957,7 @@ namespace OpenMps
 						const Vector dx = x - thisX;
 						const auto r2 = ublas::inner_prod(dx, dx);
 						const auto w = Particle::W(R(x, thisX), r_e);
-						const Detail::CorrectiveMatrix result = (w / r2 / n0 * DIM) * ublas::outer_prod(dx, dx);
+						const Detail::CorrectiveMatrix result = (w / r2) * ublas::outer_prod(dx, dx);
 						return result;
 					});
 
