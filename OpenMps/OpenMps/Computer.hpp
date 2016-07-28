@@ -700,7 +700,7 @@ namespace OpenMps
 			ModifyByPressureGradient();
 		}
 
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 		// 過剰接近粒子を補正する
 		void ModifyTooNear()
 		{
@@ -1070,7 +1070,7 @@ namespace OpenMps
 			// 第一段階の計算
 			ComputeExplicitForces();
 
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 			// 過剰接近粒子の補正
 			ModifyTooNear();
 #endif

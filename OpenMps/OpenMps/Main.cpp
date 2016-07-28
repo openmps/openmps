@@ -50,7 +50,7 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 #ifdef PRESSURE_EXPLICIT
 	const double c = 1500/1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
 #endif
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 	const double tooNearRatio = 0.5;
 	const double tooNearCoefficient = 1.5;
 #endif
@@ -71,7 +71,7 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 	}
 
 	return OpenMps::Environment(outputInterval/2, courant,
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 		tooNearRatio, tooNearCoefficient,
 #endif
 		g, rho, nu, surfaceRatio, r_eByl_0,

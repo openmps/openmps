@@ -47,7 +47,7 @@ namespace OpenMps
 		// 自由表面を判定する係数
 		const double SurfaceRatio;
 
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 		// 過剰接近粒子と判定される距離
 		const double TooNearLength;
 
@@ -87,7 +87,7 @@ namespace OpenMps
 		Environment(
 			const double maxDt_,
 			const double courant,
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 			const double tooNearRatio,
 			const double tooNearCoefficient,
 #endif
@@ -104,7 +104,7 @@ namespace OpenMps
 			const double maxX, const double maxZ)
 			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), maxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
 
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
 #endif
 #ifdef PRESSURE_EXPLICIT
@@ -203,7 +203,7 @@ namespace OpenMps
 			const_cast<double&>(this->Rho) = src.Rho;
 			const_cast<double&>(this->Nu) = src.Nu;
 			const_cast<double&>(this->SurfaceRatio) = src.SurfaceRatio;
-#ifdef MODIFY_TOO_NEAR
+#ifdef ARTIFICIAL_COLLISION_FORCE
 			const_cast<double&>(TooNearLength) = src.TooNearLength;
 			const_cast<double&>(TooNearCoefficient) = src.TooNearCoefficient;
 #endif
