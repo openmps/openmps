@@ -1,0 +1,3 @@
+[submodule "OpenMps/viennacl"]
+	path = OpenMps/viennacl
+	url = https://github.com/viennacl/viennacl-dev.git

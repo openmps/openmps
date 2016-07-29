@@ -70,7 +70,7 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 		maxZ = std::max(maxZ, z);
 	}
 
-	return OpenMps::Environment(outputInterval/2, courant,
+	return OpenMps::Environment(outputInterval/10, courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
 		tooNearRatio, tooNearCoefficient,
 #endif
@@ -90,8 +90,8 @@ static auto CreateParticles(const double l_0)
 
 	// ダムブレークのモデルを作成
 	{
-		const int L = 20;
-		const int H = 40;
+		const int L = 100;
+		const int H = 200;
 
 		// 水を追加
 		for(int i = 0; i < L/2; i++)
@@ -228,7 +228,7 @@ int main()
 	using namespace OpenMps;
 
 	const double l_0 = 1e-3;
-	const double outputInterval = 0.001;
+	const double outputInterval = 0.005;
 	const double courant = 0.1;
 #ifndef PRESSURE_EXPLICIT
 	const double eps = 1e-10;

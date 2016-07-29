@@ -1,5 +1,7 @@
 ﻿#ifndef COMPUTER_INCLUDED
 #define COMPUTER_INCLUDED
+#include "defines.hpp"
+
 #pragma warning(push, 0)
 #include <vector>
 
@@ -9,6 +11,13 @@
 #endif
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+
+#ifdef USE_VIENNACL
+#include <viennacl/vector.hpp>
+#include <viennacl/compressed_matrix.hpp>
+#include <viennacl/linalg/inner_prod.hpp>
+#endif
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
@@ -321,11 +330,23 @@ namespace OpenMps
 		// 圧力方程式
 		struct Ppe
 		{
+
+#ifdef USE_VIENNACL
+			// 線形方程式用の疎行列
+			using Matrix = viennacl::compressed_matrix<double>;
+
+			// 線形方程式用の多次元ベクトル
+			using LongVector = viennacl::vector<double>;
+
+			// CPU用疎行列（係数行列の設定に使用）
+			using TempMatrix = boost::numeric::ublas::compressed_matrix<double>;
+#else
 			// 線形方程式用の疎行列
 			using Matrix = boost::numeric::ublas::compressed_matrix<double>;
 
 			// 線形方程式用の多次元ベクトル
 			using LongVector = boost::numeric::ublas::vector<double>;
+#endif
 
 			// 係数行列
 			Matrix A;
@@ -351,6 +372,19 @@ namespace OpenMps
 				// 係数行列と探索方向ベクトルの積
 				LongVector Ap;
 			} cg;
+
+#ifdef USE_VIENNACL
+			// CPU用疎行列（係数行列の設定に使用）
+			TempMatrix tempA;
+#endif
+
+#ifdef _OPENMP
+			// 係数行列生成時の使用する行列・ベクトル
+			using A_ij = std::pair<std::size_t, double>;
+			using Row = std::vector<A_ij>;
+			std::vector<Row> a_ij;
+#endif
+
 		} ppe;
 #endif
 
@@ -481,8 +515,15 @@ namespace OpenMps
 			}
 
 			// 近傍粒子を格納
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				// 無効粒子は除く
 				if(particles[i].TYPE() != Particle::Type::Disabled)
 				{
@@ -538,8 +579,15 @@ namespace OpenMps
 
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				auto& particle = particles[i];
 
 				// ダミー粒子と無効粒子を除く
@@ -581,6 +629,9 @@ namespace OpenMps
 			});
 #else
 			const auto n0 = environment.N0();
+			const auto dt = environment.Dt();
+			const auto thisN = particles[i].N();
+
 			// 標準MPS法：b_i = (n_i - n0)/Δt
 			const auto result = (thisN - n0) / dt;
 #endif
@@ -596,8 +647,15 @@ namespace OpenMps
 
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				const auto& particle = particles[i];
 
 				// ダミー粒子と無効粒子以外
@@ -629,8 +687,15 @@ namespace OpenMps
 
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				auto& particle = particles[i];
 
 				// 水粒子のみ
@@ -776,6 +841,13 @@ namespace OpenMps
 		}
 #endif
 
+		// 近傍粒子の最大個数
+		auto MaxNeighborCount()
+		{
+			// 1ブロックの最大個数 * 3^Dブロック
+			return grid.MaxParticles() * 3u*3u;
+		}
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式を設定する
 		void SetPressurePoissonEquation()
@@ -800,10 +872,29 @@ namespace OpenMps
 				ppe.cg.r = Ppe::LongVector(n);
 				ppe.cg.p = Ppe::LongVector(n);
 				ppe.cg.Ap = Ppe::LongVector(n);
+
+#ifdef USE_VIENNACL
+				ppe.tempA = Ppe::TempMatrix(n, n);
+#endif
+
+#ifdef _OPENMP
+				ppe.a_ij.resize(n);
+				for (auto i = decltype(n)(0); i < n; i++)
+				{
+					ppe.a_ij[i].reserve(MaxNeighborCount());
+				}
+#endif
 			}
-			// 全粒子で
-			for (unsigned int i = 0; i < n; i++)
+
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				const auto thisN = particles[i].N();
 
 				// ダミー粒子と無効粒子と自由表面は0
@@ -829,24 +920,48 @@ namespace OpenMps
 					ppe.x(i) = x_i;
 				}
 			}
-			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
 
 			// 係数行列初期化
-			ppe.A.clear();
+#ifdef USE_VIENNACL
+			auto& A = ppe.tempA;
+#else
+			auto& A = ppe.A;
+#endif
+			A.clear();
 
 			// 全粒子で
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+
+				auto& a_i = ppe.a_ij[i];
+				a_i.clear();
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				// ダミー粒子と無効粒子と自由表面は対角項だけ1
 				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(particles[i].N(), n0, surfaceRatio))
 				{
-					ppe.A(i, i) = 1.0;
+#ifdef _OPENMP
+					a_i.push_back(Ppe::A_ij(i, 1.0));
+#else
+					A(i, i) = 1.0;
+#endif
 				}
 				else
 				{
 					// 対角項を設定
-					ppe.A(i, i) = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
-					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio, &A = ppe.A](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
+					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
+					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio,
+#ifdef _OPENMP
+						&a_i
+#else
+						&A
+#endif
+					](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -864,7 +979,11 @@ namespace OpenMps
 							// 自由表面の場合は非対角項は設定しない
 							if(!IsSurface(n, n0, surfaceRatio))
 							{
+#ifdef _OPENMP
+								a_i.push_back(Ppe::A_ij(j, a_ij));
+#else
 								A(i, j) = a_ij;
+#endif
 							}
 
 							return -a_ij;
@@ -874,8 +993,37 @@ namespace OpenMps
 							return 0.0;
 						}
 					});
+
+#ifdef _OPENMP
+					a_i.push_back(Ppe::A_ij(i, a_ii));
+#else
+					A(i, i) = a_ii;
+#endif
 				}
 			}
+
+#ifdef _OPENMP
+			// 全行の
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			{
+				const auto i = static_cast<decltype(n)>(ii);
+
+				// 全有効列で
+				for (auto k : ppe.a_ij[i])
+				{
+					// 行列に格納
+					const auto j = k.first;
+					const auto a_ij = k.second;
+
+					A(i, j) = a_ij;
+				}
+			}
+#endif
+
+#ifdef USE_VIENNACL
+			// 作成した係数行列をデバイス側に複製
+			viennacl::copy(ppe.tempA, ppe.A);
+#endif
 		}
 
 		// 圧力方程式をを解く
@@ -883,7 +1031,12 @@ namespace OpenMps
 		{
 			// 共役勾配法で解く
 			// TODO: 前処理ぐらい入れようよ
-			namespace ublas = boost::numeric::ublas;
+
+#ifdef USE_VIENNACL
+			namespace op = viennacl::linalg;
+#else
+			namespace op = boost::numeric::ublas;
+#endif
 
 			auto& A = ppe.A;
 			auto& x = ppe.x;
@@ -897,16 +1050,17 @@ namespace OpenMps
 			//  r_0 = b - Ap
 			//  p_0 = r_0
 			//  rr = r・r
-			Ap = ublas::prod(A, x);
+			Ap = op::prod(A, x);
 			r = b - Ap;
 			p = r;
-			double rr = ublas::inner_prod(r, r);
+			double rr = op::inner_prod(r, r);
 			const double residual0 = rr*ppe.allowableResidual*ppe.allowableResidual;
 
 			// 初期値で既に収束している場合は即時終了
 			bool isConverged = (residual0 == 0);
+			const auto n = x.size();
 			// 未知数分だけ繰り返す
-			for (unsigned int i = 0; (i < x.size()) && (!isConverged); i++)
+			for (auto i = decltype(n)(0); (i < n) && (!isConverged); i++)
 			{
 				// 計算を実行
 				//  Ap = A * p
@@ -914,14 +1068,14 @@ namespace OpenMps
 				//  x' += αp
 				//  r' -= αAp
 				//  r'r' = r'・r'
-				Ap = ublas::prod(A, p);
-				const double alpha = rr / ublas::inner_prod(p, Ap);
+				Ap = op::prod(A, p);
+				const auto alpha = rr / op::inner_prod(p, Ap);
 				x += alpha * p;
 				r -= alpha * Ap;
-				const double rrNew = ublas::inner_prod(r, r);
+				const auto rrNew = op::inner_prod(r, r);
 
 				// 収束判定
-				const double residual = rrNew;
+				const auto residual = rrNew;
 				isConverged = (residual < residual0);
 
 				// 収束していなければ、残りの計算を実行
@@ -931,7 +1085,7 @@ namespace OpenMps
 					//  β= r'r'/rr
 					//  p = r' + βp
 					//  rr = r'r'
-					const double beta = rrNew / rr;
+					const auto beta = rrNew / rr;
 					p = r + beta * p;
 					rr = rrNew;
 				}
@@ -953,8 +1107,15 @@ namespace OpenMps
 		{
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				auto& particle = particles[i];
 
 				// 水粒子のみ
@@ -1079,8 +1240,15 @@ namespace OpenMps
 
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				const auto& particle = particles[i];
 
 				// 水粒子のみ
