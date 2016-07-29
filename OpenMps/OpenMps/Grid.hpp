@@ -129,7 +129,7 @@ namespace OpenMps
 		// 1ブロック内の最大粒子数
 		auto MaxParticles() const
 		{
-			return static_cast<Index>(data.shape()[2]) - 1; // 先頭の粒子数の格納分を除く
+			return static_cast<ParticleID>(data.shape()[2]) - 1; // 先頭の粒子数の格納分を除く
 		}
 
 		// 粒子を格納する
@@ -145,14 +145,14 @@ namespace OpenMps
 				(0 <= i) && (i < n) &&
 				(0 <= j) && (j < m))
 			{
-				const auto k = static_cast<Index>(ParticleCount(i, j));
+				const auto k = ParticleCount(i, j);
 				const auto maxCount = MaxParticles();
 				if(k >= maxCount)
 				{
 					throw Exception("Too many particle in a block");
 				}
-				Particle(i, j, k) = particle;
-				ParticleCount(i, j) = static_cast<ParticleID>(k + 1);
+				Particle(i, j, static_cast<Index>(k)) = particle;
+				ParticleCount(i, j) = k + 1;
 
 				return true;
 			}
