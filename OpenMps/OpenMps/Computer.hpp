@@ -842,9 +842,16 @@ namespace OpenMps
 				ppe.tempA = Ppe::TempMatrix(n, n);
 #endif
 			}
-			// 全粒子で
-			for (unsigned int i = 0; i < n; i++)
+
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				const auto thisN = particles[i].N();
 
 				// ダミー粒子と無効粒子と自由表面は0
@@ -870,7 +877,6 @@ namespace OpenMps
 					ppe.x(i) = x_i;
 				}
 			}
-			// TODO: 以下もそうだけど、圧力方程式を作る際にインデックス指定のfor回さなきゃいけないのが気持ち悪いので、どうにかしたい
 
 			// 係数行列初期化
 #ifdef USE_VIENNACL
