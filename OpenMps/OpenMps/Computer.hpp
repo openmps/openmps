@@ -206,6 +206,13 @@ namespace OpenMps
 				{
 					return Get(std::make_tuple(val, val, val, val));
 				}
+
+				static auto Identity(const double val)
+				{
+					return Get(std::make_tuple(
+						val, 0,
+						0, val));
+				}
 			};
 
 			template<>
@@ -232,6 +239,14 @@ namespace OpenMps
 				static auto Get(const double val)
 				{
 					return Get(std::make_tuple(val, val, val, val, val, val, val, val, val));
+				}
+
+				static auto Identity(const double val)
+				{
+					return Get(std::make_tuple(
+						val, 0, 0,
+						0, val, 0,
+						0, 0, val));
 				}
 			};
 
@@ -266,6 +281,11 @@ namespace OpenMps
 		}
 		template<typename T>
 		static auto CreateMatrix(const T val)
+		{
+			return Detail::CreateMatrix<DIM>::Get(val);
+		}
+		template<typename T>
+		static auto IdentityMatrix(const T val)
 		{
 			return Detail::CreateMatrix<DIM>::Get(val);
 		}
@@ -963,7 +983,9 @@ namespace OpenMps
 
 					// 速度修正量を計算
 					const Vector d = (-dt * particle.N() / (rho * n0)) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisP = particle.P(), &thisX = particle.X(), r_e, C = Detail::InvertMatrix(std::move(invC))](const double p, const Vector& x, const Particle::Type type)
+						[&thisP = particle.P(), &thisX = particle.X(), r_e, 
+						C = ((invC(0, 0) * invC(1, 1) - invC(1, 0) * invC(0, 1) != 0) ? Detail::InvertMatrix(std::move(invC)) : Detail::IdentityMatrix(DIM/n0))]
+						(const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
