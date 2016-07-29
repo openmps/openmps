@@ -515,8 +515,15 @@ namespace OpenMps
 			}
 
 			// 近傍粒子を格納
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				// 無効粒子は除く
 				if(particles[i].TYPE() != Particle::Type::Disabled)
 				{
