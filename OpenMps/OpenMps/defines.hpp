@@ -59,5 +59,14 @@ static constexpr int DIM = 2;
 // 行列計算にViennaCLを使用する。
 #define USE_VIENNACL
 
+/**************************************************************/
+// 以下、自動設定（手動で変更しないこと）
+#ifdef USE_VIENNACL
+	#ifdef _OPENMP
+		// ViennaCLでOpenMPを使用する
+		#define VIENNACL_WITH_OPENMP
+	#endif
+#endif
 
 #endif
+
