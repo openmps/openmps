@@ -581,6 +581,9 @@ namespace OpenMps
 			});
 #else
 			const auto n0 = environment.N0();
+			const auto dt = environment.Dt();
+			const auto thisN = particles[i].N();
+
 			// 標準MPS法：b_i = (n_i - n0)/Δt
 			const auto result = (thisN - n0) / dt;
 #endif
