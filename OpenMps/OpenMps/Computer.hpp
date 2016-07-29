@@ -633,8 +633,15 @@ namespace OpenMps
 
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				const auto& particle = particles[i];
 
 				// ダミー粒子と無効粒子以外
