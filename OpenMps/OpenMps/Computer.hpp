@@ -378,6 +378,13 @@ namespace OpenMps
 			TempMatrix tempA;
 #endif
 
+#ifdef _OPENMP
+			// 係数行列生成時の使用する行列・ベクトル
+			using A_ij = std::pair<std::size_t, double>;
+			using Row = std::vector<A_ij>;
+			std::vector<Row> a_ij;
+#endif
+
 		} ppe;
 #endif
 
@@ -841,6 +848,14 @@ namespace OpenMps
 #ifdef USE_VIENNACL
 				ppe.tempA = Ppe::TempMatrix(n, n);
 #endif
+
+#ifdef _OPENMP
+				ppe.a_ij.resize(n);
+				for (auto i = decltype(n)(0); i < n; i++)
+				{
+					ppe.a_ij[i].reserve(MaxNeighborCount());
+				}
+#endif
 			}
 
 #ifdef _OPENMP
@@ -887,18 +902,38 @@ namespace OpenMps
 			A.clear();
 
 			// 全粒子で
-			for(auto i = decltype(n)(0); i < n; i++)
+#ifdef _OPENMP
+#pragma omp parallel for
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+
+				auto& a_i = ppe.a_ij[i];
+				a_i.clear();
+#else
+			for (auto i = decltype(n)(0); i < n; i++)
+			{
+#endif
 				// ダミー粒子と無効粒子と自由表面は対角項だけ1
 				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(particles[i].N(), n0, surfaceRatio))
 				{
+#ifdef _OPENMP
+					a_i.push_back(Ppe::A_ij(i, 1.0));
+#else
 					A(i, i) = 1.0;
+#endif
 				}
 				else
 				{
 					// 対角項を設定
-					A(i, i) = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
-					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio, &A](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
+					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
+					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio,
+#ifdef _OPENMP
+						&a_i
+#else
+						&A
+#endif
+					](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -916,7 +951,11 @@ namespace OpenMps
 							// 自由表面の場合は非対角項は設定しない
 							if(!IsSurface(n, n0, surfaceRatio))
 							{
+#ifdef _OPENMP
+								a_i.push_back(Ppe::A_ij(j, a_ij));
+#else
 								A(i, j) = a_ij;
+#endif
 							}
 
 							return -a_ij;
@@ -926,8 +965,32 @@ namespace OpenMps
 							return 0.0;
 						}
 					});
+
+#ifdef _OPENMP
+					a_i.push_back(Ppe::A_ij(i, a_ii));
+#else
+					A(i, i) = a_ii;
+#endif
 				}
 			}
+
+#ifdef _OPENMP
+			// 全行の
+			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			{
+				const auto i = static_cast<decltype(n)>(ii);
+
+				// 全有効列で
+				for (auto k : ppe.a_ij[i])
+				{
+					// 行列に格納
+					const auto j = k.first;
+					const auto a_ij = k.second;
+
+					A(i, j) = a_ij;
+				}
+			}
+#endif
 
 #ifdef USE_VIENNACL
 			// 作成した係数行列をデバイス側に複製
