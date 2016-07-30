@@ -1,13 +1,11 @@
 # OpenMps
 
-author (attribution)
-: 青子守歌 (aokomoriuta)
-
-URL
-: https://github.com/aokomoriuta
-
 This project contains an implemention of Moving Particle Semi-implicit (MPS) method.
 MPS method is one of the most popular Particle Method to solve Continuum Dynamics (e.g. Fluid Dynamics). See [Wikipedia](https://en.wikipedia.org/wiki/Moving_Particle_Semi-implicit_Method) for more information.
+
+![screenshot](https://bytebucket.org/OpenMps/openmps.bitbucket.org/raw/master/img/icon.PNG)
+
+## License
 
 This project is multi-licensed.
 You can select the license of your choice from as following:
@@ -15,6 +13,12 @@ You can select the license of your choice from as following:
 * [Creative Commons Attribution-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-sa/3.0/)
 * [Creative Commons Attribution-Noncommercial 3.0 Unported](http://creativecommons.org/licenses/by-nc/3.0/)
 * [GNU General Public License v3.0 or later](http://www.gnu.org/licenses/gpl.html)
+
+author (attribution)
+: 青子守歌 (aokomoriuta)
+
+URL
+: https://github.com/aokomoriuta
 
 ## Usage
 
