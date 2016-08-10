@@ -11,6 +11,10 @@
 #include <ctime>
 #include <type_traits>
 #include <boost/format.hpp>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 #pragma warning(pop)
 
 // 計算結果をCSVへ出力する
@@ -194,6 +198,14 @@ int main(int argc, char *argv[])
 {
 	system("mkdir result");
 	using namespace OpenMps;
+
+#pragma omp parallel
+	{
+#pragma omp master
+		{
+			std::cout << omp_get_num_threads() << "threads" << std::endl;
+		}
+	}
 
 	const double l_0 = 1e-3;
 	const double outputInterval = 0.001;

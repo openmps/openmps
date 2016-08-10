@@ -4,10 +4,10 @@
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
 COMPILER = clang++
-CFLAGS   = -std=c++11 -Wextra -g -MMD -MP -O3
-LDFLAGS  =
+CFLAGS   = -std=c++14 -stdlib=libc++ -g -MMD -MP -O3 -fopenmp
+LDFLAGS  = $(CFLAGS) -lomp
 LIBS     =
-INCLUDE  =  -I../../boost
+INCLUDE  =  -I../FDPS/src
 TARGET   = ./$(shell basename `readlink -f ..`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
