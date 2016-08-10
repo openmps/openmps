@@ -1,4 +1,5 @@
 ﻿#define PARTICLE_SIMULATOR_TWO_DIMENSION
+#define PARTICLE_SIMULATOR_THREAD_PARALLEL
 #define DISABLE_FDPS_STDOUT
 
 #include "Computer.hpp"
@@ -53,7 +54,7 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 	const double nu = 1.004e-6;
 	const double surfaceRatio = 0.95;
 #ifdef PRESSURE_EXPLICIT
-	const double c = 1500 / 1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
+	const double c = 1500 / 100; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
 #endif
 #ifdef MODIFY_TOO_NEAR
 	const double tooNearRatio = 0.5;
@@ -95,8 +96,8 @@ static auto CreateParticles(const double l_0, const double r_e)
 
 	// ダムブレークのモデルを作成
 	{
-		const int L = 20;
-		const int H = 40;
+		const int L = 40;
+		const int H = 80;
 
 		// 水を追加
 		for(int i = 0; i < L / 2; i++)
