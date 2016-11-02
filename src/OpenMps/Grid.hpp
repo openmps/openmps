@@ -174,14 +174,14 @@ namespace OpenMps
 			// 末尾も含めた近傍ブロックの総数
 			static constexpr auto MAX_NEIGHBOR = LAST_NEIGHBOR + 1;
 
-			// 今のイテレーターの遷移状態 = 粒子番号*LAST_NEIGHBOR_ID + 近傍ブロック番号
-			std::size_t index;
+			// 参照先のグリッド
+			const Grid& grid;
 
 			// 探索対象ブロック
 			const std::array<Block, LAST_NEIGHBOR> neighbor;
 
-			// 参照先のグリッド
-			const Grid& grid;
+			// 今のイテレーターの遷移状態 = 粒子番号*LAST_NEIGHBOR_ID + 近傍ブロック番号
+			std::size_t index;
 
 			// begin用
 			// @param g 参照先のグリッド

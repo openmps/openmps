@@ -26,6 +26,19 @@ namespace OpenMps
 
 	public:
 
+#ifdef PRESSURE_EXPLICIT
+		// 音速
+		const double C;
+#endif
+
+#ifdef ARTIFICIAL_COLLISION_FORCE
+		// 過剰接近粒子と判定される距離
+		const double TooNearLength;
+
+		// 過剰接近粒子から受ける修正量の係数
+		const double TooNearCoefficient;
+#endif
+
 		// 1ステップの最大移動距離
 		const double MaxDx;
 
@@ -46,19 +59,6 @@ namespace OpenMps
 
 		// 自由表面を判定する係数
 		const double SurfaceRatio;
-
-#ifdef ARTIFICIAL_COLLISION_FORCE
-		// 過剰接近粒子と判定される距離
-		const double TooNearLength;
-
-		// 過剰接近粒子から受ける修正量の係数
-		const double TooNearCoefficient;
-#endif
-
-#ifdef PRESSURE_EXPLICIT
-		// 音速
-		const double C;
-#endif
 
 		// 計算空間の最小座標
 		const Vector MinX;
@@ -102,20 +102,27 @@ namespace OpenMps
 			const double l_0,
 			const double minX, const double minZ,
 			const double maxX, const double maxZ)
-			:t(0), dt(0), L_0(l_0), G(CreateVector(0, -g)), Rho(rho), Nu(nu), MaxDx(courant*l_0), R_e(r_eByl_0 * l_0), SurfaceRatio(surfaceRatio),
+			:t(0), dt(0),
 
-#ifdef ARTIFICIAL_COLLISION_FORCE
-			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
-#endif
 #ifdef PRESSURE_EXPLICIT
-			C(c),
-
 			// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
 			maxDt(std::min(maxDt_, (courant*l_0) / c)),
+
+			C(c),
 #else
 			// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
 			maxDt(std::min(maxDt_, std::sqrt(2 * (courant*l_0) / g))),
 #endif
+#ifdef ARTIFICIAL_COLLISION_FORCE
+			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
+#endif
+			MaxDx(courant*l_0),
+			L_0(l_0),
+			R_e(r_eByl_0 * l_0),
+			G(CreateVector(0, -g)),
+			Rho(rho),
+			Nu(nu),
+			SurfaceRatio(surfaceRatio),
 			MinX(CreateVector(minX, minZ)), MaxX(CreateVector(maxX, maxZ)),
 			NeighborLength(r_eByl_0 * l_0 * (1 + courant*2)) // 計算の安定化のためクーラン数の2倍の距離までを近傍粒子として保持する
 		{
