@@ -107,7 +107,7 @@ namespace OpenMps
 			template<typename PARTICLES, Name NAME>
 			constexpr auto GetGetters()
 			{
-				return std::make_tuple(&GetGetter<NAME>::Get<PARTICLES>);
+				return std::make_tuple(&GetGetter<NAME>::template Get<PARTICLES>);
 			}
 
 			template<typename PARTICLES, Name NAME0, Name NAME1, Name... NAMES>
@@ -426,6 +426,28 @@ namespace OpenMps
 			return n / n0 < surfaceRatio;
 		}
 
+		// 近傍粒子数
+		// @param i 対象の粒子番号
+		auto& NeighborCount(const std::size_t i)
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+		}
+		auto NeighborCount(const std::size_t i) const
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+		}
+
+		// 近傍粒子番号
+		// @param i 対象の粒子番号
+		auto& Neighbor(const std::size_t i, const std::size_t idx)
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+		}
+		auto Neighbor(const std::size_t i, const std::size_t idx) const
+		{
+			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+		}
+
 		// 近傍粒子との相互作用を計算する
 		// @tparam FIELDS 必要な粒子の物理量
 		// @param zero 初期値
@@ -469,28 +491,6 @@ namespace OpenMps
 
 			return sum;
 		};
-
-		// 近傍粒子数
-		// @param i 対象の粒子番号
-		auto& NeighborCount(const std::size_t i)
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
-		}
-		auto NeighborCount(const std::size_t i) const
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
-		}
-
-		// 近傍粒子番号
-		// @param i 対象の粒子番号
-		auto& Neighbor(const std::size_t i, const std::size_t idx)
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
-		}
-		auto Neighbor(const std::size_t i, const std::size_t idx) const
-		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
-		}
 
 		// 近傍粒子探索
 		void SearchNeighbor()
@@ -1234,7 +1234,6 @@ namespace OpenMps
 		{
 			const double r_e = environment.R_e;
 			const double dt = environment.Dt();
-			const double rho = environment.Rho;
 			const double n0 = environment.N0();
 			const double d = environment.L_0 - environment.MaxDx;
 

@@ -188,7 +188,7 @@ namespace OpenMps
 			// @param x 探索対象の位置
 			// @param idx 遷移状態
 			Iterator(const Grid& g, const Vector& x, const decltype(index) idx)
-				: grid(g), neighbor{
+				: grid(g), neighbor{{
 				std::make_tuple(g.BlockX(x) - 1, g.BlockZ(x) - 1),
 				std::make_tuple(g.BlockX(x) - 1, g.BlockZ(x) + 0),
 				std::make_tuple(g.BlockX(x) - 1, g.BlockZ(x) + 1),
@@ -197,7 +197,7 @@ namespace OpenMps
 				std::make_tuple(g.BlockX(x) + 0, g.BlockZ(x) + 1),
 				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) - 1),
 				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) + 0),
-				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) + 1), },
+				std::make_tuple(g.BlockX(x) + 1, g.BlockZ(x) + 1), }},
 				index(idx)
 			{
 				// 先頭ブロックが空なら次のブロックに移動しておく
