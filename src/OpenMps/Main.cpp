@@ -9,6 +9,15 @@
 #include "Computer.hpp"
 #include "Timer.hpp"
 
+// iccはC++14の対応が遅れているので
+#ifdef __INTEL_COMPILER
+namespace std
+{
+	template<typename T>
+	using underlying_type_t = typename underlying_type<T>::type;
+}
+#endif
+
 // 計算結果をCSVへ出力する
 static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCount)
 {

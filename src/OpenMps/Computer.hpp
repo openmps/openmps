@@ -27,6 +27,15 @@
 #include "Environment.hpp"
 #include "Grid.hpp"
 
+// iccはC++14の対応が遅れているので
+#ifdef __INTEL_COMPILER
+namespace std
+{
+	template<typename T>
+	using make_signed_t = typename make_signed<T>::type;
+}
+#endif
+
 namespace OpenMps
 {
 	// 近傍粒子との相互作用
@@ -462,7 +471,8 @@ namespace OpenMps
 		{
 			// VS2015 Update2だとなぜか定数式だと評価できないと言われるので・・・
 			// c.f. https://connect.microsoft.com/VisualStudio/feedback/details/2599450
-#if _MSC_FULL_VER == 190023918
+			// Intel Compiler・・・お前もか
+#if (_MSC_FULL_VER == 190023918) || defined(__INTEL_COMPILER)
 			const
 #else
 			constexpr
