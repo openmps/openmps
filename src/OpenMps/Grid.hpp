@@ -3,6 +3,7 @@
 
 #pragma warning(push, 0)
 #include <iterator>
+#include <array>
 #include <boost/multi_array.hpp>
 #pragma warning(pop)
 

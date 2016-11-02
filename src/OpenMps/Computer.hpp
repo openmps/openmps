@@ -107,7 +107,12 @@ namespace OpenMps
 			template<typename PARTICLES, Name NAME>
 			constexpr auto GetGetters()
 			{
+#ifdef _MSC_VER
 				return std::make_tuple(&GetGetter<NAME>::template Get<PARTICLES>);
+#else
+				const auto get = &GetGetter<NAME>::template Get<PARTICLES>;
+				return std::make_tuple(get);
+#endif
 			}
 
 			template<typename PARTICLES, Name NAME0, Name NAME1, Name... NAMES>
@@ -1254,8 +1259,9 @@ namespace OpenMps
 				if(particle.TYPE() == Particle::Type::IncompressibleNewton)
 				{
 					// DS法：Λ = -1/(2 n0 Δt) Σ(√(d^2 - r⊥^2) - r||) x/r
+					const auto& thisX = particle.X();
 					const Vector result = -1.0/(2 * dt * n0) * AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&x0 = originalX[i], &originalX = this->originalX, &thisX = particle.X(), r_e, dt, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
+						[&x0 = originalX[i], &originalX = this->originalX, &thisX, r_e, dt, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1414,7 +1420,7 @@ namespace OpenMps
 		}
 
 		// 計算空間パラメーターを取得する
-		const Environment& Environment() const
+		const Environment& GetEnvironment() const
 		{
 			return environment;
 		}

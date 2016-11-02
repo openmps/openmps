@@ -221,10 +221,20 @@ static auto CreateParticles(const double l_0)
 
 	return particles;
 }
+template<typename T>
+static void System(T&& arg)
+{
+	const auto ret = system(std::forward<T>(arg));
+	if(ret < 0)
+	{
+		throw std::runtime_error("Error!");
+	}
+}
+
 // エントリポイント
 int main()
 {
-	system("mkdir result");
+	System("mkdir result");
 	using namespace OpenMps;
 
 	const double l_0 = 1e-3;
@@ -270,7 +280,7 @@ int main()
 	int iteration = 0;
 	for(int outputCount = 1; outputCount <= 100 ; outputCount++)
 	{
-		double tComputer = computer.Environment().T();
+		double tComputer = computer.GetEnvironment().T();
 		try
 		{
 			// 次の出力時間まで
@@ -279,7 +289,7 @@ int main()
 			{
 				// 時間を進める
 				computer.ForwardTime();
-				tComputer = computer.Environment().T();
+				tComputer = computer.GetEnvironment().T();
 				iteration++;
 			}
 
