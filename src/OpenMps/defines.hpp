@@ -2,7 +2,7 @@
 #define DEFINE_INCLUDED
 
 // 次元数
-#define DIM3
+// #define DIM3 // 用意はしているが現時点では非推奨
 namespace OpenMps
 {
 #ifdef DIM3
