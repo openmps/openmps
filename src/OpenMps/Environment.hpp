@@ -81,8 +81,14 @@ namespace OpenMps
 		// @param c 音速
 		// @param l_0 初期粒子間距離
 		// @param minX 計算空間の最小X座標
+#ifdef DIM3
+		// @param minY 計算空間の最小Y座標
+#endif
 		// @param minZ 計算空間の最小Z座標
 		// @param maxX 計算空間の最大X座標
+#ifdef DIM3
+		// @param maxY 計算空間の最大Y座標
+#endif
 		// @param maxZ 計算空間の最大Z座標
 		Environment(
 			const double maxDt_,
@@ -100,8 +106,16 @@ namespace OpenMps
 			const double c,
 #endif
 			const double l_0,
-			const double minX, const double minZ,
-			const double maxX, const double maxZ)
+			const double minX,
+#ifdef DIM3
+			const double minY,
+#endif
+			const double minZ,
+			const double maxX,
+#ifdef DIM3
+			const double maxY,
+#endif
+			const double maxZ)
 			:t(0), dt(0),
 
 #ifdef PRESSURE_EXPLICIT
@@ -119,11 +133,19 @@ namespace OpenMps
 			MaxDx(courant*l_0),
 			L_0(l_0),
 			R_e(r_eByl_0 * l_0),
+#ifdef DIM3
+			G(CreateVector(0, 0, -g)),
+#else
 			G(CreateVector(0, -g)),
+#endif
 			Rho(rho),
 			Nu(nu),
 			SurfaceRatio(surfaceRatio),
+#ifdef DIM3
+			MinX(CreateVector(minX, minY, minZ)), MaxX(CreateVector(maxX, maxY, maxZ)),
+#else
 			MinX(CreateVector(minX, minZ)), MaxX(CreateVector(maxX, maxZ)),
+#endif
 			NeighborLength(r_eByl_0 * l_0 * (1 + courant*2)) // 計算の安定化のためクーラン数の2倍の距離までを近傍粒子として保持する
 		{
 			// 基準粒子数密度とλの計算
@@ -134,26 +156,39 @@ namespace OpenMps
 			{
 				for (auto j = -range; j < range; j++)
 				{
-					// 自分以外との
-					if (!((i == 0) && (j == 0)))
+#ifdef DIM3
+					for (auto k = -range; k < range; k++)
 					{
-						// 相対位置を計算
-						const auto x = CreateVector(i*l_0, j*l_0);
-
-						// 影響半径内なら
-						const auto r = boost::numeric::ublas::norm_2(x);
-						if(r < R_e)
+						// 自分以外との
+						if (!((i == 0) && (j == 0) && (k == 0)))
 						{
-							// 重み関数を計算
-							const auto w = Particle::W(r, R_e);
+							// 相対位置を計算
+							const auto x = CreateVector(i*l_0, j*l_0, k*l_0);
+#else
+						// 自分以外との
+						if (!((i == 0) && (j == 0)))
+						{
+							// 相対位置を計算
+							const auto x = CreateVector(i*l_0, j*l_0);
+#endif
 
-							// 基準粒子数密度に足す
-							n0 += w;
+							// 影響半径内なら
+							const auto r = boost::numeric::ublas::norm_2(x);
+							if (r < R_e)
+							{
+								// 重み関数を計算
+								const auto w = Particle::W(r, R_e);
 
-							// λに足す
-							lambda += r*r * w;
+								// 基準粒子数密度に足す
+								n0 += w;
+
+								// λに足す
+								lambda += r*r * w;
+							}
 						}
+#ifdef DIM3
 					}
+#endif
 				}
 			}
 
@@ -162,7 +197,7 @@ namespace OpenMps
 			lambda /= n0;
 		}
 
-		// する
+		// CFL条件より時間刻みを決定する
 		void SetDt(const double maxU)
 		{
 			dt = (maxU == 0 ? maxDt : std::min(MaxDx/maxU, maxDt));

@@ -26,7 +26,11 @@ static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 	std::ofstream output(filename);
 
 	// ヘッダ出力
+#ifdef DIM3
+	output << "Type, x, y, z, u, v, w, p, n" << std::endl;
+#else
 	output << "Type, x, z, u, w, p, n" << std::endl;
+#endif
 
 	// 各粒子を出力
 	std::size_t nonDisalbeCount = 0;
@@ -34,8 +38,13 @@ static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 	{
 		output
 			<< static_cast<std::underlying_type_t<OpenMps::Particle::Type>>(particle.TYPE()) << ", "
+#ifdef DIM3
+			<< particle.X()[0] << ", " << particle.X()[1] << ", " << particle.X()[2] << ", "
+			<< particle.U()[0] << ", " << particle.U()[1] << ", " << particle.U()[2] << ", "
+#else
 			<< particle.X()[0] << ", " << particle.X()[1] << ", "
 			<< particle.U()[0] << ", " << particle.U()[1] << ", "
+#endif
 			<< particle.P() << ", "
 			<< particle.N() << std::endl;
 
@@ -65,6 +74,26 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 #endif
 
 	// 計算空間の領域を計算
+#ifdef DIM3
+	double minX = particles.cbegin()->X()[0];
+	double minY = particles.cbegin()->X()[1];
+	double minZ = particles.cbegin()->X()[2];
+	double maxX = minX;
+	double maxY = minY;
+	double maxZ = minZ;
+	for (auto& particle : particles)
+	{
+		const auto x = particle.X()[0];
+		const auto y = particle.X()[1];
+		const auto z = particle.X()[2];
+		minX = std::min(minX, x);
+		minY = std::min(minY, y);
+		minZ = std::min(minZ, z);
+		maxX = std::max(maxX, x);
+		maxY = std::max(maxY, y);
+		maxZ = std::max(maxZ, z);
+	}
+#else
 	double minX = particles.cbegin()->X()[0];
 	double minZ = particles.cbegin()->X()[1];
 	double maxX = minX;
@@ -78,6 +107,7 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 		maxX = std::max(maxX, x);
 		maxZ = std::max(maxZ, z);
 	}
+#endif
 
 	return OpenMps::Environment(outputInterval/10, courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
@@ -88,8 +118,14 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 		c,
 #endif
 		l_0,
+#ifdef DIM3
+		minX, minY, minZ,
+		maxX, maxY, maxZ
+#else
 		minX, minZ,
-		maxX, maxZ);
+		maxX, maxZ
+#endif
+	);
 }
 
 // 粒子を作成する
@@ -98,21 +134,26 @@ static auto CreateParticles(const double l_0)
 	std::vector<OpenMps::Particle> particles;
 
 	// ダムブレークのモデルを作成
+#ifdef DIM3
 	{
-		const int L = 100;
-		const int H = 200;
+		const int L = 10;
+		const int H = 20;
 
 		// 水を追加
-		for(int i = 0; i < L/2; i++)
+		for (int i = 0; i < L / 2; i++)
 		{
-			for(int j = 0; j < H/1.5; j++)
+			for (int j = 0; j < L / 2; j++)
 			{
-				auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+				for (int k = 0; k < H / 1.5; k++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 
-				particle.X()[0] = i*l_0;
-				particle.X()[1] = j*l_0;
+					particle.X()[0] = i*l_0;
+					particle.X()[1] = j*l_0;
+					particle.X()[2] = k*l_0;
 
-				particles.push_back(std::move(particle));
+					particles.push_back(std::move(particle));
+				}
 			}
 		}
 
@@ -120,47 +161,53 @@ static auto CreateParticles(const double l_0)
 		for(int i = -1; i < L+1; i++)
 		{
 			const double x = i*l_0;
-
-			// 床
+			for (int j = -1; j < L + 1; j++)
 			{
-				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				
-				wall1.X()[0]  = x; wall1.X()[1]  = -l_0 * 1;
-				dummy1.X()[0] = x; dummy1.X()[1] = -l_0 * 2;
-				dummy2.X()[0] = x; dummy2.X()[1] = -l_0 * 3;
-				dummy3.X()[0] = x; dummy3.X()[1] = -l_0 * 4;
+				const auto y = j * l_0;
+				// 床
+				{
+					auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+					auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+					auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+					auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
 
-				particles.push_back(std::move(wall1));
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
+					wall1.X()[0]  = x; wall1. X()[1] = y; wall1.X()[2]  = -l_0 * 1;
+					dummy1.X()[0] = x; dummy1.X()[1] = y; dummy1.X()[2] = -l_0 * 2;
+					dummy2.X()[0] = x; dummy2.X()[1] = y; dummy2.X()[2] = -l_0 * 3;
+					dummy3.X()[0] = x; dummy3.X()[1] = y; dummy3.X()[2] = -l_0 * 4;
+
+					particles.push_back(std::move(wall1));
+					particles.push_back(std::move(dummy1));
+					particles.push_back(std::move(dummy2));
+					particles.push_back(std::move(dummy3));
+				}
 			}
 		}
-
+		/*
 		// 側壁の追加
-		for(int j = 0; j < H+1; j++)
+		for (int j = -1; j < L + 1; j++)
 		{
-			const double y = j*l_0;
-
-			// 左壁
+			for (int k = 0; k < H + 1; k++)
 			{
-				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				
-				wall1.X()[0]  = -l_0 * 1; wall1.X()[1]  = y;
-				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = y;
-				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = y;
-				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = y;
+				const double z = k*l_0;
 
-				particles.push_back(std::move(wall1));
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
+				// 左壁
+				{
+					auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+					auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+					auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+					auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+
+					wall1.X()[0] = -l_0 * 1; wall1.X()[1] = z;
+					dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = z;
+					dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = z;
+					dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = z;
+
+					particles.push_back(std::move(wall1));
+					particles.push_back(std::move(dummy1));
+					particles.push_back(std::move(dummy2));
+					particles.push_back(std::move(dummy3));
+				}
 			}
 		}
 
@@ -223,7 +270,136 @@ static auto CreateParticles(const double l_0)
 				particles.push_back(std::move(dummy3));
 			}
 		}
+		*/
 	}
+#else
+	{
+		const int L = 100;
+		const int H = 200;
+
+		// 水を追加
+		for(int i = 0; i < L/2; i++)
+		{
+			for(int k = 0; k < H/1.5; k++)
+			{
+				auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+
+				particle.X()[0] = i*l_0;
+				particle.X()[1] = k*l_0;
+
+				particles.push_back(std::move(particle));
+			}
+		}
+
+		// 床を追加
+		for(int i = -1; i < L+1; i++)
+		{
+			const double x = i*l_0;
+
+			// 床
+			{
+				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				
+				wall1.X()[0]  = x; wall1.X()[1]  = -l_0 * 1;
+				dummy1.X()[0] = x; dummy1.X()[1] = -l_0 * 2;
+				dummy2.X()[0] = x; dummy2.X()[1] = -l_0 * 3;
+				dummy3.X()[0] = x; dummy3.X()[1] = -l_0 * 4;
+
+				particles.push_back(std::move(wall1));
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
+			}
+		}
+
+		// 側壁の追加
+		for(int k = 0; k < H+1; k++)
+		{
+			const double z = k*l_0;
+
+			// 左壁
+			{
+				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				
+				wall1.X()[0]  = -l_0 * 1; wall1.X()[1]  = z;
+				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = z;
+				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = z;
+				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = z;
+
+				particles.push_back(std::move(wall1));
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
+			}
+		}
+
+		// 副ダムの追加
+		for(int k = 0; k < (H + 1)/10; k++)
+		{
+			const double z = k*l_0;
+
+			// 左壁
+			{
+				auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+
+				wall1.X()[0] =  l_0 * (L + 0); wall1.X()[1] =  z;
+				dummy1.X()[0] = l_0 * (L + 1); dummy1.X()[1] = z;
+				dummy2.X()[0] = l_0 * (L + 2); dummy2.X()[1] = z;
+				dummy3.X()[0] = l_0 * (L + 3); dummy3.X()[1] = z;
+
+				particles.push_back(std::move(wall1));
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
+			}
+		}
+
+		// 四隅
+		for(int k = 0; k < 4; k++)
+		{
+			const double z = k*l_0;
+
+			// 左下
+			{
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+
+				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = z - 4 * l_0;
+				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = z - 4 * l_0;
+				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = z - 4 * l_0;
+
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
+			}
+
+			// 右下
+			{
+				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
+
+				dummy1.X()[0] = l_0 * (L + 1); dummy1.X()[1] = z - 4 * l_0;
+				dummy2.X()[0] = l_0 * (L + 2); dummy2.X()[1] = z - 4 * l_0;
+				dummy3.X()[0] = l_0 * (L + 3); dummy3.X()[1] = z - 4 * l_0;
+
+				particles.push_back(std::move(dummy1));
+				particles.push_back(std::move(dummy2));
+				particles.push_back(std::move(dummy3));
+			}
+		}
+	}
+#endif
 
 	// 粒子数を表示
 	std::cout << particles.size() << " particles" << std::endl;
