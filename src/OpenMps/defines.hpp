@@ -55,7 +55,7 @@ namespace OpenMps
 // GC法（勾配修正行列）, Khayyer and Gotoh (2011)
 //   長所：安定化
 //   短所：計算負荷の微増
-//#define MPS_GC
+#define MPS_GC
 
 // DS法（動的人工斥力）, Tsuruta et al. (2013)
 //   長所：安定化

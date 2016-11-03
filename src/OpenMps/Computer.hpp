@@ -272,31 +272,10 @@ namespace OpenMps
 						0, 0, val));
 				}
 			};
-
-			template<int D>
-			struct InvertMatrix;
-
-			template<>
-			struct InvertMatrix<2>
-			{
-				static auto Get(CorrectiveMatrix&& mat)
-				{
-					const auto a = mat(0, 0); const auto b = mat(0, 1);
-					const auto c = mat(1, 0); const auto d = mat(1, 1);
-
-					const auto det = a*d - b*c;
-					mat(0, 0) =  d/det; mat(0, 1) = -b/det;
-					mat(1, 0) = -c/det; mat(1, 1) =  a/det;
-					return mat;
-				}
-			};
-
-			// TODO: 3次元版
-			template<>
-			struct InvertMatrix<3>;
 		}
 
-		// 修正行列を作成する
+
+		// 行列を作成する
 		template<typename T, typename... ARGS>
 		static auto CreateMatrix(const T val, const ARGS... args)
 		{
@@ -310,16 +289,129 @@ namespace OpenMps
 		template<typename T>
 		static auto IdentityMatrix(const T val)
 		{
-			return Detail::CreateMatrix<DIM>::Get(val);
+			return Detail::CreateMatrix<DIM>::Identity(val);
 		}
 
 		// ゼロ行列
 		static const auto MatrixZero = CreateMatrix(0);
+		
+		namespace Detail
+		{
+			template<int D>
+			struct InvertMatrix;
+
+			template<>
+			struct InvertMatrix<2>
+			{
+				template<typename T>
+				static auto Det(
+					const T a, const T b,
+					const T c, const T d)
+				{
+					return a * d - b * c;
+				}
+
+				static auto Get(CorrectiveMatrix&& mat, const double val)
+				{
+					const auto a = mat(0, 0); const auto b = mat(0, 1);
+					const auto c = mat(1, 0); const auto d = mat(1, 1);
+
+					const auto det = Det(
+						a, b,
+						c, d);
+
+					if (det == 0)
+					{
+						return IdentityMatrix(val);
+					}
+					else
+					{
+						mat(0, 0) = d / det; mat(0, 1) = -b / det;
+						mat(1, 0) = -c / det; mat(1, 1) = a / det;
+						return mat;
+					}
+				}
+			};
+
+			template<>
+			struct InvertMatrix<3>
+			{
+				template<typename T>
+				static auto Det(
+					const T a00, const T a01, const T a02,
+					const T a10, const T a11, const T a12,
+					const T a20, const T a21, const T a22)
+				{
+					// たすき掛け
+					return
+						+ a00 * a11 * a22
+						+ a01 * a12 * a20
+						+ a02 * a10 * a21
+						- a00 * a12 * a21
+						- a01 * a10 * a22
+						- a02 * a11 * a20;
+				}
+
+				static auto Get(CorrectiveMatrix&& mat, const double val)
+				{
+					const auto a00 = mat(0, 0); const auto a01 = mat(0, 1); const auto a02 = mat(0, 2);
+					const auto a10 = mat(1, 0); const auto a11 = mat(1, 1); const auto a12 = mat(1, 2);
+					const auto a20 = mat(2, 0); const auto a21 = mat(2, 1); const auto a22 = mat(2, 2);
+
+					const auto det = Det(
+						a00, a01, a02,
+						a10, a11, a12,
+						a20, a21, a22);
+
+					if (det == 0)
+					{
+						return IdentityMatrix(val);
+					}
+					else
+					{
+						// 余因子行列式
+						const auto A00 = InvertMatrix<2>::Det(
+							a11, a12,
+							a21, a22);
+						const auto A01 = InvertMatrix<2>::Det(
+							a10, a12,
+							a20, a22);
+						const auto A02 = InvertMatrix<2>::Det(
+							a10, a11,
+							a20, a21);
+						const auto A10 = InvertMatrix<2>::Det(
+							a01, a02,
+							a21, a22);
+						const auto A11 = InvertMatrix<2>::Det(
+							a00, a02,
+							a20, a22);
+						const auto A12 = InvertMatrix<2>::Det(
+							a00, a01,
+							a20, a21);
+						const auto A20 = InvertMatrix<2>::Det(
+							a01, a02,
+							a11, a12);
+						const auto A21 = InvertMatrix<2>::Det(
+							a00, a02,
+							a10, a12);
+						const auto A22 = InvertMatrix<2>::Det(
+							a00, a01,
+							a10, a11);
+
+						mat(0, 0) = +A00 / det; mat(0, 1) = -A01 / det; mat(0, 2) = +A02 / det;
+						mat(1, 0) = -A10 / det; mat(1, 1) = +A11 / det; mat(1, 2) = -A12 / det;
+						mat(2, 0) = +A20 / det; mat(2, 1) = -A21 / det; mat(2, 2) = +A22 / det;
+
+						return mat;
+					}
+				}
+			};
+		}
 
 		// 逆行列を求める
-		static auto InvertMatrix(CorrectiveMatrix&& mat)
+		static auto InvertMatrix(CorrectiveMatrix&& mat, const double val)
 		{
-			return Detail::InvertMatrix<DIM>::Get(std::move(mat));
+			return Detail::InvertMatrix<DIM>::Get(std::move(mat), val);
 		}
 	}
 #endif
@@ -1157,10 +1249,11 @@ namespace OpenMps
 						return result;
 					});
 
+					const auto C = Detail::InvertMatrix(std::move(invC), DIM / n0);
+
 					// 速度修正量を計算
 					const Vector d = (-dt * particle.N() / (rho * n0)) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisP = particle.P(), &thisX = particle.X(), r_e, 
-						C = ((invC(0, 0) * invC(1, 1) - invC(1, 0) * invC(0, 1) != 0) ? Detail::InvertMatrix(std::move(invC)) : Detail::IdentityMatrix(DIM/n0))]
+						[&thisP = particle.P(), &thisX = particle.X(), r_e, &C]
 						(const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
