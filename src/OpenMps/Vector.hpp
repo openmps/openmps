@@ -27,7 +27,7 @@ namespace OpenMps
 		template<>
 		struct CreateVector<2>
 		{
-			static auto Get(const std::tuple<double, double> val)
+			static auto Get(const std::tuple<double, double>& val)
 			{
 				Vector vec;
 				vec[0] = std::get<0>(val);
@@ -44,7 +44,7 @@ namespace OpenMps
 		template<>
 		struct CreateVector<3>
 		{
-			static auto Get(const std::tuple<double, double, double> val)
+			static auto Get(const std::tuple<double, double, double>& val)
 			{
 				Vector vec;
 				vec[0] = std::get<0>(val);

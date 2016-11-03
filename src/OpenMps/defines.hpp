@@ -2,7 +2,20 @@
 #define DEFINE_INCLUDED
 
 // 次元数
-static constexpr int DIM = 2;
+// #define DIM3 // 用意はしているが現時点では非推奨
+namespace OpenMps
+{
+#ifdef DIM3
+	static constexpr int DIM = 3;
+	static constexpr int AXIS_X = 0;
+	static constexpr int AXIS_Y = 1;
+	static constexpr int AXIS_Z = 2;
+#else
+	static constexpr int DIM = 2;
+	static constexpr int AXIS_X = 0;
+	static constexpr int AXIS_Z = 1;
+#endif
+}
 
 /////////////////////////////////////////////
 // 以下は計算手法についての選択肢          //
