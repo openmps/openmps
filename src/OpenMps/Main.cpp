@@ -136,8 +136,8 @@ static auto CreateParticles(const double l_0)
 	// ダムブレークのモデルを作成
 #ifdef DIM3
 	{
-		const int L = 10;
-		const int H = 20;
+		const int L = 50;
+		const int H = 100;
 
 		// 水を追加
 		for (int i = 0; i < L / 2; i++)
@@ -183,94 +183,6 @@ static auto CreateParticles(const double l_0)
 				}
 			}
 		}
-		/*
-		// 側壁の追加
-		for (int j = -1; j < L + 1; j++)
-		{
-			for (int k = 0; k < H + 1; k++)
-			{
-				const double z = k*l_0;
-
-				// 左壁
-				{
-					auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-					auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-					auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-					auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-					wall1.X()[0] = -l_0 * 1; wall1.X()[1] = z;
-					dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = z;
-					dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = z;
-					dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = z;
-
-					particles.push_back(std::move(wall1));
-					particles.push_back(std::move(dummy1));
-					particles.push_back(std::move(dummy2));
-					particles.push_back(std::move(dummy3));
-				}
-			}
-		}
-
-		// 副ダムの追加
-		for(int j = 0; j < (H + 1)/10; j++)
-		{
-			const double y = j*l_0;
-
-			// 左壁
-			{
-				auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-				wall1.X()[0] =  l_0 * (L + 0); wall1.X()[1] =  y;
-				dummy1.X()[0] = l_0 * (L + 1); dummy1.X()[1] = y;
-				dummy2.X()[0] = l_0 * (L + 2); dummy2.X()[1] = y;
-				dummy3.X()[0] = l_0 * (L + 3); dummy3.X()[1] = y;
-
-				particles.push_back(std::move(wall1));
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-		}
-
-		// 四隅
-		for(int j = 0; j < 4; j++)
-		{
-			const double y = j*l_0;
-
-			// 左下
-			{
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = y - 4 * l_0;
-				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = y - 4 * l_0;
-				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = y - 4 * l_0;
-
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-
-			// 右下
-			{
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-				dummy1.X()[0] = l_0 * (L + 1); dummy1.X()[1] = y - 4 * l_0;
-				dummy2.X()[0] = l_0 * (L + 2); dummy2.X()[1] = y - 4 * l_0;
-				dummy3.X()[0] = l_0 * (L + 3); dummy3.X()[1] = y - 4 * l_0;
-
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-		}
-		*/
 	}
 #else
 	{
