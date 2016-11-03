@@ -139,7 +139,7 @@ namespace OpenMps
 #ifdef DIM3
 						ParticleCount(i, j, k) = 0;
 #else
-						ParticleCount(i, j) = 0;
+						ParticleCount(i, k) = 0;
 #endif
 					}
 				}
@@ -194,7 +194,7 @@ namespace OpenMps
 #ifdef DIM3
 				const auto l = ParticleCount(i, j, k);
 #else
-				const auto l = ParticleCount(i, j);
+				const auto l = ParticleCount(i, k);
 #endif
 				const auto maxCount = MaxParticles();
 				if(l >= maxCount)
