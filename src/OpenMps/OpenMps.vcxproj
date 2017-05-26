@@ -81,6 +81,7 @@
     <ClInclude Include="Environment.hpp" />
     <ClInclude Include="Grid.hpp" />
     <ClInclude Include="Particle.hpp" />
+    <ClInclude Include="stov.hpp" />
     <ClInclude Include="Timer.hpp" />
     <ClInclude Include="Vector.hpp" />
   </ItemGroup>

@@ -3,11 +3,15 @@
 #include <fstream>
 #include <ctime>
 #include <type_traits>
+#include <sstream>
+#include <unordered_map>
+#include <algorithm>
 #include <boost/format.hpp>
 #pragma warning(pop)
 
 #include "Computer.hpp"
 #include "Timer.hpp"
+#include "stov.hpp"
 
 // iccはC++14の対応が遅れているので
 #ifdef __INTEL_COMPILER
@@ -55,6 +59,127 @@ static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 	}
 
 	return nonDisalbeCount;
+}
+
+// 粒子を読み込む
+static auto InputFromCsv()
+{
+	std::vector<OpenMps::Particle> particles;
+
+	// ファイルを開く
+	auto filename = "particles.csv";
+	std::ifstream input(filename);
+
+	if (input.fail())
+	{
+		throw std::runtime_error("Input csv doesn't exist!");
+	}
+
+	// 行をカンマ区切りで分割する関数
+	const auto GetItems = [](std::string str)
+	{
+		str.erase(std::remove_if(str.begin(), str.end(),
+			[](const char c)
+		{
+			return (c == ' ') || (c == '\t');
+		}), str.end());
+
+		std::string item = "";
+		std::istringstream lineStream(str);
+		std::vector<std::string> data;
+		while (std::getline(lineStream, item, ','))
+		{
+			data.push_back(item);
+		}
+		return data;
+	};
+
+
+	// ヘッダー項目の列番号を取得（ない場合は-1が入る）
+	constexpr std::int8_t HEADER_NOT_FOUND = -1;
+	auto header = std::unordered_map<std::string, std::int8_t>(
+	{
+		{ "Type", HEADER_NOT_FOUND },
+		{ "x", HEADER_NOT_FOUND },
+#ifdef DIM3
+		{ "y", HEADER_NOT_FOUND },
+#endif
+		{ "z", HEADER_NOT_FOUND },
+		{ "u", HEADER_NOT_FOUND },
+#ifdef DIM3
+		{ "v", HEADER_NOT_FOUND },
+#endif
+		{ "w", HEADER_NOT_FOUND },
+		{ "p", HEADER_NOT_FOUND },
+		{ "n", HEADER_NOT_FOUND },
+	});
+	{
+		// 先頭行を読み込み
+		std::string line;
+		if (!std::getline(input, line))
+		{
+			throw std::runtime_error("Input csv has no header");
+		}
+		const auto headerItems = GetItems(line);
+		for (auto i = decltype(headerItems.size())(0); i < headerItems.size(); i++)
+		{
+			const auto name = headerItems[i];
+			if (header.find(name) != header.end())
+			{
+				header[name] = i;
+			}
+			else
+			{
+				throw std::runtime_error("Illegal header item in input csv");
+			}
+		}
+
+		// ない項目があったらエラー
+		for (const auto& item : header)
+		{
+			if (item.second == HEADER_NOT_FOUND)
+			{
+				throw std::runtime_error("Some header item doesn't exist");
+			}
+		}
+	}
+
+	// 粒子を作成して入れていく
+	std::string line;
+	while (std::getline(input, line))
+	{
+		const auto data = GetItems(line);
+
+		auto particle = OpenMps::Particle(static_cast<OpenMps::Particle::Type>(stov<std::underlying_type_t<OpenMps::Particle::Type>>(data[header["Type"]])));
+		
+		// 位置ベクトル
+		particle.X()[OpenMps::AXIS_X] = stov<double>(data[header["x"]]);
+#ifdef DIM3
+		particle.X()[OpenMps::AXIS_Y] = stov<double>(data[header["y"]]);
+#endif
+		particle.X()[OpenMps::AXIS_Z] = stov<double>(data[header["z"]]);
+
+		// 速度ベクトル
+		particle.U()[OpenMps::AXIS_X] = stov<double>(data[header["u"]]);
+#ifdef DIM3
+		particle.U()[OpenMps::AXIS_Y] = stov<double>(data[header["v"]]);
+#endif
+		particle.U()[OpenMps::AXIS_Z] = stov<double>(data[header["w"]]);
+
+		// 圧力
+		particle.P() = stov<double>(data[header["p"]]);
+
+		// 粒子数密度
+		particle.N() = stov<double>(data[header["n"]]);
+
+		particles.push_back(std::move(particle));
+	}
+
+
+	// 粒子数を表示
+	std::cout << particles.size() << " particles" << std::endl;
+
+	return particles;
 }
 
 // MPS計算用の計算空間固有パラメータを作成する
@@ -128,196 +253,6 @@ static OpenMps::Environment MakeEnvironment(const double l_0, const double coura
 	);
 }
 
-// 粒子を作成する
-static auto CreateParticles(const double l_0)
-{
-	std::vector<OpenMps::Particle> particles;
-
-	// ダムブレークのモデルを作成
-#ifdef DIM3
-	{
-		const int L = 50;
-		const int H = 100;
-
-		// 水を追加
-		for (int i = 0; i < L / 2; i++)
-		{
-			for (int j = 0; j < L / 2; j++)
-			{
-				for (int k = 0; k < H / 1.5; k++)
-				{
-					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
-
-					particle.X()[0] = i*l_0;
-					particle.X()[1] = j*l_0;
-					particle.X()[2] = k*l_0;
-
-					particles.push_back(std::move(particle));
-				}
-			}
-		}
-
-		// 床を追加
-		for(int i = -1; i < L+1; i++)
-		{
-			const double x = i*l_0;
-			for (int j = -1; j < L + 1; j++)
-			{
-				const auto y = j * l_0;
-				// 床
-				{
-					auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-					auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-					auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-					auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-					wall1.X()[0]  = x; wall1. X()[1] = y; wall1.X()[2]  = -l_0 * 1;
-					dummy1.X()[0] = x; dummy1.X()[1] = y; dummy1.X()[2] = -l_0 * 2;
-					dummy2.X()[0] = x; dummy2.X()[1] = y; dummy2.X()[2] = -l_0 * 3;
-					dummy3.X()[0] = x; dummy3.X()[1] = y; dummy3.X()[2] = -l_0 * 4;
-
-					particles.push_back(std::move(wall1));
-					particles.push_back(std::move(dummy1));
-					particles.push_back(std::move(dummy2));
-					particles.push_back(std::move(dummy3));
-				}
-			}
-		}
-	}
-#else
-	{
-		const int L = 100;
-		const int H = 200;
-
-		// 水を追加
-		for(int i = 0; i < L/2; i++)
-		{
-			for(int k = 0; k < H/1.5; k++)
-			{
-				auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
-
-				particle.X()[0] = i*l_0;
-				particle.X()[1] = k*l_0;
-
-				particles.push_back(std::move(particle));
-			}
-		}
-
-		// 床を追加
-		for(int i = -1; i < L+1; i++)
-		{
-			const double x = i*l_0;
-
-			// 床
-			{
-				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				
-				wall1.X()[0]  = x; wall1.X()[1]  = -l_0 * 1;
-				dummy1.X()[0] = x; dummy1.X()[1] = -l_0 * 2;
-				dummy2.X()[0] = x; dummy2.X()[1] = -l_0 * 3;
-				dummy3.X()[0] = x; dummy3.X()[1] = -l_0 * 4;
-
-				particles.push_back(std::move(wall1));
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-		}
-
-		// 側壁の追加
-		for(int k = 0; k < H+1; k++)
-		{
-			const double z = k*l_0;
-
-			// 左壁
-			{
-				auto wall1  = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				
-				wall1.X()[0]  = -l_0 * 1; wall1.X()[1]  = z;
-				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = z;
-				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = z;
-				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = z;
-
-				particles.push_back(std::move(wall1));
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-		}
-
-		// 副ダムの追加
-		for(int k = 0; k < (H + 1)/10; k++)
-		{
-			const double z = k*l_0;
-
-			// 左壁
-			{
-				auto wall1 = OpenMps::Particle(OpenMps::Particle::Type::Wall);
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-				wall1.X()[0] =  l_0 * (L + 0); wall1.X()[1] =  z;
-				dummy1.X()[0] = l_0 * (L + 1); dummy1.X()[1] = z;
-				dummy2.X()[0] = l_0 * (L + 2); dummy2.X()[1] = z;
-				dummy3.X()[0] = l_0 * (L + 3); dummy3.X()[1] = z;
-
-				particles.push_back(std::move(wall1));
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-		}
-
-		// 四隅
-		for(int k = 0; k < 4; k++)
-		{
-			const double z = k*l_0;
-
-			// 左下
-			{
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-				dummy1.X()[0] = -l_0 * 2; dummy1.X()[1] = z - 4 * l_0;
-				dummy2.X()[0] = -l_0 * 3; dummy2.X()[1] = z - 4 * l_0;
-				dummy3.X()[0] = -l_0 * 4; dummy3.X()[1] = z - 4 * l_0;
-
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-
-			// 右下
-			{
-				auto dummy1 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy2 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-				auto dummy3 = OpenMps::Particle(OpenMps::Particle::Type::Dummy);
-
-				dummy1.X()[0] = l_0 * (L + 1); dummy1.X()[1] = z - 4 * l_0;
-				dummy2.X()[0] = l_0 * (L + 2); dummy2.X()[1] = z - 4 * l_0;
-				dummy3.X()[0] = l_0 * (L + 3); dummy3.X()[1] = z - 4 * l_0;
-
-				particles.push_back(std::move(dummy1));
-				particles.push_back(std::move(dummy2));
-				particles.push_back(std::move(dummy3));
-			}
-		}
-	}
-#endif
-
-	// 粒子数を表示
-	std::cout << particles.size() << " particles" << std::endl;
-
-	return particles;
-}
 template<typename T>
 static void System(T&& arg)
 {
@@ -342,7 +277,7 @@ int main()
 #endif
 
 	// 粒子を作成
-	auto particles = CreateParticles(l_0);
+	auto particles = InputFromCsv();
 
 	// 計算空間の初期化
 	Computer computer(
