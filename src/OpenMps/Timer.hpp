@@ -1,7 +1,9 @@
 ﻿#ifndef TIMER_INCLUDED
 #define TIMER_INCLUDED
 
+#pragma warning(push, 0)
 #include <chrono>
+#pragma warning(pop)
 
 // 時間計測
 class Timer final
