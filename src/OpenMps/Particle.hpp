@@ -1,9 +1,12 @@
 ﻿#ifndef PARTICLE_INCLUDED
 #define PARTICLE_INCLUDED
 
+#pragma warning(push, 0)
+#include <numeric>
+#pragma warning(pop)
+
 #include "defines.hpp"
 #include "Vector.hpp"
-#include <numeric>
 
 namespace OpenMps
 {
