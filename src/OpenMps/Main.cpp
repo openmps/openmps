@@ -12,6 +12,7 @@
 #include <boost/property_tree/xml_parser.hpp>
 #pragma warning(pop)
 
+#include "ComputingCondition.hpp"
 #include "Computer.hpp"
 #include "Timer.hpp"
 #include "stov.hpp"
@@ -178,7 +179,7 @@ static auto InputFromCsv(const std::string& csv)
 }
 
 // 粒子の初期状態を読み込む
-static auto LoadParticles()
+static decltype(auto) LoadParticles()
 {
 	boost::property_tree::ptree xml;
 	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
@@ -200,7 +201,7 @@ static auto LoadParticles()
 }
 
 // 計算環境を読み込む
-static auto LoadEnvironment(const double outputInterval)
+static decltype(auto) LoadEnvironment(const double outputInterval)
 {
 	boost::property_tree::ptree xml;
 	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
@@ -252,6 +253,28 @@ static auto LoadEnvironment(const double outputInterval)
 	);
 }
 
+// 計算条件を読み込む
+static auto LoadCondition()
+{
+	boost::property_tree::ptree xml;
+	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
+
+	const auto startTime = xml.get<double>("openmps.condition.startTime.<xmlattr>.value");
+	const auto endTime = xml.get<double>("openmps.condition.endTime.<xmlattr>.value");
+	const auto outputInterval = xml.get<double>("openmps.condition.outputInterval.<xmlattr>.value");
+#ifndef PRESSURE_EXPLICIT
+	const auto eps = xml.get<double>("openmps.condition.eps.<xmlattr>.value");
+#endif
+
+	return OpenMps::ComputingCondition(
+#ifndef PRESSURE_EXPLICIT
+		eps,
+#endif
+		startTime, endTime,
+		outputInterval
+	);
+}
+
 template<typename T>
 static void System(T&& arg)
 {
@@ -268,18 +291,14 @@ int main()
 	System("mkdir result");
 	using namespace OpenMps;
 
-	const double outputInterval = 0.005;
-#ifndef PRESSURE_EXPLICIT
-	const double eps = 1e-10;
-#endif
-
+	auto&& condition = LoadCondition();
+	auto&& environment = LoadEnvironment(condition.OutputInterval);
 	auto&& particles = LoadParticles();
-	auto&& environment = LoadEnvironment(outputInterval);
 
 	// 計算空間の初期化
 	Computer computer(
 #ifndef PRESSURE_EXPLICIT
-		eps,
+		condition.Eps,
 #endif
 		environment);
 
@@ -291,14 +310,17 @@ int main()
 	timer.Start();
 	boost::format timeFormat("#%3$05d: t=%1$8.4lf (%2$05d), %10$12d particles, @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
+	const auto outputIterationOffset = static_cast<std::size_t>(std::ceil(condition.StartTime / condition.OutputInterval));
 	{
+
 		// 初期状態を出力
-		const auto count = OutputToCsv(computer, 0);
+		const auto count = OutputToCsv(computer, outputIterationOffset);
 
 		// 開始時間を画面表示
+		const auto tComputer = condition.StartTime;
 		const auto t = std::time(nullptr);
 		const auto tm = std::localtime(&t);
-		std::cout << timeFormat % 0.0 % 0 % 0
+		std::cout << timeFormat % tComputer % 0 % outputIterationOffset
 			% (tm->tm_mon + 1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 			% timer.Time() % count
 			<< std::endl;
@@ -307,13 +329,14 @@ int main()
 	// 計算が終了するまで
 	double nextOutputT = 0;
 	int iteration = 0;
-	for(int outputCount = 1; outputCount <= 100 ; outputCount++)
+	const auto endCount = static_cast<std::size_t>(std::ceil((condition.EndTime - condition.StartTime) / condition.OutputInterval));
+	for(auto outputCount = decltype(endCount)(1); outputCount <= endCount; outputCount++)
 	{
-		double tComputer = computer.GetEnvironment().T();
+		double tComputer = computer.GetEnvironment().T() + condition.StartTime;
 		try
 		{
 			// 次の出力時間まで
-			nextOutputT += outputInterval;
+			nextOutputT += condition.OutputInterval;
 			while(tComputer < nextOutputT)
 			{
 				// 時間を進める
@@ -328,7 +351,7 @@ int main()
 			// 現在時刻を画面表示
 			const auto t = std::time(nullptr);
 			const auto tm = std::localtime(&t);
-			std::cout << timeFormat % tComputer % iteration % outputCount
+			std::cout << timeFormat % tComputer % iteration % (outputCount + outputIterationOffset)
 				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
 				% timer.Time() % count
 				<< std::endl;
@@ -338,7 +361,7 @@ int main()
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
-				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % outputCount << std::endl
+				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % (outputCount + outputIterationOffset) << std::endl
 				<< ex.Message << std::endl;
 			break;
 		}

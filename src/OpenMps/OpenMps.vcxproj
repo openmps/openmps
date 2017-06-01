@@ -77,6 +77,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Computer.hpp" />
+    <ClInclude Include="ComputingCondition.hpp" />
     <ClInclude Include="defines.hpp" />
     <ClInclude Include="Environment.hpp" />
     <ClInclude Include="Grid.hpp" />

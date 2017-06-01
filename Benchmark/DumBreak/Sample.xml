@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openmps>
+  <condition>
+    <startTime value="0" />
+    <endTime value="0.5" />
+    <outputInterval value="0.005" />
+    <eps value="1e-10" />
+  </condition>
   <environment>
     <l_0 value="1e-3" /> <!-- 初期粒子間距離 -->
     <minStepCoountPerOutput value="10" /> <!-- 1出力に最低必要な計算反復回数 -->
