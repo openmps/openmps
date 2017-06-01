@@ -1,5 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openmps>
+  <environment>
+    <l_0 value="1e-3" /> <!-- 初期粒子間距離 -->
+    <minStepCoountPerOutput value="10" /> <!-- 1出力に最低必要な計算反復回数 -->
+    <courant value="0.1" /> <!-- クーラン数 -->
+
+    <g value="9.8" /> <!-- 重力加速度 -->
+    <rho value="998.20" /> <!-- 密度 -->
+    <nu value="1.004e-6" /> <!-- 動粘性係数 -->
+    <r_eByl_0 value="2.4" /> <!-- 影響範囲（初期粒子間距離との比） -->
+    <surfaceRatio value="0.95" /> <!-- 自由表面判定係数 -->
+
+    <minX value="-0.005" /> <!-- 計算領域の最小x座標 -->
+    <minY value="-0.000" /> <!-- 計算領域の最小y座標（3次元計算の時のみ使用する） -->
+    <minZ value="-0.005" /> <!-- 計算領域の最小z座標 -->
+    <maxX value=" 0.110" /> <!-- 計算領域の最大x座標 -->
+    <maxY value=" 0.000" /> <!-- 計算領域の最大y座標（3次元計算の時のみ使用する） -->
+    <maxZ value=" 0.210" /> <!-- 計算領域の最大z座標 -->
+
+    <!-- 陽解法の時のみ使用する -->
+    <c value="1.5" /> --> <!-- 音速（通常は1500[m/s]だが、問題によってはかなり小さくしても良い） -->
+
+    <!-- 人工斥力を導入する時のみ使用する -->
+    <tooNearRatio value="0.5" /> <!-- 人工斥力を付与する距離 -->
+    <tooNearCoefficient value="1.5" />  <!-- 反発係数 -->
+  </environment>
   <particles type="csv">
 Type, x, z, u, w, p, n
 0, 0, 0, 0, 0, 0, 0

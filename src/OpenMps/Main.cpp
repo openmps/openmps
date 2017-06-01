@@ -188,7 +188,7 @@ static auto LoadParticles()
 	auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
 	if (type == "csv")
 	{
-		const auto txt = xml.get_optional<std::string>("openmps.particles").get();
+		const auto txt = xml.get<std::string>("openmps.particles");
 		particles = InputFromCsv(std::move(txt));
 	}
 	else
@@ -199,59 +199,41 @@ static auto LoadParticles()
 	return particles;
 }
 
-// MPS計算用の計算空間固有パラメータを作成する
-static OpenMps::Environment MakeEnvironment(const double l_0, const double courant, const double outputInterval, const std::vector<OpenMps::Particle>& particles)
+// 計算環境を読み込む
+static auto LoadEnvironment(const double outputInterval)
 {
-	const double g = 9.8;
-	const double rho = 998.20;
-	const double nu = 1.004e-6;
-	const double r_eByl_0 = 2.4;
-	const double surfaceRatio = 0.95;
+	boost::property_tree::ptree xml;
+	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
+
+	const auto l_0 = xml.get<double>("openmps.environment.l_0.<xmlattr>.value");
+	const auto minStepCoountPerOutput = xml.get<std::size_t>("openmps.environment.minStepCoountPerOutput.<xmlattr>.value");
+	const double courant = xml.get<double>("openmps.environment.courant.<xmlattr>.value");
+
+	const double g = xml.get<double>("openmps.environment.g.<xmlattr>.value");
+	const double rho = xml.get<double>("openmps.environment.rho.<xmlattr>.value");
+	const double nu = xml.get<double>("openmps.environment.nu.<xmlattr>.value");
+	const double r_eByl_0 = xml.get<double>("openmps.environment.r_eByl_0.<xmlattr>.value");
+	const double surfaceRatio = xml.get<double>("openmps.environment.surfaceRatio.<xmlattr>.value");
 #ifdef PRESSURE_EXPLICIT
-	const double c = 1500/1000; // 物理的な音速は1500[m/s]だが、計算上小さくすることも可能
+	const double c = xml.get<double>("openmps.environment.c.<xmlattr>.value");
 #endif
 #ifdef ARTIFICIAL_COLLISION_FORCE
-	const double tooNearRatio = 0.5;
-	const double tooNearCoefficient = 1.5;
+	const double tooNearRatio = xml.get<double>("openmps.environment.tooNearRatio.<xmlattr>.value");
+	const double tooNearCoefficient = xml.get<double>("openmps.environment.tooNearCoefficient.<xmlattr>.value");
 #endif
 
-	// 計算空間の領域を計算
+	const double minX = xml.get<double>("openmps.environment.minX.<xmlattr>.value");
 #ifdef DIM3
-	double minX = particles.cbegin()->X()[0];
-	double minY = particles.cbegin()->X()[1];
-	double minZ = particles.cbegin()->X()[2];
-	double maxX = minX;
-	double maxY = minY;
-	double maxZ = minZ;
-	for (auto& particle : particles)
-	{
-		const auto x = particle.X()[0];
-		const auto y = particle.X()[1];
-		const auto z = particle.X()[2];
-		minX = std::min(minX, x);
-		minY = std::min(minY, y);
-		minZ = std::min(minZ, z);
-		maxX = std::max(maxX, x);
-		maxY = std::max(maxY, y);
-		maxZ = std::max(maxZ, z);
-	}
-#else
-	double minX = particles.cbegin()->X()[0];
-	double minZ = particles.cbegin()->X()[1];
-	double maxX = minX;
-	double maxZ = minZ;
-	for (auto& particle : particles)
-	{
-		const auto x = particle.X()[0];
-		const auto z = particle.X()[1];
-		minX = std::min(minX, x);
-		minZ = std::min(minZ, z);
-		maxX = std::max(maxX, x);
-		maxZ = std::max(maxZ, z);
-	}
+	const double minY = xml.get<double>("openmps.environment.minY.<xmlattr>.value");
 #endif
+	const double minZ = xml.get<double>("openmps.environment.minZ.<xmlattr>.value");
+	const double maxX = xml.get<double>("openmps.environment.maxX.<xmlattr>.value");
+#ifdef DIM3
+	const double maxY = xml.get<double>("openmps.environment.maxY.<xmlattr>.value");
+#endif
+	const double maxZ = xml.get<double>("openmps.environment.maxZ.<xmlattr>.value");
 
-	return OpenMps::Environment(outputInterval/10, courant,
+	return OpenMps::Environment(outputInterval / minStepCoountPerOutput, courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
 		tooNearRatio, tooNearCoefficient,
 #endif
@@ -286,20 +268,20 @@ int main()
 	System("mkdir result");
 	using namespace OpenMps;
 
-	const double l_0 = 1e-3;
 	const double outputInterval = 0.005;
-	const double courant = 0.1;
 #ifndef PRESSURE_EXPLICIT
 	const double eps = 1e-10;
 #endif
+
 	auto&& particles = LoadParticles();
+	auto&& environment = LoadEnvironment(outputInterval);
 
 	// 計算空間の初期化
 	Computer computer(
 #ifndef PRESSURE_EXPLICIT
 		eps,
 #endif
-		MakeEnvironment(l_0, courant, outputInterval, particles));
+		environment);
 
 	// 粒子を追加
 	computer.AddParticles(std::move(particles));
