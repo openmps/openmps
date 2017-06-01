@@ -179,11 +179,8 @@ static auto InputFromCsv(const std::string& csv)
 }
 
 // 粒子の初期状態を読み込む
-static decltype(auto) LoadParticles()
+static decltype(auto) LoadParticles(const boost::property_tree::ptree& xml)
 {
-	boost::property_tree::ptree xml;
-	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
-
 	// 粒子データの読み込み
 	std::vector<OpenMps::Particle> particles;
 	auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
@@ -201,11 +198,8 @@ static decltype(auto) LoadParticles()
 }
 
 // 計算環境を読み込む
-static decltype(auto) LoadEnvironment(const double outputInterval)
+static decltype(auto) LoadEnvironment(const boost::property_tree::ptree& xml, const double outputInterval)
 {
-	boost::property_tree::ptree xml;
-	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
-
 	const auto l_0 = xml.get<double>("openmps.environment.l_0.<xmlattr>.value");
 	const auto minStepCoountPerOutput = xml.get<std::size_t>("openmps.environment.minStepCoountPerOutput.<xmlattr>.value");
 	const double courant = xml.get<double>("openmps.environment.courant.<xmlattr>.value");
@@ -254,11 +248,8 @@ static decltype(auto) LoadEnvironment(const double outputInterval)
 }
 
 // 計算条件を読み込む
-static auto LoadCondition()
+static auto LoadCondition(const boost::property_tree::ptree& xml)
 {
-	boost::property_tree::ptree xml;
-	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
-
 	const auto startTime = xml.get<double>("openmps.condition.startTime.<xmlattr>.value");
 	const auto endTime = xml.get<double>("openmps.condition.endTime.<xmlattr>.value");
 	const auto outputInterval = xml.get<double>("openmps.condition.outputInterval.<xmlattr>.value");
@@ -289,14 +280,18 @@ static void System(T&& arg)
 int main()
 {
 	System("mkdir result");
-	using namespace OpenMps;
 
-	auto&& condition = LoadCondition();
-	auto&& environment = LoadEnvironment(condition.OutputInterval);
-	auto&& particles = LoadParticles();
+	auto xml = std::make_unique<boost::property_tree::ptree>();
+	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", *xml);
+
+	auto&& condition = LoadCondition(*xml);
+	auto&& environment = LoadEnvironment(*xml, condition.OutputInterval);
+	auto&& particles = LoadParticles(*xml);
+
+	xml.~unique_ptr(); // 読み込んだテキストデータを強制的に廃棄
 
 	// 計算空間の初期化
-	Computer computer(
+	OpenMps::Computer computer(
 #ifndef PRESSURE_EXPLICIT
 		condition.Eps,
 #endif
@@ -357,7 +352,7 @@ int main()
 				<< std::endl;
 		}
 		// 計算で例外があったら
-		catch(Computer::Exception ex)
+		catch(OpenMps::Computer::Exception ex)
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
