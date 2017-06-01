@@ -7,6 +7,9 @@
 #include <unordered_map>
 #include <algorithm>
 #include <boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 #pragma warning(pop)
 
 #include "Computer.hpp"
@@ -62,38 +65,33 @@ static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCoun
 }
 
 // 粒子を読み込む
-static auto InputFromCsv()
+static auto InputFromCsv(const std::string& csv)
 {
 	std::vector<OpenMps::Particle> particles;
 
-	// ファイルを開く
-	auto filename = "particles.csv";
-	std::ifstream input(filename);
+	std::vector<std::string> input;
+	boost::algorithm::split(input, csv, boost::is_any_of("\n"));
 
-	if (input.fail())
-	{
-		throw std::runtime_error("Input csv doesn't exist!");
-	}
+	// 先頭の空行は飛ばす
+	auto itr = input.cbegin();
+	for (; itr->size() == 0; ++itr) {}
 
 	// 行をカンマ区切りで分割する関数
 	const auto GetItems = [](std::string str)
 	{
 		str.erase(std::remove_if(str.begin(), str.end(),
 			[](const char c)
-		{
-			return (c == ' ') || (c == '\t');
-		}), str.end());
+			{
+				return (c == ' ') || (c == '\t');
+			}), str.end());
 
-		std::string item = "";
-		std::istringstream lineStream(str);
 		std::vector<std::string> data;
-		while (std::getline(lineStream, item, ','))
+		if (str.size() > 0)
 		{
-			data.push_back(item);
+			boost::algorithm::split(data, str, boost::is_any_of(","));
 		}
 		return data;
 	};
-
 
 	// ヘッダー項目の列番号を取得（ない場合は-1が入る）
 	constexpr std::int8_t HEADER_NOT_FOUND = -1;
@@ -115,11 +113,7 @@ static auto InputFromCsv()
 	});
 	{
 		// 先頭行を読み込み
-		std::string line;
-		if (!std::getline(input, line))
-		{
-			throw std::runtime_error("Input csv has no header");
-		}
+		auto& line = *itr; ++itr;
 		const auto headerItems = GetItems(line);
 		for (auto i = decltype(headerItems.size())(0); i < headerItems.size(); i++)
 		{
@@ -145,39 +139,62 @@ static auto InputFromCsv()
 	}
 
 	// 粒子を作成して入れていく
-	std::string line;
-	while (std::getline(input, line))
+	for (;itr != input.cend(); ++itr)
 	{
+		auto& line = *itr;
 		const auto data = GetItems(line);
+		if (data.size() > 0) // 空行は飛ばす
+		{
+			auto particle = OpenMps::Particle(static_cast<OpenMps::Particle::Type>(stov<std::underlying_type_t<OpenMps::Particle::Type>>(data[header["Type"]])));
 
-		auto particle = OpenMps::Particle(static_cast<OpenMps::Particle::Type>(stov<std::underlying_type_t<OpenMps::Particle::Type>>(data[header["Type"]])));
-		
-		// 位置ベクトル
-		particle.X()[OpenMps::AXIS_X] = stov<double>(data[header["x"]]);
+			// 位置ベクトル
+			particle.X()[OpenMps::AXIS_X] = stov<double>(data[header["x"]]);
 #ifdef DIM3
-		particle.X()[OpenMps::AXIS_Y] = stov<double>(data[header["y"]]);
+			particle.X()[OpenMps::AXIS_Y] = stov<double>(data[header["y"]]);
 #endif
-		particle.X()[OpenMps::AXIS_Z] = stov<double>(data[header["z"]]);
+			particle.X()[OpenMps::AXIS_Z] = stov<double>(data[header["z"]]);
 
-		// 速度ベクトル
-		particle.U()[OpenMps::AXIS_X] = stov<double>(data[header["u"]]);
+			// 速度ベクトル
+			particle.U()[OpenMps::AXIS_X] = stov<double>(data[header["u"]]);
 #ifdef DIM3
-		particle.U()[OpenMps::AXIS_Y] = stov<double>(data[header["v"]]);
+			particle.U()[OpenMps::AXIS_Y] = stov<double>(data[header["v"]]);
 #endif
-		particle.U()[OpenMps::AXIS_Z] = stov<double>(data[header["w"]]);
+			particle.U()[OpenMps::AXIS_Z] = stov<double>(data[header["w"]]);
 
-		// 圧力
-		particle.P() = stov<double>(data[header["p"]]);
+			// 圧力
+			particle.P() = stov<double>(data[header["p"]]);
 
-		// 粒子数密度
-		particle.N() = stov<double>(data[header["n"]]);
+			// 粒子数密度
+			particle.N() = stov<double>(data[header["n"]]);
 
-		particles.push_back(std::move(particle));
+			particles.push_back(std::move(particle));
+		}
 	}
-
 
 	// 粒子数を表示
 	std::cout << particles.size() << " particles" << std::endl;
+
+	return particles;
+}
+
+// 粒子の初期状態を読み込む
+static auto LoadParticles()
+{
+	boost::property_tree::ptree xml;
+	boost::property_tree::read_xml("../../Benchmark/DumBreak/Sample.xml", xml);
+
+	// 粒子データの読み込み
+	std::vector<OpenMps::Particle> particles;
+	auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
+	if (type == "csv")
+	{
+		const auto txt = xml.get_optional<std::string>("openmps.particles").get();
+		particles = InputFromCsv(std::move(txt));
+	}
+	else
+	{
+		throw std::runtime_error("Not Implemented!");
+	}
 
 	return particles;
 }
@@ -275,9 +292,7 @@ int main()
 #ifndef PRESSURE_EXPLICIT
 	const double eps = 1e-10;
 #endif
-
-	// 粒子を作成
-	auto particles = InputFromCsv();
+	auto&& particles = LoadParticles();
 
 	// 計算空間の初期化
 	Computer computer(
