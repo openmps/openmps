@@ -25,34 +25,34 @@ environment = {\
 }
 
 staticPressure ={\
-	"width": 50, # —±q‚Ì”
+	"width": 50, # ç²’å­ã®æ•°
 	"height": 100,
 	"wall": 110,
 }
 
 type = {\
-	"IncompressibleNewton": 0, # ”ñˆ³k«ƒjƒ…[ƒgƒ“—¬‘Ìi…‚È‚Çj
-	"Wall": 1, # •Ç–Ê
-	"Dummy": 2, # ƒ_ƒ~[—±qi•Ç–Ê•t‹ß‚Ì—±q”–§“x‚ğã‚°‚é‚½‚ß‚¾‚¯‚Ég‚í‚ê‚é—±qj
+	"IncompressibleNewton": 0, # éåœ§ç¸®æ€§ãƒ‹ãƒ¥ãƒ¼ãƒˆãƒ³æµä½“ï¼ˆæ°´ãªã©ï¼‰
+	"Wall": 1, # å£é¢
+	"Dummy": 2, # ãƒ€ãƒŸãƒ¼ç²’å­ï¼ˆå£é¢ä»˜è¿‘ã®ç²’å­æ•°å¯†åº¦ã‚’ä¸Šã’ã‚‹ãŸã‚ã ã‘ã«ä½¿ã‚ã‚Œã‚‹ç²’å­ï¼‰
 }
 
 
 def main():
 	openmps = ET.Element("openmps")
 
-	# ŒvZğŒ‚Ì¶¬
+	# è¨ˆç®—æ¡ä»¶ã®ç”Ÿæˆ
 	c = ET.SubElement(openmps, "condition")
 	for key in condition:
 		item = ET.SubElement(c, key)
 		item.set("value", str(condition[key]))
 
-	# ŒvZ‹óŠÔ‚ÌŠÂ‹«’l
+	# è¨ˆç®—ç©ºé–“ã®ç’°å¢ƒå€¤
 	e = ET.SubElement(openmps, "environment")
 	for key in environment:
 		item = ET.SubElement(e, key)
 		item.set("value", str(environment[key]))
 
-	# —±q‚Ì¶¬
+	# ç²’å­ã®ç”Ÿæˆ
 	width =staticPressure["width"] 
 	height = staticPressure["height"]
 	l_0 = environment["l_0"]
@@ -61,7 +61,7 @@ def main():
 	maxX = sys.float_info.min
 	maxZ = sys.float_info.min
 	particlesCsv= ["Type, x, z, u, w, p, n\n"]
-	# …
+	# æ°´
 	for i in range(0, width):
 		for j in range(0, height):
 			x = i * l_0
@@ -71,7 +71,7 @@ def main():
 			minZ = min(minZ, z)
 			maxX = max(maxX, x)
 			maxZ = max(maxZ, z)
-	# °
+	# åºŠ
 	for i in range(-1, width + 1):
 		x = i * l_0
 		z = -1 * l_0
@@ -104,7 +104,7 @@ def main():
 		minZ = min(minZ, z)
 		maxX = max(maxX, x)
 		maxZ = max(maxZ, z)
-	# ¶•Ç
+	# å·¦å£
 	for j in range(0, height + 1):
 		x = -1 * l_0
 		z = j * l_0
@@ -137,7 +137,7 @@ def main():
 		minZ = min(minZ, z)
 		maxX = max(maxX, x)
 		maxZ = max(maxZ, z)
-	# ‰E•Ç
+	# å³å£
 	for j in range(0, height + 1):
 		x = (width + 0) * l_0
 		z = j * l_0
@@ -170,10 +170,10 @@ def main():
 		minZ = min(minZ, z)
 		maxX = max(maxX, x)
 		maxZ = max(maxZ, z)
-	# l‹÷
+	# å››éš…
 	for i in range(1, 4):
 		for j in range(-4, 0):
-			# ¶‰º
+			# å·¦ä¸‹
 			x = (-1 - i) * l_0
 			z = j * l_0
 			particlesCsv.append("{0}, {1}, {2}, 0, 0, 0, 0\n".format(type["Dummy"], x, z))
@@ -181,7 +181,7 @@ def main():
 			minZ = min(minZ, z)
 			maxX = max(maxX, x)
 			maxZ = max(maxZ, z)
-			# ‰E‰º
+			# å³ä¸‹
 			x = (width + i) * l_0
 			z = j * l_0
 			particlesCsv.append("{0}, {1}, {2}, 0, 0, 0, 0\n".format(type["Dummy"], x, z))
@@ -194,14 +194,14 @@ def main():
 	particles.set("type", "csv")
 	particles.text = "".join(particlesCsv)
 
-	# ŒvZ‹óŠÔ‚Ì”ÍˆÍ‚ğİ’è
+	# è¨ˆç®—ç©ºé–“ã®ç¯„å›²ã‚’è¨­å®š
 	ET.SubElement(e, "minX").set("value", str(minX))
 	ET.SubElement(e, "minZ").set("value", str(minZ))
 	ET.SubElement(e, "maxX").set("value", str(maxX))
 	ET.SubElement(e, "maxZ").set("value", str(maxZ))
 	
 
-	# ƒtƒ@ƒCƒ‹‚É•Û‘¶
+	# ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜
 	xml = minidom.parseString(ET.tostring(openmps)).toprettyxml(indent="	")
 	with open("test.xml", "w") as f:
 		f.write(xml)
