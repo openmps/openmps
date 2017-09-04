@@ -721,18 +721,11 @@ namespace OpenMps
 			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U, Detail::Field::Name::Type>(i, 0.0,
 				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u, const Particle::Type type)
 			{
-				// ダミー粒子以外
-				if(type != Particle::Type::Dummy)
-				{
-					const Vector dx = x - thisX;
-					const Vector du = u - thisU;
-					const auto r = boost::numeric::ublas::norm_2(dx);
-					return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
-				}
-				else
-				{
-					return 0.0;
-				}
+				// ここは粒子数密度の計算なので、対ダミー粒子も含める
+				const Vector dx = x - thisX;
+				const Vector du = u - thisU;
+				const auto r = boost::numeric::ublas::norm_2(dx);
+				return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
 			});
 #else
 			const auto n0 = environment.N0();
