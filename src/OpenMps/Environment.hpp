@@ -18,8 +18,10 @@ namespace OpenMps
 		// 基準粒子数密度
 		double n0;
 
+#ifndef MPS_HL
 		// 拡散モデル定数
 		double lambda;
+#endif
 
 		// 最大時間刻み
 		const double maxDt;
@@ -151,7 +153,9 @@ namespace OpenMps
 			// 基準粒子数密度とλの計算
 			const auto range = static_cast<int>(std::ceil(r_eByl_0));
 			n0 = 0;
+#ifndef MPS_HL
 			lambda = 0;
+#endif
 			for (auto i = -range; i < range; i++)
 			{
 				for (auto j = -range; j < range; j++)
@@ -182,8 +186,10 @@ namespace OpenMps
 								// 基準粒子数密度に足す
 								n0 += w;
 
+#ifndef MPS_HL
 								// λに足す
 								lambda += r*r * w;
+#endif
 							}
 						}
 #ifdef DIM3
@@ -192,9 +198,11 @@ namespace OpenMps
 				}
 			}
 
+#ifndef MPS_HL
 			// λの最終計算
 			// λ = (Σr^2 w)/(Σw)
 			lambda /= n0;
+#endif
 		}
 
 		// CFL条件より時間刻みを決定する
@@ -225,10 +233,12 @@ namespace OpenMps
 			return n0;
 		}
 
+#ifndef MPS_HL
 		double Lambda() const
 		{
 			return lambda;
 		}
+#endif
 
 		// 代入演算子
 		// @param src 代入元
@@ -237,7 +247,9 @@ namespace OpenMps
 			this->t = src.t;
 			this->dt = src.dt;
 			this->n0 = src.n0;
+#ifndef MPS_HL
 			this->lambda = src.lambda;
+#endif
 			const_cast<double&>(this->maxDt) = src.maxDt;
 			const_cast<double&>(this->MaxDx) = src.MaxDx;
 			const_cast<double&>(this->R_e) = src.R_e;
