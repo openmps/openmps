@@ -784,7 +784,9 @@ namespace OpenMps
 		{
 			const auto n0 = environment.N0();
 			const auto r_e = environment.R_e;
+#ifndef MPS_HL
 			const auto lambda = environment.Lambda();
+#endif
 			const auto nu = environment.Nu;
 			const auto dt = environment.Dt();
 			const auto g = environment.G;
@@ -810,7 +812,11 @@ namespace OpenMps
 				{
 					// 粘性の計算
 					const auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
+						[&thisX = particle.X(), &thisU = particle.U(), n0, r_e,
+#ifndef MPS_HL
+						lambda,
+#endif
+						nu](const Vector& u, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -964,7 +970,9 @@ namespace OpenMps
 			const auto surfaceRatio = environment.SurfaceRatio;
 			const auto r_e = environment.R_e;
 			const auto rho = environment.Rho;
+#ifndef MPS_HL
 			const auto lambda = environment.Lambda();
+#endif
 
 			// 粒子数を取得
 			const std::size_t n = particles.size();
@@ -1062,11 +1070,14 @@ namespace OpenMps
 				{
 					// 対角項を設定
 					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
-					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio,
+					[&thisX = particles[i].X(), r_e, n0, surfaceRatio,
+#ifndef MPS_HL
+						lambda,
+#endif
 #ifdef _OPENMP
 						&a_i
 #else
-						&A
+						&A, i
 #endif
 					](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
@@ -1340,7 +1351,6 @@ namespace OpenMps
 		// DS法による人工斥力を追加
 		void DynamicStabilize()
 		{
-			const double r_e = environment.R_e;
 			const double dt = environment.Dt();
 			const double n0 = environment.N0();
 			const double d = environment.L_0 - environment.MaxDx;
@@ -1364,7 +1374,7 @@ namespace OpenMps
 					// DS法：Λ = -1/(2 n0 Δt) Σ(√(d^2 - r⊥^2) - r||) x/r
 					const auto& thisX = particle.X();
 					const Vector result = -1.0/(2 * dt * n0) * AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&x0 = originalX[i], &originalX = this->originalX, &thisX, r_e, dt, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
+						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
