@@ -1284,7 +1284,8 @@ namespace OpenMps
 #else
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
-					const auto d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
+					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 						[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
@@ -1292,10 +1293,9 @@ namespace OpenMps
 						{
 							namespace ublas = boost::numeric::ublas;
 
-							// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
 							const auto dx = x - thisX;
 							const auto r2 = ublas::inner_prod(dx, dx);
-							const Vector result = (-dt / rho * DIM / n0 * (p + thisP) / r2 * Particle::W(R(x, thisX), r_e)) * dx;
+							const Vector result = (p + thisP) / r2 * Particle::W(R(x, thisX), r_e) * dx;
 							return result;
 						}
 						else
