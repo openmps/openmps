@@ -718,8 +718,8 @@ namespace OpenMps
 			const auto r_e = environment.R_e;
 
 			// HS法（高精度生成項）：-r_eΣ r・u / |r|^3
-			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U, Detail::Field::Name::Type>(i, 0.0,
-				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u, const Particle::Type type)
+			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U>(i, 0.0,
+				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u)
 			{
 				// ここは粒子数密度の計算なので、対ダミー粒子も含める
 				const Vector dx = x - thisX;
