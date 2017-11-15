@@ -1017,9 +1017,9 @@ namespace OpenMps
 					const auto speed = NeighborDensitiyVariationSpeed(i);
 #ifdef MPS_ECS
 					const auto e = ecs[i];
-					ppe.b(i) = rho / (n0 * dt) * (speed + e);
+					ppe.b(i) = -rho / (n0 * dt) * (speed + e);
 #else
-					ppe.b(i) = rho / (n0 * dt) * speed;
+					ppe.b(i) = -rho / (n0 * dt) * speed;
 #endif
 
 
@@ -1080,11 +1080,11 @@ namespace OpenMps
 							const auto r = R(thisX, x);
 							// 非対角項を計算
 #ifdef MPS_HL
-							// HL法（高精度ラプラシアン）: -(5-D)r_e/n0 / r^3
-							const auto a_ij = -(5 - DIM) * r_e / n0 / (r*r*r);
+							// HL法（高精度ラプラシアン）: (5-D)r_e/n0 / r^3
+							const auto a_ij = (5 - DIM) * r_e / n0 / (r*r*r);
 #else
-							// 標準MPS法：-2D/(λn0) w
-							const auto a_ij = (-2 * DIM / lambda / n0) * Particle::W(r, r_e);
+							// 標準MPS法：2D/(λn0) w
+							const auto a_ij = (2 * DIM / lambda / n0) * Particle::W(r, r_e);
 #endif
 
 							// 自由表面の場合は非対角項は設定しない
