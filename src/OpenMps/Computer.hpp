@@ -1084,7 +1084,7 @@ namespace OpenMps
 							const auto a_ij = -(5 - DIM) * r_e / n0 / (r*r*r);
 #else
 							// 標準MPS法：-2D/(λn0) w
-							const auto a_ij = (-2 * DIM / lambda * n0) * Particle::W(r, r_e);
+							const auto a_ij = (-2 * DIM / lambda / n0) * Particle::W(r, r_e);
 #endif
 
 							// 自由表面の場合は非対角項は設定しない
