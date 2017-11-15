@@ -904,7 +904,7 @@ namespace OpenMps
 					const auto surfaceRatio = environment.SurfaceRatio;
 
 					// 負圧であったり自由表面の場合は圧力0
-					const auto p = ppe.x(i);
+					const double p = ppe.x(i);
 					const auto n = particles[i].N();
 					particles[i].P() = ((p < 0) || IsSurface(n, n0, surfaceRatio)) ? 0 : p;
 				}
