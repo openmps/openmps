@@ -721,18 +721,11 @@ namespace OpenMps
 			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U, Detail::Field::Name::Type>(i, 0.0,
 				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u, const Particle::Type type)
 			{
-				// ダミー粒子以外
-				if(type != Particle::Type::Dummy)
-				{
-					const Vector dx = x - thisX;
-					const Vector du = u - thisU;
-					const auto r = boost::numeric::ublas::norm_2(dx);
-					return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
-				}
-				else
-				{
-					return 0.0;
-				}
+				// ここは粒子数密度の計算なので、対ダミー粒子も含める
+				const Vector dx = x - thisX;
+				const Vector du = u - thisU;
+				const auto r = boost::numeric::ublas::norm_2(dx);
+				return boost::numeric::ublas::inner_prod(dx, du) / (r*r*r);
 			});
 #else
 			const auto n0 = environment.N0();
@@ -784,7 +777,9 @@ namespace OpenMps
 		{
 			const auto n0 = environment.N0();
 			const auto r_e = environment.R_e;
+#ifndef MPS_HL
 			const auto lambda = environment.Lambda();
+#endif
 			const auto nu = environment.Nu;
 			const auto dt = environment.Dt();
 			const auto g = environment.G;
@@ -810,7 +805,11 @@ namespace OpenMps
 				{
 					// 粘性の計算
 					const auto vis = AccumulateNeighbor<Detail::Field::Name::U, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisX = particle.X(), &thisU = particle.U(), &n0, &r_e, &lambda, &nu](const Vector& u, const Vector& x, const Particle::Type type)
+						[&thisX = particle.X(), &thisU = particle.U(), n0, r_e,
+#ifndef MPS_HL
+						lambda,
+#endif
+						nu](const Vector& u, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -905,7 +904,7 @@ namespace OpenMps
 					const auto surfaceRatio = environment.SurfaceRatio;
 
 					// 負圧であったり自由表面の場合は圧力0
-					const auto p = ppe.x(i);
+					const double p = ppe.x(i);
 					const auto n = particles[i].N();
 					particles[i].P() = ((p < 0) || IsSurface(n, n0, surfaceRatio)) ? 0 : p;
 				}
@@ -964,7 +963,9 @@ namespace OpenMps
 			const auto surfaceRatio = environment.SurfaceRatio;
 			const auto r_e = environment.R_e;
 			const auto rho = environment.Rho;
+#ifndef MPS_HL
 			const auto lambda = environment.Lambda();
+#endif
 
 			// 粒子数を取得
 			const std::size_t n = particles.size();
@@ -1016,9 +1017,9 @@ namespace OpenMps
 					const auto speed = NeighborDensitiyVariationSpeed(i);
 #ifdef MPS_ECS
 					const auto e = ecs[i];
-					ppe.b(i) = rho / (n0 * dt) * (speed + e);
+					ppe.b(i) = -rho / (n0 * dt) * (speed + e);
 #else
-					ppe.b(i) = rho / (n0 * dt) * speed;
+					ppe.b(i) = -rho / (n0 * dt) * speed;
 #endif
 
 
@@ -1062,11 +1063,14 @@ namespace OpenMps
 				{
 					// 対角項を設定
 					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
-					[i, &thisX = particles[i].X(), rho, lambda, r_e, n0, surfaceRatio,
+					[&thisX = particles[i].X(), r_e, n0, surfaceRatio,
+#ifndef MPS_HL
+						lambda,
+#endif
 #ifdef _OPENMP
 						&a_i
 #else
-						&A
+						&A, i
 #endif
 					](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
 					{
@@ -1076,11 +1080,11 @@ namespace OpenMps
 							const auto r = R(thisX, x);
 							// 非対角項を計算
 #ifdef MPS_HL
-							// HL法（高精度ラプラシアン）: -(5-D)r_e/n0 / r^3
-							const auto a_ij = -(5 - DIM) * r_e / n0 / (r*r*r);
+							// HL法（高精度ラプラシアン）: (5-D)r_e/n0 / r^3
+							const auto a_ij = (5 - DIM) * r_e / n0 / (r*r*r);
 #else
-							// 標準MPS法：-2D/(λn0) w
-							const auto a_ij = (-2 * DIM / lambda * n0) * Particle::W(r, r_e);
+							// 標準MPS法：2D/(λn0) w
+							const auto a_ij = (2 * DIM / lambda / n0) * Particle::W(r, r_e);
 #endif
 
 							// 自由表面の場合は非対角項は設定しない
@@ -1280,7 +1284,8 @@ namespace OpenMps
 #else
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
-					const auto d = AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
+					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 						[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
@@ -1288,10 +1293,9 @@ namespace OpenMps
 						{
 							namespace ublas = boost::numeric::ublas;
 
-							// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
 							const auto dx = x - thisX;
 							const auto r2 = ublas::inner_prod(dx, dx);
-							const Vector result = (-dt / rho * DIM / n0 * (p + thisP) / r2 * Particle::W(R(x, thisX), r_e)) * dx;
+							const Vector result = (p + thisP) / r2 * Particle::W(R(x, thisX), r_e) * dx;
 							return result;
 						}
 						else
@@ -1340,7 +1344,6 @@ namespace OpenMps
 		// DS法による人工斥力を追加
 		void DynamicStabilize()
 		{
-			const double r_e = environment.R_e;
 			const double dt = environment.Dt();
 			const double n0 = environment.N0();
 			const double d = environment.L_0 - environment.MaxDx;
@@ -1364,7 +1367,7 @@ namespace OpenMps
 					// DS法：Λ = -1/(2 n0 Δt) Σ(√(d^2 - r⊥^2) - r||) x/r
 					const auto& thisX = particle.X();
 					const Vector result = -1.0/(2 * dt * n0) * AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&x0 = originalX[i], &originalX = this->originalX, &thisX, r_e, dt, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
+						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
