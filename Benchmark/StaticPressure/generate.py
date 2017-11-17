@@ -6,22 +6,22 @@ import xml.etree.ElementTree as ET
 from xml.dom import minidom
 
 condition = { \
-	"startTime": 0, 
-    "endTime": 0.5,
-    "outputInterval": 0.0005,
-    "eps": 1e-10,
+	"startTime": 0,
+	"endTime": 0.5,
+	"outputInterval": 0.0005,
+	"eps": 1e-10,
 }
 
 environment = {\
 	"l_0": 1e-3,
-    "minStepCoountPerOutput": 100,
-    "courant": 0.1,
+	"minStepCoountPerOutput": 100,
+	"courant": 0.1,
 
-    "g": 9.8,
-    "rho": 998.20,
-    "nu": 1.004e-6,
-    "r_eByl_0": 2.4,
-    "surfaceRatio": 0.95,
+	"g": 9.8,
+	"rho": 998.20,
+	"nu": 1.004e-6,
+	"r_eByl_0": 2.4,
+	"surfaceRatio": 0.95,
 }
 
 staticPressure ={\
@@ -53,7 +53,7 @@ def main():
 		item.set("value", str(environment[key]))
 
 	# 粒子の生成
-	width =staticPressure["width"] 
+	width =staticPressure["width"]
 	height = staticPressure["height"]
 	l_0 = environment["l_0"]
 	minX = sys.float_info.max
@@ -199,7 +199,7 @@ def main():
 	ET.SubElement(e, "minZ").set("value", str(minZ))
 	ET.SubElement(e, "maxX").set("value", str(maxX))
 	ET.SubElement(e, "maxZ").set("value", str(maxZ))
-	
+
 
 	# ファイルに保存
 	xml = minidom.parseString(ET.tostring(openmps)).toprettyxml(indent="	")
