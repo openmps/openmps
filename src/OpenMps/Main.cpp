@@ -307,7 +307,7 @@ int main(const int argc, const char* const argv[])
 	};
 
 	// 計算空間の初期化
-	OpenMps::Computer<decltype(positonWall)> computer(
+	auto computer = OpenMps::CreateComputer(
 #ifndef PRESSURE_EXPLICIT
 		condition.Eps,
 #endif

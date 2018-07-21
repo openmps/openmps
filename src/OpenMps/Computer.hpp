@@ -1464,8 +1464,22 @@ namespace OpenMps
 #endif
 		}
 
+		Computer(Computer&& src)
+			: particles(std::move(src.particles)),
+			environment(std::move(src.environment)),
+			grid(std::move(src.grid)),
+			neighbor(src.neighbor),
+#ifndef PRESSURE_EXPLICIT
+			ppe(std::move(src.ppe)),
+#endif
+			du(std::move(src.du)),
+			ecs(std::move(src.ecs)),
+			originalX(std::move(src.originalX)),
+			ecs(std::move(src.ecs)),
+			positionWall(std::move(src.positionWall))
+		{}	
+
 		Computer(const Computer&) = delete;
-		Computer(Computer&&) = delete;
 		Computer& operator=(const Computer&) = delete;
 
 		// 時間を進める
@@ -1548,5 +1562,28 @@ namespace OpenMps
 			return environment;
 		}
 	};
+
+
+	// 計算空間を作成する
+#ifndef PRESSURE_EXPLICIT
+	// @param allowableResidual 圧力方程式の収束判定（許容誤差）
+#endif
+	// @param env MPS計算用の計算空間固有パラメータ
+	// @param posWall 壁粒子の位置
+	template<typename POSITION_WALL>
+	decltype(auto) CreateComputer(
+#ifndef PRESSURE_EXPLICIT
+		const double allowableResidual,
+#endif
+		const Environment& env,
+		const POSITION_WALL& posWall)
+	{
+		return Computer<decltype(posWall)>(
+#ifndef PRESSURE_EXPLICIT
+			allowableResidual,
+#endif
+			env,
+			posWall);
+	}
 }
 #endif
