@@ -417,6 +417,7 @@ namespace OpenMps
 #endif
 
 	// MPS法による計算空間
+	template<typename POSITION_WALL>
 	class Computer final
 	{
 	private:
@@ -506,6 +507,10 @@ namespace OpenMps
 		// 移動前の位置
 		std::vector<Vector> originalX;
 #endif
+
+		// 壁の移動
+		const POSITION_WALL& positionWall;
+
 
 		// 2点間の距離を計算する
 		// @param x1 点1
@@ -837,6 +842,7 @@ namespace OpenMps
 			}
 
 			// 全粒子で
+			const auto t = environment.T();
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
 				// 水粒子のみ
@@ -845,6 +851,14 @@ namespace OpenMps
 					// 位置・速度を修正
 					particles[i].U() += a[i] * dt;
 					particles[i].X() += particles[i].U()* dt;
+				}
+				// 壁の位置
+				else
+				{
+					const auto x = positionWall(i, t, dt);
+					const auto u = (particles[i].X() - x) / dt; // 速度は位置から微分
+					particles[i].X() = x;
+					particles[i].U() = u;
 				}
 			}
 		}
@@ -1432,14 +1446,17 @@ namespace OpenMps
 		// @param allowableResidual 圧力方程式の収束判定（許容誤差）
 #endif
 		// @param env MPS計算用の計算空間固有パラメータ
+		// @param posWall 壁粒子の位置
 		Computer(
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
 #endif
-			const Environment& env)
+			const Environment& env,
+			const POSITION_WALL& posWall)
 			: environment(env),
 			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
-			neighbor()
+			neighbor(),
+			positionWall(posWall)
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -1447,8 +1464,22 @@ namespace OpenMps
 #endif
 		}
 
+		Computer(Computer&& src)
+			: particles(std::move(src.particles)),
+			environment(std::move(src.environment)),
+			grid(std::move(src.grid)),
+			neighbor(src.neighbor),
+#ifndef PRESSURE_EXPLICIT
+			ppe(std::move(src.ppe)),
+#endif
+			du(std::move(src.du)),
+			ecs(std::move(src.ecs)),
+			originalX(std::move(src.originalX)),
+			ecs(std::move(src.ecs)),
+			positionWall(std::move(src.positionWall))
+		{}	
+
 		Computer(const Computer&) = delete;
-		Computer(Computer&&) = delete;
 		Computer& operator=(const Computer&) = delete;
 
 		// 時間を進める
@@ -1531,5 +1562,28 @@ namespace OpenMps
 			return environment;
 		}
 	};
+
+
+	// 計算空間を作成する
+#ifndef PRESSURE_EXPLICIT
+	// @param allowableResidual 圧力方程式の収束判定（許容誤差）
+#endif
+	// @param env MPS計算用の計算空間固有パラメータ
+	// @param posWall 壁粒子の位置
+	template<typename POSITION_WALL>
+	decltype(auto) CreateComputer(
+#ifndef PRESSURE_EXPLICIT
+		const double allowableResidual,
+#endif
+		const Environment& env,
+		const POSITION_WALL& posWall)
+	{
+		return Computer<decltype(posWall)>(
+#ifndef PRESSURE_EXPLICIT
+			allowableResidual,
+#endif
+			env,
+			posWall);
+	}
 }
 #endif

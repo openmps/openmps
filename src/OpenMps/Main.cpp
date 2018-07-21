@@ -27,7 +27,8 @@ namespace std
 #endif
 
 // 計算結果をCSVへ出力する
-static auto OutputToCsv(const OpenMps::Computer& computer, const int& outputCount)
+template<typename COMPUTER>
+static auto OutputToCsv(const COMPUTER& computer, const int& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -291,12 +292,27 @@ int main(const int argc, const char* const argv[])
 
 	xml.~unique_ptr(); // 読み込んだテキストデータを強制的に廃棄
 
+	// 粒子の初期位置を保存
+	auto initialPosition = std::make_unique<OpenMps::Vector[]>(particles.size());
+	std::transform(particles.cbegin(), particles.cend(), initialPosition.get(),
+		[](auto particle)
+		{
+			return particle.X();
+		});
+
+	// 壁は動かさない
+	const auto positonWall = [&initialPosition](auto i, auto t, auto dt)
+	{
+		return initialPosition[i];
+	};
+
 	// 計算空間の初期化
-	OpenMps::Computer computer(
+	auto computer = OpenMps::CreateComputer(
 #ifndef PRESSURE_EXPLICIT
 		condition.Eps,
 #endif
-		environment);
+		environment,
+		positonWall);
 
 	// 粒子を追加
 	computer.AddParticles(std::move(particles));
@@ -353,7 +369,7 @@ int main(const int argc, const char* const argv[])
 				<< std::endl;
 		}
 		// 計算で例外があったら
-		catch(OpenMps::Computer::Exception ex)
+		catch(decltype(computer)::Exception ex)
 		{
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
