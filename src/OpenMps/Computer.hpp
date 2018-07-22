@@ -669,7 +669,7 @@ namespace OpenMps
 		}
 
 		// 時間刻みを決定する
-		void DetermineDt()
+		auto DetermineDt()
 		{
 			namespace ublas = boost::numeric::ublas;
 
@@ -683,8 +683,10 @@ namespace OpenMps
 			});
 			const auto maxU = ublas::norm_2(maxUParticle.U());
 
-			// 時間刻みを設定
-			environment.SetDt(maxU);
+
+			// CFL条件より時間刻みを決定する
+			const auto dt = (maxU == 0 ? environment.MaxDt : std::min(environment.MaxDx / maxU, environment.MaxDt));
+			return dt;
 		}
 
 		// 粒子数密度を計算する
@@ -1493,10 +1495,10 @@ namespace OpenMps
 		Computer& operator=(const Computer&) = delete;
 
 		// 時間を進める
-		void ForwardTime()
+		void ForwardTime(const double dt)
 		{
 			// 時間刻みを設定
-			DetermineDt();
+			environment.Dt() = dt;
 
 			// 近傍粒子探索
 			// ※近傍粒子半径を大きめにとっているので1回で良い
@@ -1535,6 +1537,15 @@ namespace OpenMps
 
 			// 時間を進める
 			environment.SetNextT();
+		}
+
+		// 時間を進める
+		void ForwardTime()
+		{
+			// 時間刻みを設定
+			const auto dt = DetermineDt();
+
+			ForwardTime(dt);
 		}
 
 		// 粒子を追加する

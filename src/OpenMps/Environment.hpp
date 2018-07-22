@@ -23,9 +23,6 @@ namespace OpenMps
 		double lambda;
 #endif
 
-		// 最大時間刻み
-		const double maxDt;
-
 	public:
 
 #ifdef PRESSURE_EXPLICIT
@@ -40,6 +37,9 @@ namespace OpenMps
 		// 過剰接近粒子から受ける修正量の係数
 		const double TooNearCoefficient;
 #endif
+
+		// 最大時間刻み
+		const double MaxDt;
 
 		// 1ステップの最大移動距離
 		const double MaxDx;
@@ -71,7 +71,7 @@ namespace OpenMps
 		// 近傍粒子として保持する距離
 		const double NeighborLength;
 
-		// @param maxDt_ 最大時間刻み（出力時間刻み以下など）
+		// @param maxDt 最大時間刻み（出力時間刻み以下など）
 		// @param courant クーラン数
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
@@ -93,7 +93,7 @@ namespace OpenMps
 #endif
 		// @param maxZ 計算空間の最大Z座標
 		Environment(
-			const double maxDt_,
+			const double maxDt,
 			const double courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			const double tooNearRatio,
@@ -122,12 +122,12 @@ namespace OpenMps
 
 #ifdef PRESSURE_EXPLICIT
 			// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
-			maxDt(std::min(maxDt_, (courant*l_0) / c)),
+			MaxDt(std::min(maxDt, (courant*l_0) / c)),
 
 			C(c),
 #else
 			// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
-			maxDt(std::min(maxDt_, std::sqrt(2 * (courant*l_0) / g))),
+			MaxDt(std::min(maxDt, std::sqrt(2 * (courant*l_0) / g))),
 #endif
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			TooNearLength(tooNearRatio*l_0), TooNearCoefficient(tooNearCoefficient),
@@ -205,13 +205,6 @@ namespace OpenMps
 #endif
 		}
 
-		// CFL条件より時間刻みを決定する
-		void SetDt(const double maxU)
-		{
-			dt = (maxU == 0 ? maxDt : std::min(MaxDx/maxU, maxDt));
-		}
-		// CFL条件より時間刻みを決定する
-
 		// 時刻を進める
 		void SetNextT()
 		{
@@ -223,6 +216,10 @@ namespace OpenMps
 			return t;
 		}
 
+		double& Dt()
+		{
+			return dt;
+		}
 		double Dt() const
 		{
 			return dt;
@@ -250,7 +247,7 @@ namespace OpenMps
 #ifndef MPS_HL
 			this->lambda = src.lambda;
 #endif
-			const_cast<double&>(this->maxDt) = src.maxDt;
+			const_cast<double&>(this->MaxDt) = src.MaxDt;
 			const_cast<double&>(this->MaxDx) = src.MaxDx;
 			const_cast<double&>(this->R_e) = src.R_e;
 			const_cast<Vector&>(this->G) = src.G;
