@@ -509,10 +509,10 @@ namespace OpenMps
 #endif
 
 		// 壁の移動
-		const POSITION_WALL& positionWall;
+		const POSITION_WALL positionWall;
 
 		// 壁の移動移動の前処理
-		const POSITION_WALL_PRE& positionWallPre;
+		const POSITION_WALL_PRE positionWallPre;
 
 
 		// 2点間の距離を計算する
