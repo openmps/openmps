@@ -294,7 +294,7 @@ namespace OpenMps
 
 		// ゼロ行列
 		static const auto MatrixZero = CreateMatrix(0);
-		
+
 		namespace Detail
 		{
 			template<int D>
@@ -1408,7 +1408,7 @@ namespace OpenMps
 								const auto r_parallel = ublas::inner_prod(dx, e);
 								const Vector dx_perpendicular = dx - r_parallel * e;
 								const auto r_perpendicular2 = ublas::inner_prod(dx_perpendicular, dx_perpendicular);
-								
+
 								const Vector result = (std::sqrt(d2 - r_perpendicular2) - r_parallel) * e;
 								return result;
 							}
@@ -1487,7 +1487,7 @@ namespace OpenMps
 			ecs(std::move(src.ecs)),
 			positionWall(std::move(src.positionWall)),
 			positionWallPre(std::move(src.positionWallPre))
-		{}	
+		{}
 
 		Computer(const Computer&) = delete;
 		Computer& operator=(const Computer&) = delete;

@@ -285,7 +285,7 @@ namespace OpenMps
 				std::make_tuple(g.Block<AXIS_X>(x) + 0, g.Block<AXIS_Z>(x) + 1),
 				std::make_tuple(g.Block<AXIS_X>(x) + 1, g.Block<AXIS_Z>(x) - 1),
 				std::make_tuple(g.Block<AXIS_X>(x) + 1, g.Block<AXIS_Z>(x) + 0),
-				std::make_tuple(g.Block<AXIS_X>(x) + 1, g.Block<AXIS_Z>(x) + 1), 
+				std::make_tuple(g.Block<AXIS_X>(x) + 1, g.Block<AXIS_Z>(x) + 1),
 #endif
 				}},
 				index(idx)
