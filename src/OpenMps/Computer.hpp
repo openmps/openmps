@@ -294,7 +294,7 @@ namespace OpenMps
 
 		// ゼロ行列
 		static const auto MatrixZero = CreateMatrix(0);
-		
+
 		namespace Detail
 		{
 			template<int D>
@@ -417,7 +417,7 @@ namespace OpenMps
 #endif
 
 	// MPS法による計算空間
-	template<typename POSITION_WALL>
+	template<typename POSITION_WALL, typename POSITION_WALL_PRE>
 	class Computer final
 	{
 	private:
@@ -510,6 +510,9 @@ namespace OpenMps
 
 		// 壁の移動
 		const POSITION_WALL& positionWall;
+
+		// 壁の移動移動の前処理
+		const POSITION_WALL_PRE& positionWallPre;
 
 
 		// 2点間の距離を計算する
@@ -786,6 +789,7 @@ namespace OpenMps
 			const auto lambda = environment.Lambda();
 #endif
 			const auto nu = environment.Nu;
+			const auto t = environment.T();
 			const auto dt = environment.Dt();
 			const auto g = environment.G;
 
@@ -841,8 +845,10 @@ namespace OpenMps
 				}
 			}
 
+			// 壁位置計算の前処理
+			positionWallPre(t, dt);
+
 			// 全粒子で
-			const auto t = environment.T();
 			for (unsigned int i = 0; i < particles.size(); i++)
 			{
 				// 水粒子のみ
@@ -1402,7 +1408,7 @@ namespace OpenMps
 								const auto r_parallel = ublas::inner_prod(dx, e);
 								const Vector dx_perpendicular = dx - r_parallel * e;
 								const auto r_perpendicular2 = ublas::inner_prod(dx_perpendicular, dx_perpendicular);
-								
+
 								const Vector result = (std::sqrt(d2 - r_perpendicular2) - r_parallel) * e;
 								return result;
 							}
@@ -1447,16 +1453,19 @@ namespace OpenMps
 #endif
 		// @param env MPS計算用の計算空間固有パラメータ
 		// @param posWall 壁粒子の位置
+		// @param posWallPre 壁粒子の位置計算の前処理
 		Computer(
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
 #endif
 			const Environment& env,
-			const POSITION_WALL& posWall)
+			const POSITION_WALL& posWall,
+			const POSITION_WALL_PRE& posWallPre)
 			: environment(env),
 			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
 			neighbor(),
-			positionWall(posWall)
+			positionWall(posWall),
+			positionWallPre(posWallPre)
 		{
 #ifndef PRESSURE_EXPLICIT
 			// 圧力方程式の許容誤差を設定
@@ -1476,8 +1485,9 @@ namespace OpenMps
 			ecs(std::move(src.ecs)),
 			originalX(std::move(src.originalX)),
 			ecs(std::move(src.ecs)),
-			positionWall(std::move(src.positionWall))
-		{}	
+			positionWall(std::move(src.positionWall)),
+			positionWallPre(std::move(src.positionWallPre))
+		{}
 
 		Computer(const Computer&) = delete;
 		Computer& operator=(const Computer&) = delete;
@@ -1570,20 +1580,22 @@ namespace OpenMps
 #endif
 	// @param env MPS計算用の計算空間固有パラメータ
 	// @param posWall 壁粒子の位置
-	template<typename POSITION_WALL>
+	// @param posWallPre 壁粒子の位置計算の前処理
+	template<typename POSITION_WALL, typename POSITION_WALL_PRE>
 	decltype(auto) CreateComputer(
 #ifndef PRESSURE_EXPLICIT
 		const double allowableResidual,
 #endif
 		const Environment& env,
-		const POSITION_WALL& posWall)
+		const POSITION_WALL& posWall,
+		const POSITION_WALL_PRE& posWallPre)
 	{
-		return Computer<decltype(posWall)>(
+		return Computer<decltype(posWall), decltype(posWallPre)>(
 #ifndef PRESSURE_EXPLICIT
 			allowableResidual,
 #endif
 			env,
-			posWall);
+			posWall, posWallPre);
 	}
 }
 #endif

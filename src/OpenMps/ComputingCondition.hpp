@@ -17,7 +17,7 @@ namespace OpenMps
 
 		// 開始時刻
 		const double StartTime;
-		
+
 		// 終了時刻
 		const double EndTime;
 

@@ -301,9 +301,12 @@ int main(const int argc, const char* const argv[])
 		});
 
 	// 壁は動かさない
-	const auto positonWall = [&initialPosition](auto i, auto t, auto dt)
+	const auto positionWall = [&initialPosition](auto i, auto t, auto dt)
 	{
 		return initialPosition[i];
+	};
+	const auto positionWallPre = [](auto t, auto dt)
+	{
 	};
 
 	// 計算空間の初期化
@@ -312,7 +315,7 @@ int main(const int argc, const char* const argv[])
 		condition.Eps,
 #endif
 		environment,
-		positonWall);
+		positionWall, positionWallPre);
 
 	// 粒子を追加
 	computer.AddParticles(std::move(particles));

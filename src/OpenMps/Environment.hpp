@@ -243,7 +243,7 @@ namespace OpenMps
 		// 代入演算子
 		// @param src 代入元
 		Environment& operator=(const Environment& src)
-		{	
+		{
 			this->t = src.t;
 			this->dt = src.dt;
 			this->n0 = src.n0;
