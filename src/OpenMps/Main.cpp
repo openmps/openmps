@@ -305,6 +305,9 @@ int main(const int argc, const char* const argv[])
 	{
 		return initialPosition[i];
 	};
+	const auto positonWallPre = [](auto t, auto dt)
+	{
+	};
 
 	// 計算空間の初期化
 	auto computer = OpenMps::CreateComputer(
@@ -312,7 +315,7 @@ int main(const int argc, const char* const argv[])
 		condition.Eps,
 #endif
 		environment,
-		positonWall);
+		positonWall, positonWallPre);
 
 	// 粒子を追加
 	computer.AddParticles(std::move(particles));
