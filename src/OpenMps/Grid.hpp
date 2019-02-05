@@ -116,10 +116,6 @@ namespace OpenMps
 #endif
 		{}
 
-		Grid(const Grid&) = delete;
-		Grid(Grid&&) = delete;
-		Grid& operator=(const Grid&) = delete;
-
 		// 全消去（全ブロックの粒子数を0にする）
 		void Clear()
 		{
