@@ -301,11 +301,11 @@ int main(const int argc, const char* const argv[])
 		});
 
 	// 壁は動かさない
-	const auto positionWall = [&initialPosition](auto i, auto t, auto dt)
+	const auto positionWall = [&initialPosition](auto i, auto, auto)
 	{
 		return initialPosition[i];
 	};
-	const auto positionWallPre = [](auto t, auto dt)
+	const auto positionWallPre = [](auto, auto)
 	{
 	};
 
