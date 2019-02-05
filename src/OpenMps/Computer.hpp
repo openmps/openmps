@@ -1489,7 +1489,6 @@ namespace OpenMps
 			du(std::move(src.du)),
 			ecs(std::move(src.ecs)),
 			originalX(std::move(src.originalX)),
-			ecs(std::move(src.ecs)),
 			positionWall(std::move(src.positionWall)),
 			positionWallPre(std::move(src.positionWallPre))
 		{}
