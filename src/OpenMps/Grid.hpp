@@ -124,13 +124,13 @@ namespace OpenMps
 			const auto ny = GridSize<AXIS_Y>();
 #endif
 			const auto nz = GridSize<AXIS_Z>();
-			for (auto i = decltype(nx)(0); i < nx; i++)
+			for (auto i = decltype(nx){0}; i < nx; i++)
 			{
 #ifdef DIM3
-				for (auto j = decltype(ny)(0); j < nx; j++)
+				for (auto j = decltype(ny){0}; j < nx; j++)
 				{
 #endif
-					for (auto k = decltype(nz)(0); k < nz; k++)
+					for (auto k = decltype(nz){0}; k < nz; k++)
 					{
 #ifdef DIM3
 						ParticleCount(i, j, k) = 0;

@@ -345,7 +345,7 @@ int main(const int argc, const char* const argv[])
 	double nextOutputT = 0;
 	int iteration = 0;
 	const auto endCount = static_cast<std::size_t>(std::ceil((condition.EndTime - condition.StartTime) / condition.OutputInterval));
-	for(auto outputCount = decltype(endCount)(1); outputCount <= endCount; outputCount++)
+	for(auto outputCount = decltype(endCount){1}; outputCount <= endCount; outputCount++)
 	{
 		double tComputer = computer.GetEnvironment().T() + condition.StartTime;
 		try

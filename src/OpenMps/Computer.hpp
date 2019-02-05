@@ -589,7 +589,7 @@ namespace OpenMps
 			// 他の粒子に対して
 			const auto n = NeighborCount(i);
 			const auto thisX = particles[i].X();
-			for(auto idx = decltype(n)(0); idx < n; idx++)
+			for(auto idx = decltype(n){0}; idx < n; idx++)
 			{
 				const auto j = Neighbor(i, idx);
 
@@ -618,7 +618,7 @@ namespace OpenMps
 
 			// グリッドに格納
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+			for(auto i = decltype(n){0}; i < n; i++)
 			{
 				// 無効粒子は格納しない
 				if(particles[i].TYPE() != Particle::Type::Disabled)
@@ -635,17 +635,17 @@ namespace OpenMps
 			// 近傍粒子を格納
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				// 無効粒子は除く
 				if(particles[i].TYPE() != Particle::Type::Disabled)
 				{
-					auto idx = decltype(i)(0);
+					auto idx = decltype(i){0};
 
 					const auto&& begin = grid.cbegin(particles[i].X());
 					const auto&& end = grid.cend();
@@ -701,11 +701,11 @@ namespace OpenMps
 			const auto n = particles.size();
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				auto& particle = particles[i];
@@ -762,11 +762,11 @@ namespace OpenMps
 			const auto n = particles.size();
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				const auto& particle = particles[i];
@@ -805,11 +805,11 @@ namespace OpenMps
 			const auto n = particles.size();
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				auto& particle = particles[i];
@@ -880,7 +880,7 @@ namespace OpenMps
 		{
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n)(0); i < n; i++)
+			for(auto i = decltype(n){0}; i < n; i++)
 			{
 				auto& particle = particles[i];
 
@@ -1012,7 +1012,7 @@ namespace OpenMps
 
 #ifdef _OPENMP
 				ppe.a_ij.resize(n);
-				for (auto i = decltype(n)(0); i < n; i++)
+				for (auto i = decltype(n){0}; i < n; i++)
 				{
 					ppe.a_ij[i].reserve(MaxNeighborCount());
 				}
@@ -1021,11 +1021,11 @@ namespace OpenMps
 
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				const auto thisN = particles[i].N();
@@ -1065,14 +1065,14 @@ namespace OpenMps
 			// 全粒子で
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 
 				auto& a_i = ppe.a_ij[i];
 				a_i.clear();
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				// ダミー粒子と無効粒子と自由表面は対角項だけ1
@@ -1140,7 +1140,7 @@ namespace OpenMps
 
 #ifdef _OPENMP
 			// 全行の
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 
@@ -1196,7 +1196,7 @@ namespace OpenMps
 			bool isConverged = (residual0 == 0);
 			const auto n = x.size();
 			// 未知数分だけ繰り返す
-			for (auto i = decltype(n)(0); (i < n) && (!isConverged); i++)
+			for (auto i = decltype(n){0}; (i < n) && (!isConverged); i++)
 			{
 				// 計算を実行
 				//  Ap = A * p
@@ -1245,11 +1245,11 @@ namespace OpenMps
 			const auto n = particles.size();
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				auto& particle = particles[i];
@@ -1377,11 +1377,11 @@ namespace OpenMps
 			const auto n = particles.size();
 #ifdef _OPENMP
 #pragma omp parallel for
-			for (auto ii = std::make_signed_t<decltype(n)>(0); ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
 #else
-			for (auto i = decltype(n)(0); i < n; i++)
+			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
 				const auto& particle = particles[i];
