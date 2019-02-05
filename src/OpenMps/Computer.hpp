@@ -434,7 +434,7 @@ namespace OpenMps
 		boost::multi_array<std::size_t, 2> neighbor;
 
 		// 近傍粒子番号
-		using NeighborIndex = decltype(neighbor)::index;
+		using NeighborIndex = typename decltype(neighbor)::index;
 
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
