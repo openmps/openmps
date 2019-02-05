@@ -433,6 +433,9 @@ namespace OpenMps
 		// 近傍粒子リスト
 		boost::multi_array<std::size_t, 2> neighbor;
 
+		// 近傍粒子番号
+		using NeighborIndex = decltype(neighbor)::index;
+
 #ifndef PRESSURE_EXPLICIT
 		// 圧力方程式
 		struct Ppe
@@ -544,22 +547,22 @@ namespace OpenMps
 		// @param i 対象の粒子番号
 		auto& NeighborCount(const std::size_t i)
 		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+			return neighbor[static_cast<NeighborIndex>(i)][0]; // 各行の先頭が近傍粒子数
 		}
 		auto NeighborCount(const std::size_t i) const
 		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][0]; // 各行の先頭が近傍粒子数
+			return neighbor[static_cast<NeighborIndex>(i)][0]; // 各行の先頭が近傍粒子数
 		}
 
 		// 近傍粒子番号
 		// @param i 対象の粒子番号
 		auto& Neighbor(const std::size_t i, const std::size_t idx)
 		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+			return neighbor[static_cast<NeighborIndex>(i)][1 + static_cast<NeighborIndex>(idx)]; // 各行の先頭は近傍粒子数なので
 		}
 		auto Neighbor(const std::size_t i, const std::size_t idx) const
 		{
-			return neighbor[static_cast<decltype(neighbor)::index>(i)][1 + static_cast<decltype(neighbor)::index>(idx)]; // 各行の先頭は近傍粒子数なので
+			return neighbor[static_cast<NeighborIndex>(i)][1 + static_cast<NeighborIndex>(idx)]; // 各行の先頭は近傍粒子数なので
 		}
 
 		// 近傍粒子との相互作用を計算する
@@ -996,15 +999,15 @@ namespace OpenMps
 			if (n != ppe.b.size())
 			{
 				// サイズを変えて作り直し
-				ppe.A = Ppe::Matrix(n, n);
-				ppe.x = Ppe::LongVector(n);
-				ppe.b = Ppe::LongVector(n);
-				ppe.cg.r = Ppe::LongVector(n);
-				ppe.cg.p = Ppe::LongVector(n);
-				ppe.cg.Ap = Ppe::LongVector(n);
+				ppe.A = typename Ppe::Matrix {n, n};
+				ppe.x = typename Ppe::LongVector(n);
+				ppe.b = typename Ppe::LongVector(n);
+				ppe.cg.r = typename Ppe::LongVector(n);
+				ppe.cg.p = typename Ppe::LongVector(n);
+				ppe.cg.Ap = typename Ppe::LongVector(n);
 
 #ifdef USE_VIENNACL
-				ppe.tempA = Ppe::TempMatrix(n, n);
+				ppe.tempA = typename Ppe::TempMatrix(n, n);
 #endif
 
 #ifdef _OPENMP
@@ -1076,7 +1079,7 @@ namespace OpenMps
 				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(particles[i].N(), n0, surfaceRatio))
 				{
 #ifdef _OPENMP
-					a_i.push_back(Ppe::A_ij(i, 1.0));
+					a_i.emplace_back(i, 1.0);
 #else
 					A(i, i) = 1.0;
 #endif
@@ -1113,7 +1116,7 @@ namespace OpenMps
 							if(!IsSurface(n, n0, surfaceRatio))
 							{
 #ifdef _OPENMP
-								a_i.push_back(Ppe::A_ij(j, a_ij));
+								a_i.emplace_back(j, a_ij);
 #else
 								A(i, j) = a_ij;
 #endif
@@ -1128,7 +1131,7 @@ namespace OpenMps
 					});
 
 #ifdef _OPENMP
-					a_i.push_back(Ppe::A_ij(i, a_ii));
+					a_i.emplace_back(i, a_ii);
 #else
 					A(i, i) = a_ii;
 #endif
@@ -1559,8 +1562,8 @@ namespace OpenMps
 			const auto n = particles.size();
 
 			neighbor.resize(boost::extents
-				[static_cast<decltype(neighbor)::index>(n)]
-				[1 + static_cast<decltype(neighbor)::index>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
+				[static_cast<NeighborIndex>(n)]
+				[1 + static_cast<NeighborIndex>(grid.MaxParticles()*Grid::MAX_NEIGHBOR_BLOCK)]); // 先頭は近傍粒子数
 
 			du.resize(n);
 #ifdef MPS_ECS
