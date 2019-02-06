@@ -121,10 +121,10 @@ namespace OpenMps
 			:t(0), dt(0),
 
 #ifdef PRESSURE_EXPLICIT
+			C(c),
+
 			// 最大時間刻みは、dx < c dt （音速での時間刻み制限）と、指定された引数のうち小さい方
 			MaxDt(std::min(maxDt, (courant*l_0) / c)),
-
-			C(c),
 #else
 			// 最大時間刻みは、dx < 1/2 g dt^2 （重力による等加速度運動での時間刻み制限）と、指定された引数のうち小さい方
 			MaxDt(std::min(maxDt, std::sqrt(2 * (courant*l_0) / g))),

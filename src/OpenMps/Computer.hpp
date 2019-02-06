@@ -736,7 +736,7 @@ namespace OpenMps
 			}
 		}
 
-#ifndef PRESSURE_EXPLICIT
+#if !defined(PRESSURE_EXPLICIT) || defined(MPS_ECS)
 		// 粒子数密度の瞬間増加速度(Dn/Dt)を計算する
 		// @param i 対象の粒子番号
 		auto NeighborDensitiyVariationSpeed(const std::size_t i)
