@@ -249,7 +249,7 @@ static decltype(auto) LoadEnvironment(const boost::property_tree::ptree& xml, co
 }
 
 // 計算条件を読み込む
-static auto LoadCondition(const boost::property_tree::ptree& xml)
+static decltype(auto) LoadCondition(const boost::property_tree::ptree& xml)
 {
 	const auto startTime = xml.get<double>("openmps.condition.startTime.<xmlattr>.value");
 	const auto endTime = xml.get<double>("openmps.condition.endTime.<xmlattr>.value");
