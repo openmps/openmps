@@ -30,7 +30,7 @@ namespace
 {
 	// 計算結果をCSVへ出力する
 	template<typename COMPUTER>
-	auto OutputToCsv(const COMPUTER& computer, const std::size_t& outputCount)
+	inline auto OutputToCsv(const COMPUTER& computer, const std::size_t& outputCount)
 	{
 		// ファイルを開く
 		auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -69,7 +69,7 @@ namespace
 	}
 
 	// 粒子を読み込む
-	auto InputFromCsv(const std::string& csv)
+	inline auto InputFromCsv(const std::string& csv)
 	{
 		std::vector<OpenMps::Particle> particles;
 
@@ -185,7 +185,7 @@ namespace
 	}
 
 	// 粒子の初期状態を読み込む
-	decltype(auto) LoadParticles(const boost::property_tree::ptree& xml)
+	inline decltype(auto) LoadParticles(const boost::property_tree::ptree& xml)
 	{
 		// 粒子データの読み込み
 		std::vector<OpenMps::Particle> particles;
@@ -204,7 +204,7 @@ namespace
 	}
 
 	// 計算環境を読み込む
-	decltype(auto) LoadEnvironment(const boost::property_tree::ptree& xml, const double outputInterval)
+	inline decltype(auto) LoadEnvironment(const boost::property_tree::ptree& xml, const double outputInterval)
 	{
 		const auto l_0 = xml.get<double>("openmps.environment.l_0.<xmlattr>.value");
 		const auto minStepCoountPerOutput = xml.get<std::size_t>("openmps.environment.minStepCoountPerOutput.<xmlattr>.value");
@@ -254,7 +254,7 @@ namespace
 	}
 
 	// 計算条件を読み込む
-	decltype(auto) LoadCondition(const boost::property_tree::ptree& xml)
+	inline decltype(auto) LoadCondition(const boost::property_tree::ptree& xml)
 	{
 		const auto startTime = xml.get<double>("openmps.condition.startTime.<xmlattr>.value");
 		const auto endTime = xml.get<double>("openmps.condition.endTime.<xmlattr>.value");

@@ -206,7 +206,7 @@ namespace { namespace OpenMps
 		};
 
 		template<typename FUNC, typename... ARGS>
-		auto Invoke(std::tuple<ARGS...> tuple, FUNC func)
+		inline auto Invoke(std::tuple<ARGS...> tuple, FUNC func)
 		{
 			return Invoker<FUNC, decltype(tuple)>::Invoke(tuple, func);
 		}
@@ -291,17 +291,17 @@ namespace { namespace OpenMps
 
 		// 行列を作成する
 		template<typename T, typename... ARGS>
-		auto CreateMatrix(const T val, const ARGS... args)
+		inline auto CreateMatrix(const T val, const ARGS... args)
 		{
 			return Detail::CreateMatrix<DIM>::Get(std::make_tuple(val, args...));
 		}
 		template<typename T>
-		auto CreateMatrix(const T val)
+		inline auto CreateMatrix(const T val)
 		{
 			return Detail::CreateMatrix<DIM>::Get(val);
 		}
 		template<typename T>
-		auto IdentityMatrix(const T val)
+		inline auto IdentityMatrix(const T val)
 		{
 			return Detail::CreateMatrix<DIM>::Identity(val);
 		}
@@ -423,7 +423,7 @@ namespace { namespace OpenMps
 		}
 
 		// 逆行列を求める
-		auto InvertMatrix(CorrectiveMatrix&& mat, const double val)
+		inline auto InvertMatrix(CorrectiveMatrix&& mat, const double val)
 		{
 			return Detail::InvertMatrix<DIM>::Get(std::move(mat), val);
 		}
@@ -1649,7 +1649,7 @@ namespace { namespace OpenMps
 	// @param posWall 壁粒子の位置
 	// @param posWallPre 壁粒子の位置計算の前処理
 	template<typename POSITION_WALL, typename POSITION_WALL_PRE>
-	decltype(auto) CreateComputer(
+	inline decltype(auto) CreateComputer(
 #ifndef PRESSURE_EXPLICIT
 		const double allowableResidual,
 #endif

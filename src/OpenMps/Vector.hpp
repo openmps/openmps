@@ -62,12 +62,12 @@ namespace { namespace OpenMps
 
 	// ベクトルを作成する
 	template<typename T, typename... ARGS>
-	auto CreateVector(const T val, const ARGS... args)
+	inline auto CreateVector(const T val, const ARGS... args)
 	{
 		return Detail::CreateVector<DIM>::Get(std::make_tuple(val, args...));
 	}
 	template<typename T>
-	auto CreateVector(const T val)
+	inline auto CreateVector(const T val)
 	{
 		return Detail::CreateVector<DIM>::Get(val);
 	}
