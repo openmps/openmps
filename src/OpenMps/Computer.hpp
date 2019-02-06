@@ -221,7 +221,7 @@ namespace OpenMps
 
 		namespace Detail
 		{
-			template<int D>
+			template<decltype(DIM) D>
 			struct CreateMatrix;
 
 			template<>
@@ -311,7 +311,7 @@ namespace OpenMps
 
 		namespace Detail
 		{
-			template<int D>
+			template<decltype(DIM) D>
 			struct InvertMatrix;
 
 			template<>
@@ -868,8 +868,15 @@ namespace OpenMps
 			positionWallPre(t, dt);
 
 			// 全粒子で
-			for (unsigned int i = 0; i < particles.size(); i++)
+			OMP_PARALLEL_FOR
+#ifdef SINGED_LOOP_COUNTER
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n){0}; i < n; i++)
+			{
+#endif
 				// 水粒子のみ
 				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
 				{
@@ -910,10 +917,17 @@ namespace OpenMps
 		// 陰的に解く部分（第ニ段階）を計算する
 		void ComputeImplicitForces()
 		{
+			const auto n = particles.size();
 #ifdef PRESSURE_EXPLICIT
-			// 圧力を計算する
-			for(unsigned int i = 0; i < particles.size(); i++)
+			OMP_PARALLEL_FOR
+#ifdef SINGED_LOOP_COUNTER
+			for (auto ii = std::make_signed_t<decltype(n)>{ 0 }; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n){0}; i < n; i++)
+			{
+#endif
 				const auto c = environment.C;
 				const auto n0 = environment.N0();
 				const auto rho0 = environment.Rho;
@@ -934,8 +948,15 @@ namespace OpenMps
 			SolvePressurePoissonEquation();
 
 			// 得た圧力を代入する
-			for (unsigned int i = 0; i < particles.size(); i++)
+			OMP_PARALLEL_FOR
+#ifdef SINGED_LOOP_COUNTER
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n){0}; i < n; i++)
+			{
+#endif
 				// ダミー粒子と無効粒子は除く
 				if ((particles[i].TYPE() != Particle::Type::Dummy) && (particles[i].TYPE() != Particle::Type::Disabled))
 				{
@@ -944,8 +965,8 @@ namespace OpenMps
 
 					// 負圧であったり自由表面の場合は圧力0
 					const double p = ppe.x(i);
-					const auto n = particles[i].N();
-					particles[i].P() = ((p < 0) || IsSurface(n, n0, surfaceRatio)) ? 0 : p;
+					const auto nn = particles[i].N();
+					particles[i].P() = ((p < 0) || IsSurface(nn, n0, surfaceRatio)) ? 0 : p;
 				}
 			}
 #endif
@@ -1369,8 +1390,15 @@ namespace OpenMps
 			}
 
 			// 全粒子で
-			for (unsigned int i = 0; i < particles.size(); i++)
+			OMP_PARALLEL_FOR
+#ifdef SINGED_LOOP_COUNTER
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n){0}; i < n; i++)
+			{
+#endif
 				// 水粒子のみ
 				if (particles[i].TYPE() == Particle::Type::IncompressibleNewton)
 				{
@@ -1452,8 +1480,15 @@ namespace OpenMps
 			}
 
 			// 全粒子で
-			for(unsigned int i = 0; i < particles.size(); i++)
+			OMP_PARALLEL_FOR
+#ifdef SINGED_LOOP_COUNTER
+			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
+				const auto i = static_cast<decltype(n)>(ii);
+#else
+			for (auto i = decltype(n){0}; i < n; i++)
+			{
+#endif
 				// 水粒子のみ
 				if(particles[i].TYPE() == Particle::Type::IncompressibleNewton)
 				{

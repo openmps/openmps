@@ -46,7 +46,7 @@ namespace OpenMps
 		}
 
 		// 最大ブロック数
-		template<int AXIS>
+		template<decltype(AXIS_X) AXIS>
 		auto GridSize() const
 		{
 			return static_cast<Index>(data.shape()[AXIS]);
@@ -149,7 +149,7 @@ namespace OpenMps
 		}
 
 		// 対象の位置を含むブロック番号
-		template<int AXIS>
+		template<decltype(AXIS_X) AXIS>
 		auto Block(const Vector& x) const
 		{
 			return Floor(x[AXIS] - origin[AXIS], blockLength);

@@ -21,7 +21,7 @@ namespace OpenMps
 
 	namespace Detail
 	{
-		template<int D>
+		template<decltype(DIM) D>
 		struct CreateVector;
 
 		template<>
