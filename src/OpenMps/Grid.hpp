@@ -116,6 +116,10 @@ namespace OpenMps
 #endif
 		{}
 
+		Grid(Grid&&) = default;
+		Grid(const Grid&) = delete;
+		Grid& operator = (const Grid&) = delete;
+
 		// 全消去（全ブロックの粒子数を0にする）
 		void Clear()
 		{
@@ -124,13 +128,13 @@ namespace OpenMps
 			const auto ny = GridSize<AXIS_Y>();
 #endif
 			const auto nz = GridSize<AXIS_Z>();
-			for (auto i = decltype(nx)(0); i < nx; i++)
+			for (auto i = decltype(nx){0}; i < nx; i++)
 			{
 #ifdef DIM3
-				for (auto j = decltype(ny)(0); j < nx; j++)
+				for (auto j = decltype(ny){0}; j < nx; j++)
 				{
 #endif
-					for (auto k = decltype(nz)(0); k < nz; k++)
+					for (auto k = decltype(nz){0}; k < nz; k++)
 					{
 #ifdef DIM3
 						ParticleCount(i, j, k) = 0;

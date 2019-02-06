@@ -249,7 +249,7 @@ static decltype(auto) LoadEnvironment(const boost::property_tree::ptree& xml, co
 }
 
 // 計算条件を読み込む
-static auto LoadCondition(const boost::property_tree::ptree& xml)
+static decltype(auto) LoadCondition(const boost::property_tree::ptree& xml)
 {
 	const auto startTime = xml.get<double>("openmps.condition.startTime.<xmlattr>.value");
 	const auto endTime = xml.get<double>("openmps.condition.endTime.<xmlattr>.value");
@@ -345,7 +345,7 @@ int main(const int argc, const char* const argv[])
 	double nextOutputT = 0;
 	int iteration = 0;
 	const auto endCount = static_cast<std::size_t>(std::ceil((condition.EndTime - condition.StartTime) / condition.OutputInterval));
-	for(auto outputCount = decltype(endCount)(1); outputCount <= endCount; outputCount++)
+	for(auto outputCount = decltype(endCount){1}; outputCount <= endCount; outputCount++)
 	{
 		double tComputer = computer.GetEnvironment().T() + condition.StartTime;
 		try
