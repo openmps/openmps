@@ -346,7 +346,7 @@ int main(const int argc, const char* const argv[])
 
 	// 計算が終了するまで
 	double nextOutputT = 0;
-	int iteration = 0;
+	std::size_t iteration = 0;
 	const auto endCount = static_cast<std::size_t>(std::ceil((condition.EndTime - condition.StartTime) / condition.OutputInterval));
 	for(auto outputCount = decltype(endCount)(1); outputCount <= endCount; outputCount++)
 	{
