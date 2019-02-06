@@ -207,7 +207,7 @@ namespace OpenMps
 
 		namespace Detail
 		{
-			template<int D>
+			template<decltype(DIM) D>
 			struct CreateMatrix;
 
 			template<>
@@ -297,7 +297,7 @@ namespace OpenMps
 
 		namespace Detail
 		{
-			template<int D>
+			template<decltype(DIM) D>
 			struct InvertMatrix;
 
 			template<>

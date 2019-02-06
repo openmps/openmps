@@ -1,26 +1,14 @@
 ﻿#ifndef DEFINE_INCLUDED
 #define DEFINE_INCLUDED
 
-// 次元数
-// #define DIM3 // 用意はしているが現時点では非推奨
-namespace OpenMps
-{
-#ifdef DIM3
-	static constexpr int DIM = 3;
-	static constexpr int AXIS_X = 0;
-	static constexpr int AXIS_Y = 1;
-	static constexpr int AXIS_Z = 2;
-#else
-	static constexpr int DIM = 2;
-	static constexpr int AXIS_X = 0;
-	static constexpr int AXIS_Z = 1;
-#endif
-}
-
 /////////////////////////////////////////////
 // 以下は計算手法についての選択肢          //
 // 何も指定しなければ標準MPS法が採用される //
 /////////////////////////////////////////////
+
+// 3次元にする
+// ※用意はしているが現時点では非推奨
+// #define DIM3
 
 // 剛体球の衝突を模した過剰接近粒子の補正を導入する
 // 　長所：計算が安定する（発散しにくくなる）
@@ -81,5 +69,20 @@ namespace OpenMps
 	#endif
 #endif
 
-#endif
+#include <cstddef>
 
+namespace OpenMps
+{
+#ifdef DIM3
+	static constexpr std::size_t DIM = 3;
+	static constexpr std::size_t AXIS_X = 0;
+	static constexpr std::size_t AXIS_Y = 1;
+	static constexpr std::size_t AXIS_Z = 2;
+#else
+	static constexpr std::size_t DIM = 2;
+	static constexpr std::size_t AXIS_X = 0;
+	static constexpr std::size_t AXIS_Z = 1;
+#endif
+}
+
+#endif
