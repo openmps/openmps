@@ -3,7 +3,7 @@
 
 #include "defines.hpp"
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 	// MPS計算の計算条件
 	class ComputingCondition final
@@ -49,5 +49,5 @@ namespace OpenMps
 		ComputingCondition(const ComputingCondition&) = delete;
 		ComputingCondition& operator = (const ComputingCondition&) = delete;
 	};
-}
+}}
 #endif

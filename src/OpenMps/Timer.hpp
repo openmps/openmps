@@ -4,24 +4,26 @@
 #pragma warning(push, 0)
 #include <chrono>
 #pragma warning(pop)
-
-// 時間計測
-class Timer final
+namespace
 {
-private:
-	std::chrono::time_point<std::chrono::system_clock> begin;
-
-public:
-	void Start()
+	// 時間計測
+	class Timer final
 	{
-		this->begin = std::chrono::system_clock::now();
-	}
+	private:
+		std::chrono::time_point<std::chrono::system_clock> begin;
 
-	auto Time()
-	{
-		const auto end = std::chrono::system_clock::now();
-		return std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()/1000.0;
-	}
-};
+	public:
+		void Start()
+		{
+			this->begin = std::chrono::system_clock::now();
+		}
+
+		auto Time()
+		{
+			const auto end = std::chrono::system_clock::now();
+			return std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()/1000.0;
+		}
+	};
+}
 
 #endif

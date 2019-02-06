@@ -8,7 +8,7 @@
 #include "defines.hpp"
 #include "Vector.hpp"
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 	// 粒子
 	class Particle final
@@ -158,5 +158,5 @@ namespace OpenMps
 			return type;
 		}
 	};
-}
+}}
 #endif

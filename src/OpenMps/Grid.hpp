@@ -9,7 +9,7 @@
 
 #include "Vector.hpp"
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 	// 近傍粒子探索用グリッド
 	class Grid final
@@ -457,5 +457,5 @@ namespace OpenMps
 			return Iterator::CreateEnd(*this);
 		}
 	};
-}
+}}
 #endif

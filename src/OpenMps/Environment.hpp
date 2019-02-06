@@ -3,7 +3,7 @@
 
 #include "Vector.hpp"
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 	// MPS計算用の計算空間固有パラメータ
 	class Environment final
@@ -264,5 +264,5 @@ namespace OpenMps
 			return *this;
 		}
 	};
-}
+}}
 #endif
