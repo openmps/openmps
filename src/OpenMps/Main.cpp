@@ -28,7 +28,7 @@ namespace std
 
 // 計算結果をCSVへ出力する
 template<typename COMPUTER>
-static auto OutputToCsv(const COMPUTER& computer, const int& outputCount)
+static auto OutputToCsv(const COMPUTER& computer, const std::size_t& outputCount)
 {
 	// ファイルを開く
 	auto filename = (boost::format("result/particles_%05d.csv") % outputCount).str();
@@ -95,9 +95,9 @@ static auto InputFromCsv(const std::string& csv)
 		return data;
 	};
 
-	// ヘッダー項目の列番号を取得（ない場合は-1が入る）
-	constexpr std::int8_t HEADER_NOT_FOUND = -1;
-	auto header = std::unordered_map<std::string, std::int8_t>(
+	// ヘッダー項目の列番号を取得（ない場合は0が入る）
+	constexpr std::size_t HEADER_NOT_FOUND = 0;
+	auto header = std::unordered_map<std::string, std::size_t>(
 	{
 		{ "Type", HEADER_NOT_FOUND },
 		{ "x", HEADER_NOT_FOUND },
@@ -122,7 +122,7 @@ static auto InputFromCsv(const std::string& csv)
 			const auto name = headerItems[i];
 			if (header.find(name) != header.end())
 			{
-				header[name] = i;
+				header[name] = static_cast<decltype(header)::mapped_type>(i + 1); // 列番号+1を格納しておく（0が「ない」を表すため）
 			}
 			else
 			{
@@ -130,13 +130,16 @@ static auto InputFromCsv(const std::string& csv)
 			}
 		}
 
-		// ない項目があったらエラー
-		for (const auto& item : header)
+		for (auto& item : header)
 		{
+			// ない項目があったらエラー
 			if (item.second == HEADER_NOT_FOUND)
 			{
 				throw std::runtime_error("Some header item doesn't exist");
 			}
+
+			// 列番号に戻す
+			item.second--;
 		}
 	}
 
