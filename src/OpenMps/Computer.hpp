@@ -29,11 +29,11 @@
 
 // iccはC++14の対応が遅れているので
 #ifdef __INTEL_COMPILER
-namespace std
+namespace { namespace std
 {
 	template<typename T>
 	using make_signed_t = typename make_signed<T>::type;
-}
+}}
 #endif
 
 // OpenMP関連
@@ -50,7 +50,7 @@ namespace std
 	#define OMP_PARALLEL_FOR
 #endif
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 	// 近傍粒子との相互作用
 	namespace Detail
@@ -291,17 +291,17 @@ namespace OpenMps
 
 		// 行列を作成する
 		template<typename T, typename... ARGS>
-		static auto CreateMatrix(const T val, const ARGS... args)
+		auto CreateMatrix(const T val, const ARGS... args)
 		{
 			return Detail::CreateMatrix<DIM>::Get(std::make_tuple(val, args...));
 		}
 		template<typename T>
-		static auto CreateMatrix(const T val)
+		auto CreateMatrix(const T val)
 		{
 			return Detail::CreateMatrix<DIM>::Get(val);
 		}
 		template<typename T>
-		static auto IdentityMatrix(const T val)
+		auto IdentityMatrix(const T val)
 		{
 			return Detail::CreateMatrix<DIM>::Identity(val);
 		}
@@ -423,7 +423,7 @@ namespace OpenMps
 		}
 
 		// 逆行列を求める
-		static auto InvertMatrix(CorrectiveMatrix&& mat, const double val)
+		auto InvertMatrix(CorrectiveMatrix&& mat, const double val)
 		{
 			return Detail::InvertMatrix<DIM>::Get(std::move(mat), val);
 		}
@@ -1664,5 +1664,5 @@ namespace OpenMps
 			env,
 			posWall, posWallPre);
 	}
-}
+}}
 #endif

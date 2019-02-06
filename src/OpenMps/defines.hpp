@@ -71,7 +71,7 @@
 
 #include <cstddef>
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 #ifdef DIM3
 	static constexpr std::size_t DIM = 3;
@@ -83,6 +83,6 @@ namespace OpenMps
 	static constexpr std::size_t AXIS_X = 0;
 	static constexpr std::size_t AXIS_Z = 1;
 #endif
-}
+}}
 
 #endif

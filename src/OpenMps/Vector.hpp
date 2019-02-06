@@ -14,7 +14,7 @@
 
 #include "defines.hpp"
 
-namespace OpenMps
+namespace { namespace OpenMps
 {
 	// ベクトル
 	using Vector = boost::numeric::ublas::c_vector<double, DIM>;
@@ -62,17 +62,17 @@ namespace OpenMps
 
 	// ベクトルを作成する
 	template<typename T, typename... ARGS>
-	static auto CreateVector(const T val, const ARGS... args)
+	auto CreateVector(const T val, const ARGS... args)
 	{
 		return Detail::CreateVector<DIM>::Get(std::make_tuple(val, args...));
 	}
 	template<typename T>
-	static auto CreateVector(const T val)
+	auto CreateVector(const T val)
 	{
 		return Detail::CreateVector<DIM>::Get(val);
 	}
 
 	// ゼロベクトル
 	static const auto VectorZero = CreateVector(0);
-}
+}}
 #endif
