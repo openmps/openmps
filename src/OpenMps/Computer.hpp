@@ -39,7 +39,7 @@ namespace { namespace std
 // OpenMP関連
 #ifdef _OPENMP
 	#ifdef _MSC_VER
-		#define OMP_PARALLEL_FOR __pragma("omp parallel for")
+		#define OMP_PARALLEL_FOR __pragma(omp parallel for)
 	#else
 		#define OMP_PARALLEL_FOR _Pragma("omp parallel for")
 	#endif
