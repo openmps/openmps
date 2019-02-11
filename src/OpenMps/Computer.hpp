@@ -1558,6 +1558,9 @@ namespace { namespace OpenMps
 			// 時間刻みを設定
 			environment.Dt() = dt;
 
+			// 時間を進める
+			environment.SetNextT();
+
 			// 近傍粒子探索
 			// ※近傍粒子半径を大きめにとっているので1回で良い
 			SearchNeighbor();
@@ -1592,9 +1595,6 @@ namespace { namespace OpenMps
 			// DS法による人工斥力の追加
 			DynamicStabilize();
 #endif
-
-			// 時間を進める
-			environment.SetNextT();
 		}
 
 		// 時間を進める
