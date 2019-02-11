@@ -39,7 +39,7 @@ namespace { namespace std
 // OpenMP関連
 #ifdef _OPENMP
 	#ifdef _MSC_VER
-		#define OMP_PARALLEL_FOR __pragma("omp parallel for")
+		#define OMP_PARALLEL_FOR __pragma(omp parallel for)
 	#else
 		#define OMP_PARALLEL_FOR _Pragma("omp parallel for")
 	#endif
@@ -648,7 +648,7 @@ namespace { namespace OpenMps
 
 			// 近傍粒子を格納
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -714,7 +714,7 @@ namespace { namespace OpenMps
 			// 全粒子で
 			const auto n = particles.size();
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -775,7 +775,7 @@ namespace { namespace OpenMps
 			// 全粒子で
 			const auto n = particles.size();
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -818,7 +818,7 @@ namespace { namespace OpenMps
 			// 全粒子で
 			const auto n = particles.size();
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -869,7 +869,7 @@ namespace { namespace OpenMps
 
 			// 全粒子で
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -920,7 +920,7 @@ namespace { namespace OpenMps
 			const auto n = particles.size();
 #ifdef PRESSURE_EXPLICIT
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{ 0 }; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -949,7 +949,7 @@ namespace { namespace OpenMps
 
 			// 得た圧力を代入する
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1055,7 +1055,7 @@ namespace { namespace OpenMps
 			}
 
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1099,7 +1099,7 @@ namespace { namespace OpenMps
 
 			// 全粒子で
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1176,7 +1176,7 @@ namespace { namespace OpenMps
 
 #ifdef _OPENMP
 			// 全行の
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1284,7 +1284,7 @@ namespace { namespace OpenMps
 			// 全粒子で
 			const auto n = particles.size();
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1391,7 +1391,7 @@ namespace { namespace OpenMps
 
 			// 全粒子で
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1423,7 +1423,7 @@ namespace { namespace OpenMps
 			// 全粒子で
 			const auto n = particles.size();
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
@@ -1481,7 +1481,7 @@ namespace { namespace OpenMps
 
 			// 全粒子で
 			OMP_PARALLEL_FOR
-#ifdef SINGED_LOOP_COUNTER
+#ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
 			{
 				const auto i = static_cast<decltype(n)>(ii);
