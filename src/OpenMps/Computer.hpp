@@ -1073,7 +1073,7 @@ namespace { namespace OpenMps
 				}
 				else
 				{
-					// 生成項を計算する：ρ/n0 Δt Dn/Dt
+					// 生成項を計算する：ρ/n0 Δt -Dn/Dt
 					const auto speed = NeighborDensitiyVariationSpeed(i);
 #ifdef MPS_ECS
 					const auto e = ecs[i];
