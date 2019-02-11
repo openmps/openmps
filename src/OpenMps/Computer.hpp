@@ -1541,7 +1541,9 @@ namespace { namespace OpenMps
 			ppe(std::move(src.ppe)),
 #endif
 			du(std::move(src.du)),
+#ifdef MPS_ECS
 			ecs(std::move(src.ecs)),
+#endif
 			originalX(std::move(src.originalX)),
 			positionWall(std::move(src.positionWall)),
 			positionWallPre(std::move(src.positionWallPre))
