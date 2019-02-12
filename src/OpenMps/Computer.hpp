@@ -771,6 +771,7 @@ namespace { namespace OpenMps
 		void ComputeErrorCorrection()
 		{
 			const auto n0 = environment.N0();
+			const auto surfaceRatio = environment.SurfaceRatio;
 
 			// 全粒子で
 			const auto n = particles.size();
@@ -788,11 +789,13 @@ namespace { namespace OpenMps
 				// ダミー粒子と無効粒子以外
 				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
+					const auto nn = particle.N();
+
 					// ECS法の誤差修正項：α Dn/Dt + β (n-n0)/n0
 					// α=|(n-n0)/n0|
 					// β=|Dn/Dt|
 					const auto speed = NeighborDensitiyVariationSpeed(i);
-					const auto error = (particle.N() - n0) / n0;
+					const auto error = IsSurface(nn, n0, surfaceRatio) ? 0 : (nn - n0) / n0; // 自由表面付近の粒子数密度が足りないのは当然なので訂正しない
 					ecs[i] = std::abs(error) * speed + std::abs(speed) * error;
 				}
 			}
@@ -1073,7 +1076,7 @@ namespace { namespace OpenMps
 				}
 				else
 				{
-					// 生成項を計算する：ρ/n0 Δt Dn/Dt
+					// 生成項を計算する：ρ/n0 Δt -Dn/Dt
 					const auto speed = NeighborDensitiyVariationSpeed(i);
 #ifdef MPS_ECS
 					const auto e = ecs[i];
@@ -1541,7 +1544,9 @@ namespace { namespace OpenMps
 			ppe(std::move(src.ppe)),
 #endif
 			du(std::move(src.du)),
+#ifdef MPS_ECS
 			ecs(std::move(src.ecs)),
+#endif
 			originalX(std::move(src.originalX)),
 			positionWall(std::move(src.positionWall)),
 			positionWallPre(std::move(src.positionWallPre))
@@ -1555,6 +1560,9 @@ namespace { namespace OpenMps
 		{
 			// 時間刻みを設定
 			environment.Dt() = dt;
+
+			// 時間を進める
+			environment.SetNextT();
 
 			// 近傍粒子探索
 			// ※近傍粒子半径を大きめにとっているので1回で良い
@@ -1590,9 +1598,6 @@ namespace { namespace OpenMps
 			// DS法による人工斥力の追加
 			DynamicStabilize();
 #endif
-
-			// 時間を進める
-			environment.SetNextT();
 		}
 
 		// 時間を進める
