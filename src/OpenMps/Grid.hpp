@@ -53,12 +53,6 @@ namespace { namespace OpenMps
 		}
 
 #ifdef DIM3
-		// 各ブロック内の粒子数
-		auto& ParticleCount(const Index i, const Index j, const Index k)
-		{
-			return data[i][j][k][0]; // 先頭は粒子数を格納してある
-		}
-
 		// 各ブロック内の粒子
 		auto& Particle(const Index i, const Index j, const Index k, const Index l)
 		{
@@ -69,12 +63,6 @@ namespace { namespace OpenMps
 			return data[i][j][k][l + 1]; // 先頭は粒子数を格納してある
 		}
 #else
-		// 各ブロック内の粒子数
-		auto& ParticleCount(const Index i, const Index k)
-		{
-			return data[i][k][0]; // 先頭は粒子数を格納してある
-		}
-
 		// 各ブロック内の粒子
 		auto& Particle(const Index i, const Index k, const Index l)
 		{
@@ -137,9 +125,9 @@ namespace { namespace OpenMps
 					for (auto k = decltype(nz){0}; k < nz; k++)
 					{
 #ifdef DIM3
-						ParticleCount(i, j, k) = 0;
+						data[i][j][k][0] = 0; // 先頭は粒子数を格納してある
 #else
-						ParticleCount(i, k) = 0;
+						data[i][k][0] = 0; // 先頭は粒子数を格納してある
 #endif
 					}
 				}
@@ -191,10 +179,14 @@ namespace { namespace OpenMps
 #endif
 				(0 <= k) && (k < nz))
 			{
+				decltype(data)::element l = 0;
+#ifdef _OPENMP
+				#pragma omp atomic capture
+#endif
 #ifdef DIM3
-				const auto l = ParticleCount(i, j, k);
+				l = data[i][j][k][0]++;
 #else
-				const auto l = ParticleCount(i, k);
+				l = data[i][k][0]++;
 #endif
 				const auto maxCount = MaxParticles();
 				if(l >= maxCount)
@@ -203,10 +195,8 @@ namespace { namespace OpenMps
 				}
 #ifdef DIM3
 				Particle(i, j, k, static_cast<Index>(l)) = particle;
-				ParticleCount(i, j, k) = l + 1;
 #else
 				Particle(i, k, static_cast<Index>(l)) = particle;
-				ParticleCount(i, k) = l + 1;
 #endif
 
 				return true;
