@@ -21,7 +21,6 @@ def calculate_n0(r_e):
 	return n0
 
 def output(dirname, filename, r_e, beta, R):
-	print(filename)
 	with open(dirname + "/" + filename, "r") as f:
 		data = [[math.sqrt(float(line["x"])**2 + float(line["z"])**2), float(line["p"]), float(line["n"])] for line in csv.DictReader(f, skipinitialspace="True")]
 
@@ -53,7 +52,7 @@ def output(dirname, filename, r_e, beta, R):
 def main(dirname, r_e, beta, dt, L):
 	R = L/math.sqrt(math.pi)
 
-	data = joblib.Parallel(n_jobs=-1)([joblib.delayed(output)(dirname, filename, r_e, beta, R) for filename in sorted(os.listdir(dirname))])
+	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, r_e, beta, R) for filename in sorted(os.listdir(dirname))])
 #	data = [output(dirname, filename, r_e, beta) for filename in sorted(os.listdir(dirname))]
 
 	data = numpy.array(data).T
