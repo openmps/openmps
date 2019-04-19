@@ -6,6 +6,8 @@ import os
 import csv
 import math
 import numpy
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot
 import joblib
 
@@ -20,22 +22,23 @@ def calculate_n0(r_e):
 				n0 += w
 	return n0
 
-def output(dirname, filename, r_e, beta, R):
+def output(dirname, filename, r_e, beta, R, p_theoretical):
 	with open(dirname + "/" + filename, "r") as f:
 		data = [[math.sqrt(float(line["x"])**2 + float(line["z"])**2), float(line["p"]), float(line["n"])] for line in csv.DictReader(f, skipinitialspace="True")]
 
 	data = numpy.array(data)
 
-	# pyplot.xlim([0, 0.06])
-	# pyplot.ylim([0, 600])
-	# pyplot.xlabel("r [m]")
-	# pyplot.ylabel("p [Pa]")
-	# pyplot.grid(which="minor", color="lightgray", linestyle="-")
-	# pyplot.grid(which="major", color="black", linestyle="-", b=True)
-	# pyplot.minorticks_on()
-	# pyplot.plot(data.T[0], data.T[1], ".")
-	# pyplot.savefig("output/" + filename + ".svg")
-	# pyplot.clf()
+	pyplot.xlim([0, 0.06])
+	pyplot.ylim([0, 600])
+	pyplot.xlabel("r [m]")
+	pyplot.ylabel("p [Pa]")
+	pyplot.grid(which="minor", color="lightgray", linestyle="-")
+	pyplot.grid(which="major", color="black", linestyle="-", b=True)
+	pyplot.minorticks_on()
+	pyplot.plot(data.T[0], data.T[1], ".", markersize=1)
+	pyplot.plot([0, R], [p_theoretical, 0], "-")
+	pyplot.savefig("png/" + filename + ".png")
+	pyplot.clf()
 
 	n0 = calculate_n0(r_e)
 	n_surface = n0 * beta
@@ -51,9 +54,10 @@ def output(dirname, filename, r_e, beta, R):
 
 def main(dirname, r_e, beta, dt, L):
 	R = L/math.sqrt(math.pi)
+	p_theoretical = 1000*9.8*R
 
-	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, r_e, beta, R) for filename in sorted(os.listdir(dirname))])
-#	data = [output(dirname, filename, r_e, beta) for filename in sorted(os.listdir(dirname))]
+	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, r_e, beta, R, p_theoretical) for filename in sorted(os.listdir(dirname))])
+#	data = [output(dirname, filename, r_e, beta, R, p_theoretical) for filename in sorted(os.listdir(dirname))]
 
 	data = numpy.array(data).T
 	n = data.shape[1]
@@ -62,7 +66,7 @@ def main(dirname, r_e, beta, dt, L):
 
 	pyplot.plot(t, data[0])
 	pyplot.xlim([0, maxT])
-	pyplot.ylim([0, 100])
+	pyplot.ylim(top=100)
 	pyplot.xlabel("t [s]")
 	pyplot.ylabel("Roundness [%]")
 	pyplot.grid(which="minor", color="lightgray", linestyle="-")
@@ -71,9 +75,8 @@ def main(dirname, r_e, beta, dt, L):
 	pyplot.savefig("roundness.svg")
 	pyplot.clf()
 
-	p_theoretical = [1000*9.8*R] * n
 	pyplot.plot(t, data[1])
-	pyplot.plot(t, p_theoretical)
+	pyplot.plot([0, maxT], [p_theoretical, p_theoretical])
 	pyplot.xlim([0, maxT])
 	pyplot.ylim(bottom=0)
 	pyplot.xlabel("t [s]")
