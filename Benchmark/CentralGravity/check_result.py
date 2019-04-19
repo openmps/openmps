@@ -4,23 +4,15 @@
 import sys
 import csv
 import math
+import numpy
 from matplotlib import pyplot
 
 def main(filename):
-	r = []
-	p = []
-	with open(filename) as f:
-		header = True
-		for line in csv.reader(f, delimiter=","):
-			if header:
-				header = False
-			else:
-				x = float(line[1])
-				z = float(line[2])
-				r.append(math.sqrt(x*x + z*z))
-				p.append(float(line[5]))
-	
-	pyplot.plot(r, p, ".")
+	with open(filename, "r") as f:
+		data = [[math.sqrt(float(line["x"])**2 + float(line["z"])**2), float(line["p"])] for line in csv.DictReader(f, skipinitialspace="True")]
+
+	data = numpy.array(data).T
+	pyplot.plot(data[0], data[1], ".")
 	pyplot.savefig("out.svg")
 	pyplot.clf()
 
