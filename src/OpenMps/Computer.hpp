@@ -813,7 +813,13 @@ namespace { namespace OpenMps
 			const auto nu = environment.Nu;
 			const auto t = environment.T();
 			const auto dt = environment.Dt();
+
+#ifdef CENTRAL_GRAVITY
+			const auto l_0 = environment.L_0;
+			const auto g = environment.G[AXIS_Z];
+#else
 			const auto g = environment.G;
+#endif
 
 			// 加速度
 			auto& a = du;
@@ -863,7 +869,15 @@ namespace { namespace OpenMps
 					});
 
 					// 重力 + 粘性
-					a[i] = g + vis;
+					a[i] = vis;
+#ifdef CENTRAL_GRAVITY
+					const auto x = particle.X();
+					const auto r = boost::numeric::ublas::norm_2(x);
+					const auto c = (r < l_0 * 0.01) ? VectorZero : (x/r); // 方向ベクトル（中心付近にいる場合はゼロ）
+					a[i] += g * c;
+#else
+					a[i] += g;
+#endif
 				}
 			}
 

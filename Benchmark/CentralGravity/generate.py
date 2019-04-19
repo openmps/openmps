@@ -7,14 +7,14 @@ from xml.dom import minidom
 
 condition = { \
 	"startTime": 0,
-	"endTime": 0.5,
-	"outputInterval": 0.0005,
+	"endTime": 30.0,
+	"outputInterval": 0.005,
 	"eps": 1e-10,
 }
 
 environment = {\
 	"l_0": 1e-3,
-	"minStepCoountPerOutput": 100,
+	"minStepCoountPerOutput": 10,
 	"courant": 0.1,
 
 	"g": 9.8,
