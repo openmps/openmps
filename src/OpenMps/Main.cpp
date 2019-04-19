@@ -353,7 +353,7 @@ int main(const int argc, const char* const argv[])
 	const auto endCount = static_cast<std::size_t>(std::ceil((condition.EndTime - condition.StartTime) / condition.OutputInterval));
 	for(auto outputCount = decltype(endCount){1}; outputCount <= endCount; outputCount++)
 	{
-		double tComputer = computer.GetEnvironment().T() + condition.StartTime;
+		double tComputer = computer.GetEnvironment().T();
 		try
 		{
 			// 次の出力時間まで
@@ -367,7 +367,9 @@ int main(const int argc, const char* const argv[])
 			}
 
 			// CSVに結果を出力
-			const auto count = OutputToCsv(computer, outputCount);
+			const auto count = OutputToCsv(computer, outputCount + outputIterationOffset);
+
+			tComputer += condition.StartTime;
 
 			// 現在時刻を画面表示
 			const auto t = std::time(nullptr);
