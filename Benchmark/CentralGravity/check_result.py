@@ -7,8 +7,10 @@ import csv
 import math
 import numpy
 from matplotlib import pyplot
+import joblib
 
 def output(dirname, filename):
+	print(filename)
 	with open(dirname + "/" + filename, "r") as f:
 		data = [[math.sqrt(float(line["x"])**2 + float(line["z"])**2), float(line["p"])] for line in csv.DictReader(f, skipinitialspace="True")]
 
@@ -25,9 +27,7 @@ def output(dirname, filename):
 	pyplot.clf()
 
 def main(dirname):
-	for filename in sorted(os.listdir(dirname)):
-		output(dirname, filename)
-		print(filename)
+	joblib.Parallel(n_jobs=-1)([joblib.delayed(output)(dirname, filename) for filename in sorted(os.listdir(dirname))])
 
 if __name__ == "__main__":
 	main(sys.argv[1])
