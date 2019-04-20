@@ -10,7 +10,7 @@ MPS method is one of the most popular Particle Method to solve Continuum Dynamic
 All files in this repository, including which has no header text about the license, are licensed under [GNU General Public License (GPL) v3.0 or later](http://www.gnu.org/licenses/gpl.html) (See LICENSE).
 
 ```
-Copyright (C) OpenMps Project https://openmps.bitbucket.io/ (aokomoriuta)
+Copyright (C) OpenMps Project https://openmps.bitbucket.io/ (aokomoriuta, LWisteria@Fixstars)
 
 OpenMps, which means all files under this repository, is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
