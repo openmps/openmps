@@ -8,13 +8,13 @@ from xml.dom import minidom
 condition = { \
 	"startTime": 0,
 	"endTime": 30.0,
-	"outputInterval": 0.005,
+	"outputInterval": 0.01,
 	"eps": 1e-10,
 }
 
 environment = {\
 	"l_0": 1e-3,
-	"minStepCoountPerOutput": 10,
+	"minStepCoountPerOutput": 20,
 	"courant": 0.1,
 
 	"g": 9.8,
@@ -58,8 +58,8 @@ def main():
 	l_0 = environment["l_0"]
 	particlesCsv= ["Type, x, z, u, w, p, n\n"]
 	# 水
-	for i in range(-width, width):
-		for j in range(-height, height):
+	for i in range(-width, width+1):
+		for j in range(-height, height+1):
 			x = i * l_0
 			z = j * l_0
 			particlesCsv.append("{0}, {1}, {2}, 0, 0, 0, 0\n".format(type["IncompressibleNewton"], x, z))
