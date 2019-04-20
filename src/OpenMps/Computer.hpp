@@ -1368,7 +1368,7 @@ namespace { namespace OpenMps
 					// 速度修正量を計算
 					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
 					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisP = particle.P(), &thisX = particle.X(), &r_e, &dt, &rho, &n0](const double p, const Vector& x, const Particle::Type type)
+						[&thisP = particle.P(), &thisX = particle.X(), &r_e](const double p, const Vector& x, const Particle::Type type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
