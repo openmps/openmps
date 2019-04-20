@@ -7,18 +7,17 @@ MPS method is one of the most popular Particle Method to solve Continuum Dynamic
 
 ## License
 
-This project is multi-licensed.
-You can select the license of your choice from as following:
+All files in this repository, including which has no header text about the license, are licensed under [GNU General Public License (GPL) v3.0 or later](http://www.gnu.org/licenses/gpl.html) (See LICENSE).
 
-* [Creative Commons Attribution-ShareAlike 3.0 Unported](http://creativecommons.org/licenses/by-sa/3.0/)
-* [Creative Commons Attribution-Noncommercial 3.0 Unported](http://creativecommons.org/licenses/by-nc/3.0/)
-* [GNU General Public License v3.0 or later](http://www.gnu.org/licenses/gpl.html)
+```
+Copyright (C) OpenMps Project https://openmps.bitbucket.io/ (aokomoriuta)
 
-author (attribution)
-: OpenMps Project (aokomoriuta)
+OpenMps, which means all files under this repository, is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-URL
-: https://openmps.bitbucket.io/
+OpenMps is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with OpenMps.  If not, see <https://www.gnu.org/licenses/>.
+```
 
 ## Usage
 
@@ -47,6 +46,7 @@ URL
 		* p : value of pressure
 		* n : value of particle number density
 	1. or you can load ParaView State File "resultViewer.pvsm" for instance.
+
 ## Desclaimer
 Anyone is not responsible for any damages or corrupts by this project. Download and use this project at your own risk.
 Any questions or pull-resquests or other contribution are welcome. Although keeping trying to respond as soon as possible, but no one is responsible to respond it. Any responses are also not responsible by anyone.
