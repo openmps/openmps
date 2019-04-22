@@ -22,16 +22,18 @@ def calculate_n0(r_e):
 				n0 += w
 	return n0
 
-def output(dirname, filename, r_e, beta, R, p_theoretical):
+def output(dirname, filename, r_e, beta, R, p_theoretical, dt):
 	with open(dirname + "/" + filename, "r") as f:
 		data = [[math.sqrt(float(line["x"])**2 + float(line["z"])**2), float(line["p"]), float(line["n"])] for line in csv.DictReader(f, skipinitialspace="True")]
 
 	data = numpy.array(data)
 
+	t = dt * int(filename[10:15])
 	pyplot.xlim([0, 0.06])
 	pyplot.ylim([0, 600])
 	pyplot.xlabel("r [m]")
 	pyplot.ylabel("p [Pa]")
+	pyplot.title("%4.2f [s]" % t)
 	pyplot.grid(which="minor", color="lightgray", linestyle="-")
 	pyplot.grid(which="major", color="black", linestyle="-", b=True)
 	pyplot.minorticks_on()
@@ -56,8 +58,8 @@ def main(dirname, r_e, beta, dt, L):
 	R = L/math.sqrt(math.pi)
 	p_theoretical = 1000*9.8*R
 
-	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, r_e, beta, R, p_theoretical) for filename in sorted(os.listdir(dirname))])
-#	data = [output(dirname, filename, r_e, beta, R, p_theoretical) for filename in sorted(os.listdir(dirname))]
+	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, r_e, beta, R, p_theoretical, dt) for filename in sorted(os.listdir(dirname))])
+#	data = [output(dirname, filename, r_e, beta, R, p_theoretical, dt) for filename in sorted(os.listdir(dirname))]
 
 	data = numpy.array(data).T
 	n = data.shape[1]
@@ -66,7 +68,7 @@ def main(dirname, r_e, beta, dt, L):
 
 	pyplot.plot(t, data[0])
 	pyplot.xlim([0, maxT])
-	pyplot.ylim(top=100)
+	pyplot.ylim([0, 100])
 	pyplot.xlabel("t [s]")
 	pyplot.ylabel("Roundness [%]")
 	pyplot.grid(which="minor", color="lightgray", linestyle="-")
@@ -78,7 +80,7 @@ def main(dirname, r_e, beta, dt, L):
 	pyplot.plot(t, data[1])
 	pyplot.plot([0, maxT], [p_theoretical, p_theoretical])
 	pyplot.xlim([0, maxT])
-	pyplot.ylim(bottom=0)
+	pyplot.ylim([0, 600])
 	pyplot.xlabel("t [s]")
 	pyplot.ylabel("p [Pa]")
 	pyplot.grid(which="minor", color="lightgray", linestyle="-")

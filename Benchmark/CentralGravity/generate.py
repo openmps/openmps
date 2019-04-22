@@ -13,8 +13,8 @@ condition = { \
 }
 
 environment = {\
-	"l_0": 1e-3,
-	"minStepCoountPerOutput": 20,
+	"l_0": 0.5e-3,
+	"minStepCoountPerOutput": 50,
 	"courant": 0.1,
 
 	"g": 9.8,
@@ -25,8 +25,8 @@ environment = {\
 }
 
 centralGravity ={\
-	"width": 50, # 粒子の数（半径）
-	"height": 50,
+	"width": 100, # 粒子の数（半径）
+	"height": 100,
 	"areaSize": 2, # 計算領域の大きさ （初期粒子配置領域のn倍）
 }
 
