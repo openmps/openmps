@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License along with Ope
 ```
 
 Note that OpenMps depends on [Boost C++ Libraries](https://www.boost.org/) and [ViennaCL](http://viennacl.sourceforge.net/), which is not distributed by OpenMps itself.
-Therefore, the built binaries must be legal under [Boost Software License](https://www.boost.org/users/license.html), [ViennaCL's MIT License](https://github.com/viennacl/viennacl-dev/blob/master/LICENSE), and (if they have) the libraries' licenses that they depend on, not only OpenMps's GPL.
+Therefore, the built binaries must also be legal under [Boost Software License](https://www.boost.org/users/license.html), [ViennaCL's MIT License](https://github.com/viennacl/viennacl-dev/blob/master/LICENSE), and (if they have) the libraries' licenses that they depend on, not only OpenMps's GPL.
 OpenMps source codes could also be same as built binaries when you distribute it with those libraries' sources.
 
 ## Usage
