@@ -52,7 +52,7 @@ OpenMps source codes could also be same as built binaries when you distribute it
 		* w : vertical value of velocity vector
 		* p : value of pressure
 		* n : value of particle number density
-	1. or you can load ParaView State File "resultViewer.pvsm" for instance.
+	1. or you can load ParaView State File "resultView.pvsm" for instance.
 
 ## Desclaimer
 Anyone is not responsible for any damages or corrupts by this project. Download and use this project at your own risk.
