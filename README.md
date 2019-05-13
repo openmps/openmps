@@ -27,7 +27,10 @@ OpenMps source codes could also be same as built binaries when you distribute it
 
 ### Build
 
-0. Build codes. It is recommended to use Visual Studio 2015.
+0. Get [Boost C++ Libraries](https://www.boost.org/) and [ViennaCL](http://viennacl.sourceforge.net/) by yourself.
+	* Boost should be installed in your system and includible by OpenMps.
+	* ViennaCL should be placed on `src/viennacl`. You can use `git submodule`.
+0. Build codes. It is recommended to use Visual Studio.
 
 ### Execution
 0. Run the program (Developers expect execution on Windows). Results will be output as CSV in "result" folder.
