@@ -3,11 +3,19 @@
 #	開発の本流はVisual StudioによるWindows環境です。そちらを使うことを強く推奨します。
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
-COMPILER = clang++
-CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-LDFLAGS  = ${CFLAGS} -lomp
+# clang++ ver
+#COMPILER = clang++
+#CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+#LDFLAGS  = ${CFLAGS} -lomp
+
+# g++ ver
+COMPILER = g++
+CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+LDFLAGS  = ${CFLAGS}
+
+TESTFLAGS= -lgtest -lgtest_main
 LIBS     =
-INCLUDE  =  -isystem ../viennacl
+INCLUDE  =  -isystem ../viennacl -I../googletest/googletest/include -L../googletest/lib
 TARGET   = ./$(shell basename `readlink -f .`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
@@ -27,7 +35,12 @@ $(OBJDIR)/%.o: %.cpp
 all: clean $(TARGET)
 
 clean:
-	rm -f $(OBJECTS) $(DEPENDS) $(TARGET)
+	rm -f $(OBJECTS) $(DEPENDS) $(TARGET) Computer_test
 	@rmdir --ignore-fail-on-non-empty `readlink -f $(OBJDIR)`
 
 -include $(DEPENDS)
+
+test: Computer_test
+
+Computer_test: test/Computer_test.cpp Computer.hpp
+	$(COMPILER) -o $@ $< $(LDFLAGS) $(INCLUDE) $(TESTFLAGS)
