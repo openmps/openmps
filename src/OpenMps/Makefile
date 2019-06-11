@@ -15,7 +15,8 @@ LDFLAGS  = ${CFLAGS}
 
 TESTFLAGS= -lgtest -lgtest_main
 LIBS     =
-INCLUDE  =  -isystem ../viennacl -I../googletest/googletest/include -L../googletest/lib
+INCLUDE  =  -isystem ../viennacl 
+TESTINCLUDE= ${INCLUDE} -isystem ../googletest/googletest/include -L../googletest/lib
 TARGET   = ./$(shell basename `readlink -f .`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
@@ -43,4 +44,4 @@ clean:
 test: Computer_test
 
 Computer_test: test/Computer_test.cpp Computer.hpp
-	$(COMPILER) -o $@ $< $(LDFLAGS) $(INCLUDE) $(TESTFLAGS)
+	$(COMPILER) -o $@ $< $(LDFLAGS) $(TESTINCLUDE) $(TESTFLAGS)
