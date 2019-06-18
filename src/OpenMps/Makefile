@@ -13,10 +13,8 @@ LDFLAGS  = ${CFLAGS} -lomp
 #CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
 #LDFLAGS  = ${CFLAGS}
 
-TESTFLAGS= -lgtest -lgtest_main
 LIBS     =
 INCLUDE  =  -isystem ../viennacl 
-TESTINCLUDE= ${INCLUDE} -isystem ../googletest/googletest/include -L../googletest/lib
 TARGET   = ./$(shell basename `readlink -f .`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
@@ -25,6 +23,17 @@ endif
 SOURCES  = $(wildcard *.cpp)
 OBJECTS  = $(addprefix $(OBJDIR)/, $(SOURCES:.cpp=.o))
 DEPENDS  = $(OBJECTS:.o=.d)
+
+TESTOBJDIR = ./testobj
+TESTDIR = ./test
+TESTFLAGS= 
+TESTLDFLAGS= -lgtest -lgtest_main -L../googletest/lib
+TESTINCLUDE= -isystem ../googletest/googletest/include
+
+TESTSOURCES = $(notdir $(wildcard $(TESTDIR)/*.cpp))
+TESTOBJECTS  = $(addprefix $(TESTOBJDIR)/, $(TESTSOURCES:.cpp=.o))
+
+TESTTARGET = ./test_$(shell basename `readlink -f .`)
 
 $(TARGET): $(OBJECTS) $(LIBS)
 	$(COMPILER) -o $@ $^ $(LDFLAGS)
@@ -36,12 +45,18 @@ $(OBJDIR)/%.o: %.cpp
 all: clean $(TARGET)
 
 clean:
+	echo $(TESTOBJECTS) $(TESTSOURCES)
 	rm -f $(OBJECTS) $(DEPENDS) $(TARGET) Computer_test
 	@rmdir --ignore-fail-on-non-empty `readlink -f $(OBJDIR)`
 
+$(TESTTARGET): $(TESTOBJECTS)
+	$(COMPILER) -o $@ $^ $(LDFLAGS) $(TESTLDFLAGS)
+
+$(TESTOBJDIR)/%.o: $(TESTDIR)/%.cpp
+	@[ -d $(TESTOBJDIR) ] || mkdir -p $(TESTOBJDIR)
+	$(COMPILER) $(CFLAGS) $(INCLUDE) $(TESTINCLUDE) $(TESTFLAGS) -o $@ -c $<
+
+test: $(TESTTARGET)
+
 -include $(DEPENDS)
 
-test: Computer_test
-
-Computer_test: test/Computer_test.cpp Computer.hpp
-	$(COMPILER) -o $@ $< $(LDFLAGS) $(TESTINCLUDE) $(TESTFLAGS)
