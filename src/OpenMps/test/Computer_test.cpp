@@ -3,15 +3,17 @@
 #include <gtest/gtest.h>
 #include "../Computer.hpp"
 
-double dist_matrix(const double* M1, const double* M2){
-	double d = 0.0;
-	double dim = OpenMps::DIM;
+namespace {
+	double dist_matrix(const double* M1, const double* M2){
+		double d = 0.0;
+		double dim = OpenMps::DIM;
 
-	for(int k = 0; k < dim*dim; ++k){
-		double diff = M1[k] - M2[k];
-		d += diff*diff;
+		for(int k = 0; k < dim*dim; ++k){
+			double diff = M1[k] - M2[k];
+			d += diff*diff;
+		}
+		return sqrt(d);
 	}
-	return sqrt(d);
 }
 
 TEST(MatrixTest, InvertMatrixDiag){
