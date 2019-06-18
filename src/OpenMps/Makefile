@@ -14,7 +14,7 @@ LDFLAGS  = ${CFLAGS} -lomp
 #LDFLAGS  = ${CFLAGS}
 
 LIBS     =
-INCLUDE  =  -isystem ../viennacl 
+INCLUDE  = -isystem ../viennacl 
 TARGET   = ./$(shell basename `readlink -f .`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
@@ -45,8 +45,7 @@ $(OBJDIR)/%.o: %.cpp
 all: clean $(TARGET)
 
 clean:
-	echo $(TESTOBJECTS) $(TESTSOURCES)
-	rm -f $(OBJECTS) $(DEPENDS) $(TARGET) Computer_test
+	rm -f $(OBJECTS) $(DEPENDS) $(TARGET) $(TESTTARGET) $(TESTOBJECT)
 	@rmdir --ignore-fail-on-non-empty `readlink -f $(OBJDIR)`
 
 $(TESTTARGET): $(TESTOBJECTS)
