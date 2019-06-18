@@ -4,14 +4,14 @@
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
 # clang++ ver
-#COMPILER = clang++
-#CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-#LDFLAGS  = ${CFLAGS} -lomp
+COMPILER = clang++
+CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+LDFLAGS  = ${CFLAGS} -lomp
 
 # g++ ver
-COMPILER = g++
-CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-LDFLAGS  = ${CFLAGS}
+#COMPILER = g++
+#CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+#LDFLAGS  = ${CFLAGS}
 
 TESTFLAGS= -lgtest -lgtest_main
 LIBS     =
