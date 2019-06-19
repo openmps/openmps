@@ -14,7 +14,7 @@ condition = { \
 
 environment = {\
 	"l_0": 1e-3,
-	"minStepCoountPerOutput": 100,
+	"minStepCountPerOutput": 100,
 	"courant": 0.1,
 
 	"g": 9.8,

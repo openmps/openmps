@@ -8,7 +8,7 @@
   </condition>
   <environment>
     <l_0 value="1e-3" /> <!-- 初期粒子間距離 -->
-    <minStepCoountPerOutput value="10" /> <!-- 1出力に最低必要な計算反復回数 -->
+    <minStepCountPerOutput value="10" /> <!-- 1出力に最低必要な計算反復回数 -->
     <courant value="0.1" /> <!-- クーラン数 -->
 
     <g value="9.8" /> <!-- 重力加速度 -->

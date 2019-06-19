@@ -207,7 +207,7 @@ namespace
 	inline decltype(auto) LoadEnvironment(const boost::property_tree::ptree& xml, const double outputInterval)
 	{
 		const auto l_0 = xml.get<double>("openmps.environment.l_0.<xmlattr>.value");
-		const auto minStepCoountPerOutput = xml.get<std::size_t>("openmps.environment.minStepCoountPerOutput.<xmlattr>.value");
+		const auto minStepCountPerOutput = xml.get<std::size_t>("openmps.environment.minStepCountPerOutput.<xmlattr>.value");
 		const double courant = xml.get<double>("openmps.environment.courant.<xmlattr>.value");
 
 		const double g = xml.get<double>("openmps.environment.g.<xmlattr>.value");
@@ -234,7 +234,7 @@ namespace
 #endif
 		const double maxZ = xml.get<double>("openmps.environment.maxZ.<xmlattr>.value");
 
-		return OpenMps::Environment(outputInterval / minStepCoountPerOutput, courant,
+		return OpenMps::Environment(outputInterval / minStepCountPerOutput, courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			tooNearRatio, tooNearCoefficient,
 #endif
