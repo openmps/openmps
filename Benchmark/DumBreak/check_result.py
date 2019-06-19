@@ -11,17 +11,6 @@ matplotlib.use('Agg')
 from matplotlib import pyplot
 import joblib
 
-def calculate_n0(r_e):
-	size = int(math.ceil(r_e))
-	n0 = 0.0
-	for y in range(-size, size+1):
-		for x in range(-size, size+1):
-			r = math.sqrt(x*x + y*y)
-			if((0 < r) and (r < r_e)):
-				w = r_e/r - 1
-				n0 += w
-	return n0
-
 def output(dirname, filename):
 	with open(dirname + "/" + filename, "r") as f:
 		data = [[float(line["x"]), int(line["Type"])] for line in csv.DictReader(f, skipinitialspace="True")]
