@@ -40,7 +40,7 @@ def output(dirname, filename, l_0, min_n):
 
 def main(dirname, l_0, dt, r_e):
 	n0 = calculate_n0(r_e)
-	min_n = n0*0.01
+	min_n = n0*0.1
 	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, l_0, min_n) for filename in sorted(os.listdir(dirname))])
 	# data = [output(dirname, filename, l_0, min_n) for filename in sorted(os.listdir(dirname)) if filename.startswith("particles_00000")]
 
