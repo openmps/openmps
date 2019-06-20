@@ -49,6 +49,10 @@ def main(dirname, l_0, dt, r_e):
 
 	h1 = data[0]
 	pyplot.plot(t, h1, '-', label="OpenMPS")
+	with open("zhouetal1999/h1.csv", "r") as f:
+		exp = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
+	exp = numpy.array(exp).T
+	pyplot.plot(exp[0] - exp[0][0], exp[1], '--', label="Exp: Zhou et al. (1999)")
 	pyplot.xlim([0, 4])
 	pyplot.ylim([0, 0.6])
 	pyplot.xlabel("$t$ [s]")
@@ -61,6 +65,10 @@ def main(dirname, l_0, dt, r_e):
 
 	h2 = data[1]
 	pyplot.plot(t, h2, '-', label="OpenMPS")
+	with open("zhouetal1999/h2.csv", "r") as f:
+		exp = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
+	exp = numpy.array(exp).T
+	pyplot.plot(exp[0] - exp[0][0], exp[1], '--', label="Exp: Zhou et al. (1999)")
 	pyplot.xlim([0, 4])
 	pyplot.ylim([0, 0.6])
 	pyplot.xlabel("$t$ [s]")
@@ -73,6 +81,10 @@ def main(dirname, l_0, dt, r_e):
 
 	p2 = data[2]
 	pyplot.plot(t, p2, '-', label="OpenMPS")
+	with open("zhouetal1999/p2.csv", "r") as f:
+		exp = [[float(line["t"]), float(line["p"])] for line in csv.DictReader(f, skipinitialspace="True")]
+	exp = numpy.array(exp).T
+	pyplot.plot(exp[0] - exp[0][0], exp[1], '--', label="Exp: Zhou et al. (1999)")
 	pyplot.xlim([0, 4])
 	pyplot.ylim([0, 6000])
 	pyplot.xlabel("$t$ [s]")
