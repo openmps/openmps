@@ -10,7 +10,7 @@ import math
 
 condition = { \
 	"startTime": 0,
-	"endTime": 8.0,
+	"endTime": 4.0,
 	"outputInterval": 0.005,
 	"eps": 1e-10,
 }
