@@ -103,13 +103,18 @@ def main(dirname, l_0, dt, r_e):
 		exp = [[float(line["t"]), float(line["p"])] for line in csv.DictReader(f, skipinitialspace="True")]
 	exp = numpy.array(exp).T
 	pyplot.plot((exp[0] - exp[0][0])*tt, exp[1]/p0, '--', label="Exp: Zhou et al. (1999)")
+	with open("zhouetal1999/abdolmalekietal2004_p2.csv", "r") as f:
+		fluent = [[float(line["t"]), float(line["p"])] for line in csv.DictReader(f, skipinitialspace="True")]
+	fluent = numpy.array(fluent).T
+	pyplot.plot(fluent[0], fluent[1], '-', label="Fluent: Abdolmaleki et al. (2004) Vertex Average")
 	pyplot.xlim([0, 16])
-	pyplot.ylim([0, 1.0])
+	pyplot.ylim([0, 1.2])
 	pyplot.xlabel(r"$t\sqrt{g/H}$")
 	pyplot.ylabel(r"$P/\rho g H$")
 	pyplot.grid(which="minor", color="gray", linestyle="dashed")
 	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
 	pyplot.minorticks_on()
+	pyplot.legend(prop={'size': 10})
 	pyplot.savefig("zhouetal1999_p2.svg")
 	pyplot.clf()
 
