@@ -1,0 +1,87 @@
+#!/usr/bin/env python
+#-*- coding:utf-8 -*-
+
+import sys
+import os
+import csv
+import math
+import numpy
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot
+import joblib
+
+def calculate_n0(r_e):
+	size = int(math.ceil(r_e))
+	n0 = 0.0
+	for y in range(-size, size+1):
+		for x in range(-size, size+1):
+			r = math.sqrt(x*x + y*y)
+			if((0 < r) and (r < r_e)):
+				w = r_e/r - 1
+				n0 += w
+	return n0
+
+def output(dirname, filename, l_0, min_n):
+	with open(dirname + "/" + filename, "r") as f:
+		data = [[float(line["x"]), float(line["z"]), float(line["p"]), float(line["n"]), int(line["Type"])] for line in csv.DictReader(f, skipinitialspace="True")]
+
+	X_H1 = 2020e-3 - 1525e-3
+	X_H2 = 2020e-3 - 1028e-3
+	Z_P2 = 160e-3
+
+	h1 = max([0] + [d[1] for d in data if abs(d[0] - X_H1) < l_0/2 and d[3] > min_n])
+	h2 = max([0] + [d[1] for d in data if abs(d[0] - X_H2) < l_0/2 and d[3] > min_n])
+	p2 = min([d for d in data if d[0] < 0 and d[4] == 1], key=lambda d: abs(d[1] - Z_P2))[2]
+
+	return [h1, h2, p2]
+
+def main(dirname, l_0, dt, r_e):
+	n0 = calculate_n0(r_e)
+	min_n = n0*0.01
+	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, l_0, min_n) for filename in sorted(os.listdir(dirname))])
+	# data = [output(dirname, filename, l_0, min_n) for filename in sorted(os.listdir(dirname)) if filename.startswith("particles_00000")]
+
+	data = numpy.array(data).T
+	n = data.shape[1]
+	maxT = n * dt
+	t = numpy.array(range(n)) * dt
+
+	h1 = data[0]
+	pyplot.plot(t, h1, '-', label="OpenMPS")
+	pyplot.xlim([0, 4])
+	pyplot.ylim([0, 0.6])
+	pyplot.xlabel("$t$ [s]")
+	pyplot.ylabel("$H$ [m]")
+	pyplot.grid(which="minor", color="gray", linestyle="dashed")
+	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
+	pyplot.minorticks_on()
+	pyplot.savefig("zhouetal1999_h1.svg")
+	pyplot.clf()
+
+	h2 = data[1]
+	pyplot.plot(t, h2, '-', label="OpenMPS")
+	pyplot.xlim([0, 4])
+	pyplot.ylim([0, 0.6])
+	pyplot.xlabel("$t$ [s]")
+	pyplot.ylabel("$H$ [m]")
+	pyplot.grid(which="minor", color="gray", linestyle="dashed")
+	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
+	pyplot.minorticks_on()
+	pyplot.savefig("zhouetal1999_h2.svg")
+	pyplot.clf()
+
+	p2 = data[2]
+	pyplot.plot(t, p2, '-', label="OpenMPS")
+	pyplot.xlim([0, 4])
+	pyplot.ylim([0, 6000])
+	pyplot.xlabel("$t$ [s]")
+	pyplot.ylabel("$P$ [Pa]")
+	pyplot.grid(which="minor", color="gray", linestyle="dashed")
+	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
+	pyplot.minorticks_on()
+	pyplot.savefig("zhouetal1999_p2.svg")
+	pyplot.clf()
+
+if __name__ == "__main__":
+	main(sys.argv[1], float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4]))
