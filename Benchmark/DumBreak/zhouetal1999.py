@@ -39,6 +39,12 @@ def output(dirname, filename, l_0, min_n):
 	return [h1, h2, p2]
 
 def main(dirname, l_0, dt, r_e):
+	H = 0.6
+	g = 9.8
+	rho = 1000
+	tt = math.sqrt(g/H)
+	p0 = rho*g*H
+
 	n0 = calculate_n0(r_e)
 	min_n = n0*0.1
 	data = joblib.Parallel(n_jobs=-1, verbose=1)([joblib.delayed(output)(dirname, filename, l_0, min_n) for filename in sorted(os.listdir(dirname))])
@@ -50,15 +56,15 @@ def main(dirname, l_0, dt, r_e):
 	t = numpy.array(range(n)) * dt
 
 	h1 = data[0]
-	pyplot.plot(t, h1, '-', label="OpenMPS")
+	pyplot.plot(t*tt, h1/H, '-', label="OpenMPS")
 	with open("zhouetal1999/h1.csv", "r") as f:
 		exp = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
 	exp = numpy.array(exp).T
-	pyplot.plot(exp[0] - exp[0][0], exp[1], '--', label="Exp: Zhou et al. (1999)")
-	pyplot.xlim([0, 4])
-	pyplot.ylim([0, 0.6])
-	pyplot.xlabel("$t$ [s]")
-	pyplot.ylabel("$H$ [m]")
+	pyplot.plot((exp[0] - exp[0][0])*tt, exp[1]/H, '--', label="Exp: Zhou et al. (1999)")
+	pyplot.xlim([0, 16])
+	pyplot.ylim([0, 1.0])
+	pyplot.xlabel(r"$t\sqrt{g/H}$")
+	pyplot.ylabel(r"$h_1/H$")
 	pyplot.grid(which="minor", color="gray", linestyle="dashed")
 	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
 	pyplot.minorticks_on()
@@ -66,15 +72,15 @@ def main(dirname, l_0, dt, r_e):
 	pyplot.clf()
 
 	h2 = data[1]
-	pyplot.plot(t, h2, '-', label="OpenMPS")
+	pyplot.plot(t*tt, h2/H, '-', label="OpenMPS")
 	with open("zhouetal1999/h2.csv", "r") as f:
 		exp = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
 	exp = numpy.array(exp).T
-	pyplot.plot(exp[0] - exp[0][0], exp[1], '--', label="Exp: Zhou et al. (1999)")
-	pyplot.xlim([0, 4])
-	pyplot.ylim([0, 0.6])
-	pyplot.xlabel("$t$ [s]")
-	pyplot.ylabel("$H$ [m]")
+	pyplot.plot((exp[0] - exp[0][0])*tt, exp[1]/H, '--', label="Exp: Zhou et al. (1999)")
+	pyplot.xlim([0, 16])
+	pyplot.ylim([0, 1.0])
+	pyplot.xlabel(r"$t\sqrt{g/H}$")
+	pyplot.ylabel(r"$h_2/H$")
 	pyplot.grid(which="minor", color="gray", linestyle="dashed")
 	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
 	pyplot.minorticks_on()
@@ -82,15 +88,15 @@ def main(dirname, l_0, dt, r_e):
 	pyplot.clf()
 
 	p2 = data[2]
-	pyplot.plot(t, p2, '-', label="OpenMPS")
+	pyplot.plot(t*tt, p2/p0, '-', label="OpenMPS")
 	with open("zhouetal1999/p2.csv", "r") as f:
 		exp = [[float(line["t"]), float(line["p"])] for line in csv.DictReader(f, skipinitialspace="True")]
 	exp = numpy.array(exp).T
-	pyplot.plot(exp[0] - exp[0][0], exp[1], '--', label="Exp: Zhou et al. (1999)")
-	pyplot.xlim([0, 4])
-	pyplot.ylim([0, 6000])
-	pyplot.xlabel("$t$ [s]")
-	pyplot.ylabel("$P$ [Pa]")
+	pyplot.plot((exp[0] - exp[0][0])*tt, exp[1]/p0, '--', label="Exp: Zhou et al. (1999)")
+	pyplot.xlim([0, 16])
+	pyplot.ylim([0, 1.0])
+	pyplot.xlabel(r"$t\sqrt{g/H}$")
+	pyplot.ylabel(r"$P/\rho g H$")
 	pyplot.grid(which="minor", color="gray", linestyle="dashed")
 	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
 	pyplot.minorticks_on()
