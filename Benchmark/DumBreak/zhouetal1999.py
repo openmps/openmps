@@ -56,11 +56,15 @@ def main(dirname, l_0, dt, r_e):
 	t = numpy.array(range(n)) * dt
 
 	h1 = data[0]
-	pyplot.plot(t*tt, h1/H, '-', label="OpenMPS")
+	pyplot.plot(t*tt, h1/H, '-', label="OpenMPS", linewidth=2)
 	with open("zhouetal1999/h1.csv", "r") as f:
 		exp = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
 	exp = numpy.array(exp).T
 	pyplot.plot((exp[0] - exp[0][0])*tt, exp[1]/H, '--', label="Exp: Zhou et al. (1999)")
+	with open("zhouetal1999/abdolmalekietal2004_h1.csv", "r") as f:
+		fluent = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
+	fluent = numpy.array(fluent).T
+	pyplot.plot(fluent[0], fluent[1], '-', label="Fluent: Abdolmaleki et al. (2004)")
 	pyplot.xlim([0, 16])
 	pyplot.ylim([0, 1.0])
 	pyplot.xlabel(r"$t\sqrt{g/H}$")
@@ -68,15 +72,20 @@ def main(dirname, l_0, dt, r_e):
 	pyplot.grid(which="minor", color="gray", linestyle="dashed")
 	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
 	pyplot.minorticks_on()
+	pyplot.legend()
 	pyplot.savefig("zhouetal1999_h1.svg")
 	pyplot.clf()
 
 	h2 = data[1]
-	pyplot.plot(t*tt, h2/H, '-', label="OpenMPS")
+	pyplot.plot(t*tt, h2/H, '-', label="OpenMPS", linewidth=2)
 	with open("zhouetal1999/h2.csv", "r") as f:
 		exp = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
 	exp = numpy.array(exp).T
 	pyplot.plot((exp[0] - exp[0][0])*tt, exp[1]/H, '--', label="Exp: Zhou et al. (1999)")
+	with open("zhouetal1999/abdolmalekietal2004_h2.csv", "r") as f:
+		fluent = [[float(line["t"]), float(line["h"])] for line in csv.DictReader(f, skipinitialspace="True")]
+	fluent = numpy.array(fluent).T
+	pyplot.plot(fluent[0], fluent[1], '-', label="Fluent: Abdolmaleki et al. (2004)")
 	pyplot.xlim([0, 16])
 	pyplot.ylim([0, 1.0])
 	pyplot.xlabel(r"$t\sqrt{g/H}$")
@@ -84,6 +93,7 @@ def main(dirname, l_0, dt, r_e):
 	pyplot.grid(which="minor", color="gray", linestyle="dashed")
 	pyplot.grid(which="major", color="black", linestyle="solid", b=True)
 	pyplot.minorticks_on()
+	pyplot.legend()
 	pyplot.savefig("zhouetal1999_h2.svg")
 	pyplot.clf()
 
