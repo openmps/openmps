@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot
 import joblib
+import statistics
 
 def calculate_n0(r_e):
 	size = int(math.ceil(r_e))
@@ -29,10 +30,11 @@ def output(dirname, filename, l_0, min_n):
 	X_H1 = 2020e-3 - 1525e-3
 	X_H2 = 2020e-3 - 1028e-3
 	Z_P2 = 160e-3
+	D = 90e-3
 
 	h1 = max([0] + [d[1] for d in data if abs(d[0] - X_H1) < l_0/2 and d[3] > min_n])
 	h2 = max([0] + [d[1] for d in data if abs(d[0] - X_H2) < l_0/2 and d[3] > min_n])
-	p2 = min([d for d in data if d[0] < 0 and d[4] == 1], key=lambda d: abs(d[1] - Z_P2))[2]
+	p2 = statistics.mean(d[2] for d in data if d[0] < 0 and d[4] == 1 and abs(d[1] - Z_P2) < D/2)
 
 	return [h1, h2, p2]
 
