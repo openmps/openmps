@@ -62,6 +62,5 @@ $(TESTOBJDIR)/%.o: $(TESTDIR)/%.cpp
 test: $(TESTTARGET)
 
 -include $(DEPENDS)
-
-#-include $(TESTDEPENDS)
+-include $(TESTDEPENDS)
 
