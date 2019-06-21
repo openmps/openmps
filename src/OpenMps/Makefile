@@ -4,14 +4,14 @@
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
 # clang++ ver
-COMPILER = clang++
-CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-LDFLAGS  = ${CFLAGS} -lomp
+#COMPILER = clang++
+#CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+#LDFLAGS  = ${CFLAGS} -lomp
 
 # g++ ver
-#COMPILER = g++
-#CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-#LDFLAGS  = ${CFLAGS}
+COMPILER = g++
+CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+LDFLAGS  = ${CFLAGS}
 
 LIBS     =
 INCLUDE  = -isystem ../viennacl 
@@ -23,6 +23,8 @@ endif
 SOURCES  = $(wildcard *.cpp)
 OBJECTS  = $(addprefix $(OBJDIR)/, $(SOURCES:.cpp=.o))
 DEPENDS  = $(OBJECTS:.o=.d)
+
+TESTDEPENDS = $(TESTOBJECTS:.o=.d)
 
 TESTOBJDIR = ./testobj
 TESTDIR = ./test
@@ -45,8 +47,10 @@ $(OBJDIR)/%.o: %.cpp
 all: clean $(TARGET)
 
 clean:
-	rm -f $(OBJECTS) $(DEPENDS) $(TARGET) $(TESTTARGET) $(TESTOBJECT)
+	rm -f $(OBJECTS) $(DEPENDS) $(TARGET)
+	rm -f $(TESTOBJECTS) $(TESTDEPENDS) $(TESTTARGET)
 	@rmdir --ignore-fail-on-non-empty `readlink -f $(OBJDIR)`
+	@rmdir --ignore-fail-on-non-empty `readlink -f $(TESTOBJDIR)`
 
 $(TESTTARGET): $(TESTOBJECTS)
 	$(COMPILER) -o $@ $^ $(LDFLAGS) $(TESTLDFLAGS)
@@ -58,4 +62,6 @@ $(TESTOBJDIR)/%.o: $(TESTDIR)/%.cpp
 test: $(TESTTARGET)
 
 -include $(DEPENDS)
+
+#-include $(TESTDEPENDS)
 
