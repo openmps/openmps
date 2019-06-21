@@ -8,7 +8,7 @@ CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfat
 LDFLAGS  = ${CFLAGS} -lomp
 
 LIBS     =
-INCLUDE  = -isystem ../viennacl 
+INCLUDE  = -isystem ../viennacl
 TARGET   = ./$(shell basename `readlink -f .`)
 OBJDIR   = ./obj
 ifeq "$(strip $(OBJDIR))" ""
