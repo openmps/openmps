@@ -64,8 +64,8 @@ TEST(MatrixTest, InvertMatrixAsym){
 	ASSERT_DOUBLE_EQ( dist_matrix(M1,M2), 0.0 );
 }
 #else
-	// MPS_GCが未定義の場合には行列演算が定義されない
-	// その場合にTESTが1つもないとエラーとなるため、ダミーのテストケースを用意する
+// MPS_GCが未定義の場合には行列演算が定義されない
+// その場合にTESTが1つもないとエラーとなるため、ダミーのテストケースを用意する
 TEST(MatrixTest, Dummy){
 }
 #endif
