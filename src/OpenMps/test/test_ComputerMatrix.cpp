@@ -7,10 +7,10 @@
 namespace {
 	double dist_matrix(const double* M1, const double* M2){
 		double d = 0.0;
-		double dim = OpenMps::DIM;
+		constexpr double dim = OpenMps::DIM;
 
 		for(int k = 0; k < dim*dim; ++k){
-			double diff = M1[k] - M2[k];
+			const double diff = M1[k] - M2[k];
 			d += diff*diff;
 		}
 		return sqrt(d);
