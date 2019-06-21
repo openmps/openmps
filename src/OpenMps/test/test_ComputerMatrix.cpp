@@ -1,9 +1,9 @@
 // MPS_GC使用する場合に本テストが有効となる
-#ifdef MPS_GC
 
 #include <gtest/gtest.h>
 #include "../Computer.hpp"
 
+#ifdef MPS_GC
 namespace {
 	double dist_matrix(const double* M1, const double* M2){
 		double d = 0.0;
@@ -65,5 +65,9 @@ TEST(MatrixTest, InvertMatrixAsym){
 	const double M2[] = { invM(0,0), invM(0,1), invM(1,0), invM(1,1) };
 	ASSERT_DOUBLE_EQ( dist_matrix(M1,M2), 0.0 );
 }
-
+#else
+	// MPS_GCが未定義の場合には行列演算が定義されない
+  // その場合にTESTが1つもないとエラーとなるため、ダミーのテストケースを用意する
+TEST(MatrixTest, Dummy){
+}
 #endif
