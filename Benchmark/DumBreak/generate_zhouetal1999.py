@@ -154,8 +154,8 @@ def main():
 	# 計算空間の範囲を設定
 	ET.SubElement(e, "minX").set("value", str(-4*l_0))
 	ET.SubElement(e, "minZ").set("value", str(-4*l_0))
-	ET.SubElement(e, "maxX").set("value", str(W + 4*l_0))
-	ET.SubElement(e, "maxZ").set("value", str(H * 1.5))
+	ET.SubElement(e, "maxX").set("value", str((W + 4)*l_0))
+	ET.SubElement(e, "maxZ").set("value", str(1.2 * H * l_0))
 
 	# ファイルに保存
 	xml = minidom.parseString(ET.tostring(openmps)).toprettyxml(indent="	")
