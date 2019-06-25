@@ -27,7 +27,7 @@ environment = {\
 	"surfaceRatio": 0.97,
 }
 
-dumbreak ={\
+dambreak ={\
 	"H": 1000e-3, # 水槽高
 	"W": 1200e-3+2020e-3, # 水槽幅
 	"h": 0.6, # 水柱高
@@ -60,10 +60,10 @@ def main():
 	l_0 = environment["l_0"]
 	particlesCsv= ["Type, x, z, u, w, p, n\n"]
 
-	H = math.ceil(dumbreak["H"]/l_0)
-	W = math.ceil(dumbreak["W"]/l_0)
-	h = math.ceil(dumbreak["h"]/l_0)
-	w = math.ceil(dumbreak["w"]/l_0)
+	H = math.ceil(dambreak["H"]/l_0)
+	W = math.ceil(dambreak["W"]/l_0)
+	h = math.ceil(dambreak["h"]/l_0)
+	w = math.ceil(dambreak["w"]/l_0)
 
 	# 水
 	for i in range(0, w):
