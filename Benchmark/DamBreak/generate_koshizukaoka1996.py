@@ -27,7 +27,7 @@ environment = {\
 	"surfaceRatio": 0.97,
 }
 
-koshizukadumbreak ={\
+koshizukadambreak ={\
 	"L": 14.6e-2, # m
 	"height": 2, # 水柱高/L
 	"width": 4, # 水槽幅/L
@@ -59,9 +59,9 @@ def main():
 	l_0 = environment["l_0"]
 	particlesCsv= ["Type, x, z, u, w, p, n\n"]
 
-	width =koshizukadumbreak["width"]
-	height = koshizukadumbreak["height"]
-	L = koshizukadumbreak["L"]
+	width =koshizukadambreak["width"]
+	height = koshizukadambreak["height"]
+	L = koshizukadambreak["L"]
 	l = math.ceil(L/l_0)
 	h = math.ceil(L*height/l_0)
 	w = math.ceil(L*width/l_0)
