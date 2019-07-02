@@ -10,6 +10,7 @@
 #include "../ComputingCondition.hpp"
 
 namespace{
+	namespace OpenMps{
 	double positionWall(std::size_t, double, double){
 		return 0.0;
 	}
@@ -137,6 +138,7 @@ namespace{
 		// 粒子数を表示
 		std::cout << particles.size() << " particles" << std::endl;
 
+	}
 	}
 
 }
