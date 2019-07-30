@@ -5,6 +5,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#define TEST_DENSITY
 #include "../Computer.hpp"
 #include "../Particle.hpp"
 
