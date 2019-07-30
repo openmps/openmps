@@ -7,7 +7,6 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include "../Computer.hpp"
 #include "../Particle.hpp"
-#include "../ComputingCondition.hpp"
 #include <iostream>
 
 namespace{
@@ -19,8 +18,6 @@ namespace{
 				const double tooNearCoefficient = 1.0;
 #endif
 
-				const double startTime = 0.0;
-				const double endTime = 0.5;
 				const double outputInterval = 1.0;
 				const std::size_t minStepCountPerOutput = 10;
 				const double maxDt = outputInterval / minStepCountPerOutput;
@@ -66,13 +63,13 @@ namespace{
 			// それぞれのテストケースTEST_Fが呼ばれる直前にSetUpで初期化される
 			virtual void SetUp(){
 
-		auto&& condition = OpenMps::ComputingCondition(
-#ifndef PRESSURE_EXPLICIT
-				eps,
-#endif
-				startTime, endTime,
-				outputInterval
-				);
+//		auto&& condition = OpenMps::ComputingCondition(
+//#ifndef PRESSURE_EXPLICIT
+//				eps,
+//#endif
+//				startTime, endTime,
+//				outputInterval
+//				);
 
 		auto&& environment = OpenMps::Environment(maxDt, courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
@@ -127,11 +124,11 @@ namespace{
 	TEST_F(DensityTest, FieldEnvironment){
 		auto env = computer->GetEnvironment();
 
-		// Environment TODO: PRESSURE_EXPLICITのifdef
+		// Environment TODO: 時間刻みdt,dxについて, PRESSURE_EXPLICITのifdef
 		const double dt_grav = std::sqrt(2.0*l0/g);
 		ASSERT_LE( env.MaxDt, dt_grav ); // PRESSURE_EXPLICITで分岐必要
-
 		ASSERT_DOUBLE_EQ( env.MaxDx, l0*courant ); // PRESSURE_EXPLICITで分岐必要
+
 		ASSERT_DOUBLE_EQ( env.L_0, l0 );
 		ASSERT_DOUBLE_EQ( env.R_e, r_eByl_0*l0 );
 		ASSERT_DOUBLE_EQ( env.G[OpenMps::AXIS_X], 0.0 );
@@ -164,8 +161,20 @@ namespace{
 		}
 	}
 
+	// アクセッサが適切か/フィールドに設定されているか for Computer
+	TEST_F(DensityTest, FieldComputer){
+#ifndef PRESSURE_EXPLICIT
+      // 圧力方程式の許容誤差
+      ASSERT_EQ_DOUBLE(computer->allowableResidual, eps);
+#endif
+      // TODO: grid もここでテストすべきか？: 粒子数密度のテストするなら、サイズくらいはテストすべきだと思った
+//			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
+//			positionWall(posWall),
+//			positionWallPre(posWallPre)
+	
+  }
 
-	}//openmps
+  }//openmps
 }//anonymas
 
 	///#ifndef PRESSURE_EXPLICIT
@@ -178,7 +187,3 @@ namespace{
 	///				const double tooNearCoefficient = 1.0;
 	///#endif
 	///
-	///				const double startTime = 0.0;
-	///				const double endTime = 0.5;
-	///				const double outputInterval = 0.0;
-	///				const std::size_t minStepCountPerOutput = 100;
