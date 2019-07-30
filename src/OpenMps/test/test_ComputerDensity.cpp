@@ -7,26 +7,17 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include "../Computer.hpp"
 #include "../Particle.hpp"
-#include <iostream>
 
 namespace{
 #ifndef PRESSURE_EXPLICIT
 				const double eps = 1e-10;
 #endif
-#ifdef ARTIFICIAL_COLLISION_FORCE
-				const double tooNearRatio = 1.0;
-				const double tooNearCoefficient = 1.0;
-#endif
 
-				const double outputInterval = 1.0;
-				const std::size_t minStepCountPerOutput = 10;
-				const double maxDt = outputInterval / minStepCountPerOutput;
+				const double dt_step = 1.0 / 100;
 				const double courant = 0.1;
 
 				const double l0 = 0.001;
 				const double g = 9.8;
-				// 計算ステップから指定した時間スケール, dt = maxDt = 0.100
-				// 重力加速度による時間スケール, dt = sqrt(2*l0/g) = 0.0143..
 
 				const double rho = 998.2;
 				const double nu = 1.004e-06;
@@ -60,21 +51,11 @@ namespace{
 	{
 		protected:
 			OpenMps::Computer<POS_WALL,POS_WALL_PRE> *computer;
-			// それぞれのテストケースTEST_Fが呼ばれる直前にSetUpで初期化される
+
+			// それぞれのテストケースはTEST_Fが呼ばれる直前にSetUpで初期化される
 			virtual void SetUp(){
 
-//		auto&& condition = OpenMps::ComputingCondition(
-//#ifndef PRESSURE_EXPLICIT
-//				eps,
-//#endif
-//				startTime, endTime,
-//				outputInterval
-//				);
-
-		auto&& environment = OpenMps::Environment(maxDt, courant,
-#ifdef ARTIFICIAL_COLLISION_FORCE
-			tooNearRatio, tooNearCoefficient,
-#endif
+		auto&& environment = OpenMps::Environment(dt_step, courant,
 			g, rho, nu, surfaceRatio, r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 			c,
@@ -86,7 +67,7 @@ namespace{
 
 		OpenMps::Computer<POS_WALL,POS_WALL_PRE> comp = OpenMps::CreateComputer(
 #ifndef PRESSURE_EXPLICIT
-			condition.Eps,
+				eps,
 #endif
 			environment,
 			positionWall, positionWallPre);
@@ -115,35 +96,55 @@ namespace{
 
 		}
 
+		auto getAllowableResidual(){
+			return computer->ppe.allowableResidual;
+		}
+
 		virtual void TearDown(){
 			delete computer;
 		}
   };
 
-	// アクセッサが適切か/フィールドに設定されているか for Environment
 	TEST_F(DensityTest, FieldEnvironment){
 		auto env = computer->GetEnvironment();
 
-		// Environment TODO: 時間刻みdt,dxについて, PRESSURE_EXPLICITのifdef
-		const double dt_grav = std::sqrt(2.0*l0/g);
-		ASSERT_LE( env.MaxDt, dt_grav ); // PRESSURE_EXPLICITで分岐必要
-		ASSERT_DOUBLE_EQ( env.MaxDx, l0*courant ); // PRESSURE_EXPLICITで分岐必要
-
-		ASSERT_DOUBLE_EQ( env.L_0, l0 );
-		ASSERT_DOUBLE_EQ( env.R_e, r_eByl_0*l0 );
+		// 設定した定数値がフィールド値と一致するか？
+#ifdef PRESSURE_EXPLICIT
+		ASSERT_DOUBLE_EQ( env.C, c );
+#endif
+		// 物性値
 		ASSERT_DOUBLE_EQ( env.G[OpenMps::AXIS_X], 0.0 );
 		ASSERT_DOUBLE_EQ( env.G[OpenMps::AXIS_Z], -g );
 		ASSERT_DOUBLE_EQ( env.Rho, rho );
 		ASSERT_DOUBLE_EQ( env.Nu, nu );
+
+		// 粒子法パラメータ
 		ASSERT_DOUBLE_EQ( env.SurfaceRatio, surfaceRatio );
+		ASSERT_DOUBLE_EQ( env.L_0, l0 );
+		ASSERT_DOUBLE_EQ( env.R_e, r_eByl_0*l0 );
+
+		// 計算範囲
 		ASSERT_DOUBLE_EQ( env.MinX[OpenMps::AXIS_X], minX );
 		ASSERT_DOUBLE_EQ( env.MinX[OpenMps::AXIS_Z], minZ );
 		ASSERT_DOUBLE_EQ( env.MaxX[OpenMps::AXIS_X], maxX );
 		ASSERT_DOUBLE_EQ( env.MaxX[OpenMps::AXIS_Z], maxZ );
-		ASSERT_GE( env.NeighborLength, r_eByl_0*l0 * (1+ courant*2) ); // 近傍粒子として保持する距離が、クーラン数による距離の二倍以上か？
+
+		// 時間刻みが各特徴的スケール以下であるか？
+		const double dt_grav = std::sqrt(2.0*(courant*l0)/g);
+		ASSERT_LE( env.MaxDt, dt_step );
+		ASSERT_LE( env.MaxDt, dt_grav );
+#ifdef PRESSURE_EXPLICIT
+		const double dt_sound = (courant*l0)/c;
+		ASSERT_LE( env.MaxDt, dt_sound );
+#endif
+
+		// 空間刻みがCFL条件を満足するか？
+		ASSERT_GE( env.MaxDx, l0*courant );
+
+		// 近傍粒子として判定する距離が、クーラン数による距離の1倍以上か？
+		ASSERT_GE( env.NeighborLength, r_eByl_0*l0 * (1+ courant) );
 	}
 
-	// アクセッサが適切か/フィールドに設定されているか for Particles
 	TEST_F(DensityTest, FieldParticles){
 		auto particles = computer->Particles();
 
@@ -161,29 +162,12 @@ namespace{
 		}
 	}
 
-	// アクセッサが適切か/フィールドに設定されているか for Computer
 	TEST_F(DensityTest, FieldComputer){
 #ifndef PRESSURE_EXPLICIT
       // 圧力方程式の許容誤差
-      ASSERT_EQ_DOUBLE(computer->allowableResidual, eps);
+      ASSERT_DOUBLE_EQ(getAllowableResidual(), eps);
 #endif
-      // TODO: grid もここでテストすべきか？: 粒子数密度のテストするなら、サイズくらいはテストすべきだと思った
-//			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
-//			positionWall(posWall),
-//			positionWallPre(posWallPre)
-	
   }
 
   }//openmps
 }//anonymas
-
-	///#ifndef PRESSURE_EXPLICIT
-	///				const double eps = 1e-10;
-	///					const double c = 1.0;
-	/////		const double C; // env
-	///#endif
-	///#ifdef ARTIFICIAL_COLLISION_FORCE
-	///				const double tooNearRatio = 1.0;
-	///				const double tooNearCoefficient = 1.0;
-	///#endif
-	///
