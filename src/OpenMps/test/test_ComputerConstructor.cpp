@@ -44,13 +44,10 @@ namespace OpenMps
 		return 0.0;
 	}
 
-	using POS_WALL = double (&)(std::size_t,double,double);
-	using POS_WALL_PRE = double (&)(double,double);
-
 	class DensityTest : public ::testing::Test
 	{
 	protected:
-		OpenMps::Computer<POS_WALL,POS_WALL_PRE> *computer;
+		OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&> *computer;
 
 		// それぞれのテストケースはTEST_Fが呼ばれる直前にSetUpで初期化される
 		virtual void SetUp()
@@ -65,14 +62,14 @@ namespace OpenMps
 				maxX, maxZ
 				);
 
-			OpenMps::Computer<POS_WALL,POS_WALL_PRE> comp = OpenMps::CreateComputer(
+			OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&> comp = OpenMps::CreateComputer(
 #ifndef PRESSURE_EXPLICIT
 				eps,
 #endif
 				environment,
 				positionWall, positionWallPre);
 
-			computer = new OpenMps::Computer<POS_WALL,POS_WALL_PRE>(std::move(comp));
+			computer = new OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&>(std::move(comp));
 
 			std::vector<OpenMps::Particle> particles;
 
