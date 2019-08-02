@@ -434,6 +434,10 @@ namespace { namespace OpenMps
 	template<typename POSITION_WALL, typename POSITION_WALL_PRE>
 	class Computer final
 	{
+#ifdef TEST_CONSTRUCTOR
+	friend class DensityTest;
+#endif
+
 	private:
 		// 粒子リスト
 		std::vector<Particle> particles;
