@@ -12,30 +12,30 @@
 
 namespace{
 #ifndef PRESSURE_EXPLICIT
-	const double eps = 1e-10;
+	static constexpr double eps = 1e-10;
 #endif
 
-	const double dt_step = 1.0 / 100;
-	const double courant = 0.1;
+	static constexpr double dt_step = 1.0 / 100;
+	static constexpr double courant = 0.1;
 
-	const double l0 = 0.001;
-	const double g = 9.8;
+	static constexpr double l0 = 0.001;
+	static constexpr double g = 9.8;
 
-	const double rho = 998.2;
-	const double nu = 1.004e-06;
-	const double r_eByl_0 = 2.4;
-	const double surfaceRatio = 0.95;
-	const double minX = -0.004;
-	const double minZ = -0.004;
-	const double maxX = 0.053;
-	const double maxZ = 0.1;
+	static constexpr double rho = 998.2;
+	static constexpr double nu = 1.004e-06;
+	static constexpr double r_eByl_0 = 2.4;
+	static constexpr double surfaceRatio = 0.95;
+	static constexpr double minX = -0.004;
+	static constexpr double minZ = -0.004;
+	static constexpr double maxX = 0.053;
+	static constexpr double maxZ = 0.1;
 
 	// 格子状に配置する際の1辺あたりの粒子数
-	const int num_ps_x = 7;
-	const int num_ps_z = 9;
+	static constexpr int num_ps_x = 7;
+	static constexpr int num_ps_z = 9;
 
 #ifdef PRESSURE_EXPLICIT
-	const double c = 1.0;
+	static constexpr double c = 1.0;
 #endif
 
 	namespace OpenMps{
