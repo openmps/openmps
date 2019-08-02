@@ -434,7 +434,7 @@ namespace { namespace OpenMps
 	template<typename POSITION_WALL, typename POSITION_WALL_PRE>
 	class Computer final
 	{
-#ifdef TEST_DENSITY
+#ifdef TEST_CONSTRUCTOR
 	  friend class DensityTest;
 #endif
 
