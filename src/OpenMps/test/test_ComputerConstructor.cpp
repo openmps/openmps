@@ -93,10 +93,12 @@ namespace OpenMps
 			computer->AddParticles(std::move(particles));
 		}
 
+#ifndef PRESSURE_EXPLICIT
 		auto getAllowableResidual()
 		{
 			return computer->ppe.allowableResidual;
 		}
+#endif
 
 		virtual void TearDown()
 		{
