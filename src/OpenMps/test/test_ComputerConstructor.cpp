@@ -47,8 +47,9 @@ namespace{
 			return 0.0;
 		}
 
-		typedef double (&POS_WALL)(std::size_t,double,double);
-		typedef double (&POS_WALL_PRE)(double,double);
+//		using double (&POS_WALL)(std::size_t,double,double);
+		using POS_WALL = double (&)(std::size_t,double,double);
+		using POS_WALL_PRE = double (&)(double,double);
 
 		class DensityTest : public ::testing::Test {
 	    protected:
