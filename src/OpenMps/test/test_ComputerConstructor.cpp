@@ -1,10 +1,4 @@
 #include <gtest/gtest.h>
-#include <vector>
-#include <cstdio>
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
 
 #define TEST_CONSTRUCTOR
 #include "../Computer.hpp"
