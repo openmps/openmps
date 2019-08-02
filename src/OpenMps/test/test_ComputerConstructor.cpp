@@ -47,12 +47,11 @@ namespace{
 			return 0.0;
 		}
 
-//		using double (&POS_WALL)(std::size_t,double,double);
 		using POS_WALL = double (&)(std::size_t,double,double);
 		using POS_WALL_PRE = double (&)(double,double);
 
 		class DensityTest : public ::testing::Test {
-	    protected:
+			protected:
 				OpenMps::Computer<POS_WALL,POS_WALL_PRE> *computer;
 
 				// それぞれのテストケースはTEST_Fが呼ばれる直前にSetUpで初期化される
