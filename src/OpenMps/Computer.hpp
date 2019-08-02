@@ -435,7 +435,7 @@ namespace { namespace OpenMps
 	class Computer final
 	{
 #ifdef TEST_CONSTRUCTOR
-	  friend class DensityTest;
+	friend class DensityTest;
 #endif
 
 	private:
