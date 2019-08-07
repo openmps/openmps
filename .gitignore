@@ -15,3 +15,5 @@ Result/
 *.psess
 *.vsp
 *.pdb
+*.db
+/src/packages
