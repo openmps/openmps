@@ -4,7 +4,11 @@
 #	ビルドできない場合などは、自己メンテナンスをお願いします。githubにpull requestを送ってもらえば受け取ります。
 #	Thanks to http://urin.github.io/posts/2013/simple-makefile-for-clang/
 COMPILER = clang++
-CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+ifeq ($(shell uname),Darwin)
+	CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -Xpreprocessor -fopenmp
+else
+	CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+endif
 LDFLAGS  = ${CFLAGS} -lomp
 
 LIBS     =
