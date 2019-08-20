@@ -44,7 +44,7 @@ namespace OpenMps
 		return 0.0;
 	}
 
-	class DensityTest : public ::testing::Test
+	class ConstructorTest : public ::testing::Test
 	{
 	protected:
 		OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&> *computer;
@@ -106,7 +106,7 @@ namespace OpenMps
 		}
 	};
 
-	TEST_F(DensityTest, FieldEnvironment)
+	TEST_F(ConstructorTest, FieldEnvironment)
 	{
 		const auto& env = computer->GetEnvironment();
 
@@ -147,7 +147,7 @@ namespace OpenMps
 		ASSERT_GE( env.NeighborLength, r_eByl_0*l0*(1+courant) );
 	}
 
-	TEST_F(DensityTest, FieldParticles)
+	TEST_F(ConstructorTest, FieldParticles)
 	{
 		const auto& particles = computer->Particles();
 
@@ -166,7 +166,7 @@ namespace OpenMps
 		}
 	}
 
-	TEST_F(DensityTest, FieldComputer)
+	TEST_F(ConstructorTest, FieldComputer)
 	{
 		// 設定した定数値がフィールド値と一致するか？
 #ifndef PRESSURE_EXPLICIT
