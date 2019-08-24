@@ -289,6 +289,7 @@ int main(const int argc, const char* const argv[])
 	System("mkdir result");
 
 	const auto filename = (argc == 1) ? "../../Benchmark/DamBreak/Sample.xml" : argv[1];
+	std::cout << "Input XML file: " << filename << std::endl;
 	auto xml = std::make_unique<boost::property_tree::ptree>();
 	boost::property_tree::read_xml(filename, *xml);
 
