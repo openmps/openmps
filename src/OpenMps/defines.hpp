@@ -28,17 +28,17 @@
 // HS法（高精度生成項）, Khayyer and Gotoh (2009)
 //   長所：高精度化
 //   短所：計算負荷の微増
-#define MPS_HS
+//#define MPS_HS
 
 // HL法（高精度ラプラシアン）, Khayyer and Gotoh (2010)
 //   長所：高精度化
 //   短所：なし
-#define MPS_HL
+//#define MPS_HL
 
 // ECS法（誤差修正項）, Khayyer and Gotoh (2011)
 //   長所：高精度化・安定化
 //   短所：計算負荷・メモリ使用量の微増
-#define MPS_ECS
+//#define MPS_ECS
 
 // GC法（勾配修正行列）, Khayyer and Gotoh (2011)
 //   長所：安定化
@@ -48,7 +48,12 @@
 // DS法（動的人工斥力）, Tsuruta et al. (2013)
 //   長所：安定化
 //   短所：運動量がやや不正確になる（剛体球衝突のモデルよりは低減されている）
-#define MPS_DS
+//#define MPS_DS
+
+// SPP法（自由表面仮想粒子）, Tsuruta et al. (2015)
+//   長所：非物理的な空隙の除去、自由表面の追跡性高精度化
+//   短所：なし
+#define MPS_SPP
 
 /**************************************************************/
 
