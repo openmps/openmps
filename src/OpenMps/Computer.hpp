@@ -68,7 +68,7 @@ namespace { namespace OpenMps
 			};
 
 			template<typename T, typename PARTICLES>
-			using Getter = T (*)(const PARTICLES& particles, const std::size_t i);
+			using Getter = T (*)(const PARTICLES&, const std::ptrdiff_t);
 
 			template<Name NAME>
 			struct GetGetter;
@@ -76,54 +76,54 @@ namespace { namespace OpenMps
 			struct GetGetter<Name::ID> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES&, const std::size_t i)
+				static auto Get(const PARTICLES&, const std::ptrdiff_t j)
 				{
-					return i;
+					return j;
 				}
 			};
 			template<>
 			struct GetGetter<Name::X> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].X();
+					return particles[j].X();
 				}
 			};
 			template<>
 			struct GetGetter<Name::U> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].U();
+					return particles[j].U();
 				}
 			};
 			template<>
 			struct GetGetter<Name::P> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].P();
+					return particles[j].P();
 				}
 			};
 			template<>
 			struct GetGetter<Name::N> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].N();
+					return particles[j].N();
 				}
 			};
 			template<>
 			struct GetGetter<Name::Type> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].TYPE();
+					return particles[j].TYPE();
 				}
 			};
 
@@ -154,7 +154,7 @@ namespace { namespace OpenMps
 			struct GetArg<TUPLE, I, true> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES&, const std::size_t, TUPLE)
+				static auto Get(const PARTICLES&, const std::ptrdiff_t, TUPLE)
 				{
 					return std::make_tuple();
 				}
@@ -163,18 +163,18 @@ namespace { namespace OpenMps
 			struct GetArg<TUPLE, I, false> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i, TUPLE getters)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j, TUPLE getters)
 				{
 					return std::tuple_cat(
-						std::make_tuple(std::get<I>(getters)(particles, i)),
-						GetArg<TUPLE, I+1>::Get(particles, i, getters));
+						std::make_tuple(std::get<I>(getters)(particles, j)),
+						GetArg<TUPLE, I+1>::Get(particles, j, getters));
 				}
 			};
 
 			template<typename PARTICLES, typename... Ts>
-			auto Get(const PARTICLES& particles, const std::size_t i, std::tuple<Getter<Ts, PARTICLES>...> getters)
+			auto Get(const PARTICLES& particles, const std::ptrdiff_t j, std::tuple<Getter<Ts, PARTICLES>...> getters)
 			{
-				return GetArg<decltype(getters)>::Get(particles, i, getters);
+				return GetArg<decltype(getters)>::Get(particles, j, getters);
 			}
 		}
 
