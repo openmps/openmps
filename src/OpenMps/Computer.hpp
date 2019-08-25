@@ -732,7 +732,7 @@ namespace { namespace OpenMps
 				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
 					// 粒子数密度を計算する
-					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(i, 0.0, [&thisX = particle.X(), &r_e](const Vector& x)
+					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(i, 0.0, [&thisX = particle.X(), &r_e](const auto& x)
 					{
 						return Particle::W(R(thisX, x), r_e);
 					});
@@ -750,7 +750,7 @@ namespace { namespace OpenMps
 
 			// HS法（高精度生成項）：-r_eΣ r・u / |r|^3
 			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U>(i, 0.0,
-				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u)
+				[&thisX = particles[i].X(), &thisU = particles[i].U()](const auto& x, const auto& u)
 			{
 				// ここは粒子数密度の計算なので、対ダミー粒子も含める
 				const Vector dx = x - thisX;
@@ -850,7 +850,7 @@ namespace { namespace OpenMps
 #ifndef MPS_HL
 						lambda,
 #endif
-						nu](const Vector& u, const Vector& x, const Particle::Type type)
+						nu](const auto& u, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1154,7 +1154,7 @@ namespace { namespace OpenMps
 #else
 						&A, i
 #endif
-					](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
+					](const auto j, const auto& x, const auto n, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1327,7 +1327,7 @@ namespace { namespace OpenMps
 #ifdef MPS_GC
 					// 勾配修正行列を計算
 					auto invC = AccumulateNeighbor<Detail::Field::Name::X>(i, Detail::MatrixZero,
-						[&thisX = particle.X(), r_e](const Vector& x)
+						[&thisX = particle.X(), r_e](const auto& x)
 					{
 						namespace ublas = boost::numeric::ublas;
 
@@ -1344,7 +1344,7 @@ namespace { namespace OpenMps
 					// 速度修正量を計算
 					const Vector d = (-dt * particle.N() / (rho * n0)) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 						[&thisP = particle.P(), &thisX = particle.X(), r_e, &C]
-						(const double p, const Vector& x, const Particle::Type type)
+						(const auto p, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1372,7 +1372,7 @@ namespace { namespace OpenMps
 					// 速度修正量を計算
 					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
 					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisP = particle.P(), &thisX = particle.X(), &r_e](const double p, const Vector& x, const Particle::Type type)
+						[&thisP = particle.P(), &thisX = particle.X(), &r_e](const auto p, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1460,7 +1460,7 @@ namespace { namespace OpenMps
 					// DS法：Λ = -1/(2 n0 Δt) Σ(√(d^2 - r⊥^2) - r||) x/r
 					const auto& thisX = particle.X();
 					const Vector result = -1.0/(2 * dt * n0) * AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
+						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const auto j, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
