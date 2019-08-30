@@ -1,36 +1,30 @@
 COMPILER = clang++
 CFLAGS   = -g -MMD -MP -O3 -std=c++14 -stdlib=libc++ -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-LDFLAGS  = ${CFLAGS} -lomp
-
-LIBS     =
-INCLUDE  = -isystem ../../viennacl
+LDFLAGS= ${CFLAGS} -lomp -lgtest -lgtest_main -L../../googletest/lib
+INCLUDE  = -isystem ../../viennacl -isystem ../../googletest/googletest/include
 
 TESTDIR = ./
-TESTFLAGS= 
-TESTLDFLAGS= -lgtest -lgtest_main -L../../googletest/lib
-
-TESTINCLUDE= -isystem ../../googletest/googletest/include
-TESTTARGET = ./test_$(shell basename `readlink -f .`)
-TESTOBJDIR = ./testobj
-ifeq "$(strip $(TESTOBJDIR))" ""
-  TESTOBJDIR = .
+TARGET = ./test_$(shell basename `readlink -f ..`)
+OBJDIR = ./testobj
+ifeq "$(strip $(OBJDIR))" ""
+  OBJDIR = .
 endif
-TESTSOURCES = $(notdir $(wildcard $(TESTDIR)/*.cpp))
-TESTOBJECTS  = $(addprefix $(TESTOBJDIR)/, $(TESTSOURCES:.cpp=.o))
-TESTDEPENDS = $(TESTOBJECTS:.o=.d)
+SOURCES = $(notdir $(wildcard $(TESTDIR)/*.cpp))
+OBJECTS  = $(addprefix $(OBJDIR)/, $(SOURCES:.cpp=.o))
+DEPENDS = $(OBJECTS:.o=.d)
 
-$(TESTTARGET): $(TESTOBJECTS)
-	$(COMPILER) -o $@ $^ $(LDFLAGS) $(TESTLDFLAGS)
+$(TARGET): $(OBJECTS)
+	$(COMPILER) -o $@ $^ $(LDFLAGS)
 
-$(TESTOBJDIR)/%.o: $(TESTDIR)/%.cpp
-	@[ -d $(TESTOBJDIR) ] || mkdir -p $(TESTOBJDIR)
-	$(COMPILER) $(CFLAGS) $(INCLUDE) $(TESTINCLUDE) $(TESTFLAGS) -o $@ -c $<
+$(OBJDIR)/%.o: $(TESTDIR)/%.cpp
+	@[ -d $(OBJDIR) ] || mkdir -p $(OBJDIR)
+	$(COMPILER) $(CFLAGS) $(INCLUDE) -o $@ -c $<
 
-all: clean $(TESTTARGET)
+all: clean $(TARGET)
 
 clean:
-	rm -f $(TESTOBJECTS) $(TESTDEPENDS) $(TESTTARGET)
-	@rmdir --ignore-fail-on-non-empty `readlink -f $(TESTOBJDIR)`
+	rm -f $(OBJECTS) $(DEPENDS) $(TARGET)
+	@rmdir --ignore-fail-on-non-empty `readlink -f $(OBJDIR)`
 
--include $(TESTDEPENDS)
+-include $(DEPENDS)
 
