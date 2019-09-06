@@ -437,6 +437,9 @@ namespace { namespace OpenMps
 #ifdef TEST_CONSTRUCTOR
 	friend class ConstructorTest;
 #endif
+#ifdef TEST_DENSITY
+	friend class DensityTest;
+#endif
 
 	private:
 		// 粒子リスト
