@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 
-#define TEST_DENSITY
+#define TEST_NUMBERDENSITY
 #include "../Computer.hpp"
 #include "../Particle.hpp"
 #include "../Vector.hpp"
+
+#include <cmath>
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
@@ -45,7 +47,7 @@ namespace OpenMps
 		return 0.0;
 	}
 
-	class DensityTest : public ::testing::Test
+	class NumberDensityTest : public ::testing::Test
 	{
 	protected:
 		OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&> *computer;
@@ -134,28 +136,65 @@ namespace OpenMps
 		}
 	};
 
-	// 距離計算は距離の基本的性質を満足するか？
-	TEST_F(DensityTest, NeighborDistance)
+	TEST_F(NumberDensityTest, DistanceValue)
 	{
-		// 適当な3つのVector, Particleを用意
+		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+		auto p2 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+
+		p1.X()[OpenMps::AXIS_X] = 0.0;
+		p1.X()[OpenMps::AXIS_Z] = 0.0;
+
+		p2.X()[OpenMps::AXIS_X] = 1.0;
+		p2.X()[OpenMps::AXIS_Z] = 2.0;
+
+		ASSERT_DOUBLE_EQ(R(p1, p2), std::sqrt(1.0*1.0+2.0*2.0));
+	}
+
+	// 点入れ替えについて対称か？
+	TEST_F(NumberDensityTest, DistanceSymmetry)
+	{
+		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+		auto p2 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+
+		p1.X()[OpenMps::AXIS_X] = -10.0;
+		p1.X()[OpenMps::AXIS_Z] = 0.1;
+
+		p2.X()[OpenMps::AXIS_X] = 1.5;
+		p2.X()[OpenMps::AXIS_Z] = 2.8;
+
+		ASSERT_DOUBLE_EQ(R(p1, p2), R(p2, p1));
+	}
+
+
+	// Vector, Particleの距離計算が一致するか？
+	TEST_F(NumberDensityTest, DistanceOverload)
+	{
+		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+		auto p2 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+
+		p1.X()[OpenMps::AXIS_X] = -10.0;
+		p1.X()[OpenMps::AXIS_Z] = 0.1;
+
+		p2.X()[OpenMps::AXIS_X] = 1.5;
+		p2.X()[OpenMps::AXIS_Z] = 2.8;
+
+		ASSERT_DOUBLE_EQ(R(p1.X(), p2.X()), R(p1, p2));
+	}
+
+	TEST_F(NumberDensityTest, DistanceTriangleInequality)
+	{
 		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 		auto p2 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 		auto p3 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 
-		p1.X()[OpenMps::AXIS_X] = 1.0;
-		p1.X()[OpenMps::AXIS_Z] = 0.3;
+		p1.X()[OpenMps::AXIS_X] = -10.0;
+		p1.X()[OpenMps::AXIS_Z] = 0.1;
 
-		p2.X()[OpenMps::AXIS_X] = -2.0;
-		p2.X()[OpenMps::AXIS_Z] = 0.8;
+		p2.X()[OpenMps::AXIS_X] = 1.5;
+		p2.X()[OpenMps::AXIS_Z] = 2.8;
 
 		p3.X()[OpenMps::AXIS_X] = 100.0;
-		p3.X()[OpenMps::AXIS_Z] = -20.5;
-
-		// Vector, Particleの距離計算が一致するか？
-		ASSERT_DOUBLE_EQ(R(p1.X(), p2.X()), R(p1, p2));
-
-		// 点入れ替えについて対称か？
-		ASSERT_DOUBLE_EQ(R(p1, p2), R(p2, p1));
+		p3.X()[OpenMps::AXIS_Z] = -30.8;
 
 		// 三角不等式は成立するか？
 		ASSERT_LE(R(p1, p2), R(p1, p3) + R(p2, p3));
@@ -164,14 +203,12 @@ namespace OpenMps
 	}
 
 	// 近接する2粒子は互いを近傍粒子として保持しているか？
-	TEST_F(DensityTest, NeighborSymmetry)
+	TEST_F(NumberDensityTest, NeighborSymmetry)
 	{
 		SearchNeighbor();
 
 		const auto& particles = GetParticles();
 		const auto n = particles.size();
-
-		bool neigh_symm = true;
 
 	    // i: 場に存在する粒子を走査
 	    // j: i番目粒子の近傍粒子を走査
@@ -190,39 +227,37 @@ namespace OpenMps
 						j_has_i |= (particles[j].TYPE() != Particle::Type::Disabled && Neighbor(j, idxj) == i);
 					}
 
-					neigh_symm &= j_has_i;
+					ASSERT_TRUE(j_has_i);
 				}
 			}
 		}
-
-		ASSERT_TRUE(neigh_symm);
 	}
 
 	// 粒子は自分自身を近傍粒子として含んでいないか？
-	TEST_F(DensityTest, NeighborMyself)
+	TEST_F(NumberDensityTest, NeighborMyself)
 	{
 		SearchNeighbor();
 
 		const auto& particles = GetParticles();
 		const auto n = particles.size();
 
-		bool has_myself = false;
 		for(auto i = decltype(n){0}; i < n; i++)
 		{
 			if(particles[i].TYPE() != Particle::Type::Disabled)
 			{
+				bool has_myself = false;
 				for(auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
 					has_myself |= (Neighbor(i, idx) == i);
 				}
+				ASSERT_FALSE(has_myself);
 			}
 		}
 
-		ASSERT_FALSE(has_myself);
 	}
 
 	// 粒子数密度は理論値と一致するか？
-	TEST_F(DensityTest, NeighDensity)
+	TEST_F(NumberDensityTest, NeighDensity)
 	{
 		SearchNeighbor();
 
