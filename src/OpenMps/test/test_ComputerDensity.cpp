@@ -26,8 +26,8 @@ namespace {
 	static constexpr double maxZ = 0.1;
 
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr int num_ps_x = 7;
-	static constexpr int num_ps_z = 7;
+	static constexpr int num_x = 7;
+	static constexpr int num_z = 7;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
@@ -73,10 +73,10 @@ namespace OpenMps
 
 			std::vector<OpenMps::Particle> particles;
 
-			// 1辺l0, num_ps_x*num_ps_zの格子状に粒子を配置
-			for (int j = 0; j < num_ps_z; ++j)
+			// 1辺l0, num_x*nums_zの格子状に粒子を配置
+			for (int j = 0; j < num_z; ++j)
 			{
-				for (int i = 0; i < num_ps_x; ++i)
+				for (int i = 0; i < num_x; ++i)
 				{
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					particle.X()[OpenMps::AXIS_X] = i * l0;
