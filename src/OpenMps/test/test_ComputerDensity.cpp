@@ -98,12 +98,12 @@ namespace OpenMps
 			return computer->particles;
 		}
 
-		double Rv(const Vector& x1, const Vector& x2)
+		double R(const Vector& x1, const Vector& x2)
 		{
 			return OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::R(x1, x2);
 		}
 
-		double Rp(const Particle& p1, const Particle& p2)
+		double R(const Particle& p1, const Particle& p2)
 		{
 			return OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::R(p1, p2);
 		}
@@ -152,15 +152,15 @@ namespace OpenMps
 		p3.X()[OpenMps::AXIS_Z] = -20.5;
 
 		// Vector, Particleの距離計算が一致するか？
-		ASSERT_DOUBLE_EQ(Rv(p1.X(), p2.X()), Rp(p1, p2));
+		ASSERT_DOUBLE_EQ(R(p1.X(), p2.X()), R(p1, p2));
 
 		// 点入れ替えについて対称か？
-		ASSERT_DOUBLE_EQ(Rp(p1, p2), Rp(p2, p1));
+		ASSERT_DOUBLE_EQ(R(p1, p2), R(p2, p1));
 
 		// 三角不等式は成立するか？
-		ASSERT_LE(Rp(p1, p2), Rp(p1, p3) + Rp(p2, p3));
-		ASSERT_LE(Rp(p2, p3), Rp(p1, p2) + Rp(p1, p3));
-		ASSERT_LE(Rp(p3, p1), Rp(p1, p2) + Rp(p2, p3));
+		ASSERT_LE(R(p1, p2), R(p1, p3) + R(p2, p3));
+		ASSERT_LE(R(p2, p3), R(p1, p2) + R(p1, p3));
+		ASSERT_LE(R(p3, p1), R(p1, p2) + R(p2, p3));
 	}
 
 	// 近接する2粒子は互いを近傍粒子として保持しているか？
