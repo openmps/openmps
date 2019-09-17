@@ -210,8 +210,8 @@ namespace OpenMps
 		const auto& particles = GetParticles();
 		const auto n = particles.size();
 
-	    // i: 場に存在する粒子を走査
-	    // j: i番目粒子の近傍粒子を走査
+		// i: 場に存在する粒子を走査
+		// j: i番目粒子の近傍粒子を走査
 		for(auto i = decltype(n){0}; i < n; i++)
 		{
 			if(particles[i].TYPE() != Particle::Type::Disabled)
