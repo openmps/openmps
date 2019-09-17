@@ -50,7 +50,6 @@ namespace OpenMps
 	protected:
 		OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&> *computer;
 
-		// それぞれのテストケースはTEST_Fが呼ばれる直前にSetUpで初期化される
 		virtual void SetUp()
 		{
 			auto&& environment = OpenMps::Environment(dt_step, courant,
@@ -135,11 +134,10 @@ computer->AddParticles(std::move(particles));
 		}
 	};
 
+  // 距離計算は距離の基本的性質を満足するか？
 	TEST_F(DensityTest, NeighborDistance)
 	{
-		// TODO: 適当な3点をいくらか取ってくる
-
-		// 3つのVector, Particleを用意
+		// 適当な3つのVector, Particleを用意
 		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 		auto p2 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 		auto p3 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
@@ -153,20 +151,19 @@ computer->AddParticles(std::move(particles));
 		p3.X()[OpenMps::AXIS_X] = 100.0;
 		p3.X()[OpenMps::AXIS_Z] = -20.5;
 
-		// Vector, Particle の距離計算が一致
+		// Vector, Particleの距離計算が一致するか？
 		ASSERT_DOUBLE_EQ(Rv(p1.X(), p2.X()), Rp(p1, p2));
 
-		// 点入れ替えについて対称
+		// 点入れ替えについて対称か？
 		ASSERT_DOUBLE_EQ(Rp(p1, p2), Rp(p2, p1));
 
-		// 三角不等式
+		// 三角不等式は成立するか？
 		ASSERT_LE(Rp(p1, p2), Rp(p1, p3) + Rp(p2, p3));
 		ASSERT_LE(Rp(p2, p3), Rp(p1, p2) + Rp(p1, p3));
 		ASSERT_LE(Rp(p3, p1), Rp(p1, p2) + Rp(p2, p3));
 	}
 
 	// 近接する2粒子は互いを近傍粒子として保持しているか？
-	// TODO: 1個でもあれば false的な文を確認
 	TEST_F(DensityTest, NeighborSymmetry)
 	{
 		SearchNeighbor();
@@ -174,31 +171,34 @@ computer->AddParticles(std::move(particles));
 		const auto& particles = GetParticles();
 		auto n = particles.size();
 
-		bool neigh_sym = true;
-		for(auto i = decltype(n){0}; i < n; i++) // 場に存在する粒子ループ
+		bool neigh_symm = true;
+
+    // i: 場に存在する粒子を走査
+    // j: i番目粒子の近傍粒子を走査
+		for(auto i = decltype(n){0}; i < n; i++)
 		{
 			if(particles[i].TYPE() != Particle::Type::Disabled)
 			{
-				for(auto idx = decltype(i){0}; idx < NeighborCount(i); idx++) // i粒子の近傍粒子ループ
+				for(auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
-					auto j = Neighbor(i, idx); // i粒子に隣り合うidx番目粒子をjとする
+					auto j = Neighbor(i, idx);
 
 					// j粒子の近傍にi粒子が含まれているか？
-					bool hasi = false;
+					bool j_has_i = false;
 					for (auto idxj = decltype(i){0}; idxj < NeighborCount(j); idxj++)
 					{
 						if (particles[j].TYPE() != Particle::Type::Disabled && Neighbor(j, idxj) == i)
 						{
-							hasi |= true;
+							j_has_i |= true;
 						}
 					}
-				}
 
-				neigh_sym &= true;
+          neigh_symm &= j_has_i;
+				}
 			}
 		}
 
-		ASSERT_TRUE(neigh_sym);
+		ASSERT_TRUE(neigh_symm);
 	}
 
 	// 粒子は自分自身を近傍粒子として含んでいないか？
@@ -224,7 +224,7 @@ computer->AddParticles(std::move(particles));
 		ASSERT_FALSE(hasmyself);
 	}
 
-	// 密粒子数密度を計算して理論値と比較
+	// 粒子数密度は理論値と一致するか？
 	TEST_F(DensityTest, NeighDensity)
 	{
 		SearchNeighbor();
@@ -232,8 +232,8 @@ computer->AddParticles(std::move(particles));
 		ComputeNeighborDensities();
 
 		const auto& particles = GetParticles();
-		// テキスト Koshizuka et al.,(2014) による値と比較
-		// TODO: ID 24は中心粒子を表す。初期の粒子IDが維持されていると仮定している
+		// テキスト Koshizuka et al.,2014 による値と比較
+		// ID 24は中心粒子を表す。初期粒子IDが近傍探索処理後も維持されるという仮定に注意
 		ASSERT_NEAR(particles[24].N(), 6.539696962, 1e-5);
 	}
 }
