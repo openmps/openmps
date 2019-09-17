@@ -94,13 +94,6 @@ for (int j = 0; j < num_ps_z; ++j)
 computer->AddParticles(std::move(particles));
 		}
 
-#ifndef PRESSURE_EXPLICIT
-		auto getAllowableResidual()
-		{
-			return computer->ppe.allowableResidual;
-		}
-#endif
-
 		auto& GetParticles()
 		{
 			return computer->particles;
