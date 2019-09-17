@@ -135,9 +135,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="test_ComputerDensity.cpp" />
     <ClCompile Include="test_ComputerConstructor.cpp" />
     <ClCompile Include="test_ComputerMatrix.cpp" />
+    <ClCompile Include="test_ComputerNumberDensity.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
