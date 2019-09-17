@@ -169,7 +169,7 @@ namespace OpenMps
 		SearchNeighbor();
 
 		const auto& particles = GetParticles();
-		auto n = particles.size();
+		const auto n = particles.size();
 
 		bool neigh_symm = true;
 
@@ -181,7 +181,7 @@ namespace OpenMps
 			{
 				for(auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
-					auto j = Neighbor(i, idx);
+					const auto j = Neighbor(i, idx);
 
 					// j粒子の近傍にi粒子が含まれているか？
 					bool j_has_i = false;
@@ -204,7 +204,7 @@ namespace OpenMps
 		SearchNeighbor();
 
 		const auto& particles = GetParticles();
-		auto n = particles.size();
+		const auto n = particles.size();
 
 		bool has_myself = false;
 		for(auto i = decltype(n){0}; i < n; i++)
@@ -229,9 +229,11 @@ namespace OpenMps
 		ComputeNeighborDensities();
 
 		const auto& particles = GetParticles();
+
 		// テキスト Koshizuka et al.,2014 による値と比較
 		// ID 24は中心粒子を表す。初期粒子IDが近傍探索処理後も維持されるという仮定に注意
-		ASSERT_NEAR(particles[24].N(), 6.539696962, 1e-5);
+		static constexpr double density_koshizuka2014 = 6.539696962;
+		ASSERT_NEAR(particles[24].N(), density_koshizuka2014, 1e-5);
 	}
 }
 }
