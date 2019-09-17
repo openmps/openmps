@@ -60,37 +60,37 @@ namespace OpenMps
 				l0,
 				minX, minZ,
 				maxX, maxZ
-				);
+			);
 
-OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&> comp = OpenMps::CreateComputer(
+			OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&> comp = OpenMps::CreateComputer(
 #ifndef PRESSURE_EXPLICIT
-	eps,
+				eps,
 #endif
-	environment,
-	positionWall, positionWallPre);
+				environment,
+				positionWall, positionWallPre);
 
-computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(comp));
+			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(comp));
 
-std::vector<OpenMps::Particle> particles;
+			std::vector<OpenMps::Particle> particles;
 
-// 1辺l0, num_ps_x*num_ps_zの格子状に粒子を配置
-for (int j = 0; j < num_ps_z; ++j)
-{
-	for (int i = 0; i < num_ps_x; ++i)
-	{
-		auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
-		particle.X()[OpenMps::AXIS_X] = i * l0;
-		particle.X()[OpenMps::AXIS_Z] = j * l0;
+			// 1辺l0, num_ps_x*num_ps_zの格子状に粒子を配置
+			for (int j = 0; j < num_ps_z; ++j)
+			{
+				for (int i = 0; i < num_ps_x; ++i)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					particle.X()[OpenMps::AXIS_X] = i * l0;
+					particle.X()[OpenMps::AXIS_Z] = j * l0;
 
-		particle.U()[OpenMps::AXIS_X] = 0.0;
-		particle.U()[OpenMps::AXIS_Z] = 0.0;
-		particle.P() = 0.0;
-		particle.N() = 0.0;
+					particle.U()[OpenMps::AXIS_X] = 0.0;
+					particle.U()[OpenMps::AXIS_Z] = 0.0;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
 
-		particles.push_back(std::move(particle));
-	}
-}
-computer->AddParticles(std::move(particles));
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
 		}
 
 		auto& GetParticles()
@@ -134,7 +134,7 @@ computer->AddParticles(std::move(particles));
 		}
 	};
 
-  // 距離計算は距離の基本的性質を満足するか？
+	// 距離計算は距離の基本的性質を満足するか？
 	TEST_F(DensityTest, NeighborDistance)
 	{
 		// 適当な3つのVector, Particleを用意
@@ -173,8 +173,8 @@ computer->AddParticles(std::move(particles));
 
 		bool neigh_symm = true;
 
-    // i: 場に存在する粒子を走査
-    // j: i番目粒子の近傍粒子を走査
+	    // i: 場に存在する粒子を走査
+	    // j: i番目粒子の近傍粒子を走査
 		for(auto i = decltype(n){0}; i < n; i++)
 		{
 			if(particles[i].TYPE() != Particle::Type::Disabled)
@@ -187,13 +187,10 @@ computer->AddParticles(std::move(particles));
 					bool j_has_i = false;
 					for (auto idxj = decltype(i){0}; idxj < NeighborCount(j); idxj++)
 					{
-						if (particles[j].TYPE() != Particle::Type::Disabled && Neighbor(j, idxj) == i)
-						{
-							j_has_i |= true;
-						}
+						j_has_i |= (particles[j].TYPE() != Particle::Type::Disabled && Neighbor(j, idxj) == i);
 					}
 
-          neigh_symm &= j_has_i;
+					neigh_symm &= j_has_i;
 				}
 			}
 		}
@@ -209,19 +206,19 @@ computer->AddParticles(std::move(particles));
 		const auto& particles = GetParticles();
 		auto n = particles.size();
 
-		bool hasmyself = false;
-		for(auto i = decltype(n){0}; i < n; i++) // 場に存在する粒子ループ
+		bool has_myself = false;
+		for(auto i = decltype(n){0}; i < n; i++)
 		{
 			if(particles[i].TYPE() != Particle::Type::Disabled)
 			{
-				for(auto idx = decltype(i){0}; idx < NeighborCount(i); idx++) // i粒子の近傍粒子ループ
+				for(auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
-					hasmyself = (Neighbor(i, idx) == i);
+					has_myself |= (Neighbor(i, idx) == i);
 				}
 			}
 		}
 
-		ASSERT_FALSE(hasmyself);
+		ASSERT_FALSE(has_myself);
 	}
 
 	// 粒子数密度は理論値と一致するか？
