@@ -62,18 +62,18 @@ namespace OpenMps
 				maxX, maxZ
 			);
 
-			OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&> comp = OpenMps::CreateComputer(
-#ifndef PRESSURE_EXPLICIT
-				eps,
-#endif
-				environment,
-				positionWall, positionWallPre);
 
-			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(comp));
+			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(
+				OpenMps::CreateComputer(
+	#ifndef PRESSURE_EXPLICIT
+					eps,
+	#endif
+					environment,
+					positionWall, positionWallPre)));
 
 			std::vector<OpenMps::Particle> particles;
 
-			// 1辺l0, num_x*nums_zの格子状に粒子を配置
+			// 1辺l0, num_x*num_zの格子状に粒子を配置
 			for (int j = 0; j < num_z; ++j)
 			{
 				for (int i = 0; i < num_x; ++i)
