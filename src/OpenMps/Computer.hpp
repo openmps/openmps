@@ -874,13 +874,13 @@ namespace { namespace OpenMps
 				// ダミー粒子と無効粒子以外
 				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
-					const auto nn = particle.N();
+					const auto thisN = particle.N();
 
 					// ECS法の誤差修正項：α Dn/Dt + β (n-n0)/n0
 					// α=|(n-n0)/n0|
 					// β=|Dn/Dt|
 					const auto speed = NeighborDensitiyVariationSpeed(i);
-					const auto error = IsSurface(nn, n0, surfaceRatio) ? 0 : (nn - n0) / n0; // 自由表面付近の粒子数密度が足りないのは当然なので訂正しない
+					const auto error = (thisN - n0) / n0;
 					ecs[i] = std::abs(error) * speed + std::abs(speed) * error;
 				}
 			}

@@ -38,7 +38,7 @@
 // ECS法（誤差修正項）, Khayyer and Gotoh (2011)
 //   長所：高精度化・安定化
 //   短所：計算負荷・メモリ使用量の微増
-//#define MPS_ECS
+#define MPS_ECS
 
 // GC法（勾配修正行列）, Khayyer and Gotoh (2011)
 //   長所：安定化
