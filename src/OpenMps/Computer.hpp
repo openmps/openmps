@@ -529,6 +529,11 @@ namespace { namespace OpenMps
 		std::vector<Vector> originalX;
 #endif
 
+#ifdef MPS_SPP
+		// SPP補正を入れない粒子数密度
+		std::vector<double> nWithoutSpp;
+#endif
+
 		// 壁の移動
 		const POSITION_WALL positionWall;
 
@@ -638,7 +643,7 @@ namespace { namespace OpenMps
 #ifdef MPS_SPP
 			// SPP粒子に対して
 			{
-				const auto thisN = particles[i].N();
+				const auto thisN = nWithoutSpp[i];
 				const auto n0 = environment.N0();
 				dx_g /= n0;
 
@@ -754,6 +759,9 @@ namespace { namespace OpenMps
 		void ComputeNeighborDensities()
 		{
 			const double r_e = environment.R_e;
+#ifdef MPS_SPP
+			const auto n0 = environment.N0();
+#endif
 
 			// 全粒子で
 			const auto n = particles.size();
@@ -767,12 +775,15 @@ namespace { namespace OpenMps
 			{
 #endif
 				auto& particle = particles[i];
+#ifdef MPS_SPP
+				nWithoutSpp[i] = n0;
+#endif
 
 				// ダミー粒子と無効粒子を除く
 				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
 					// 粒子数密度を計算する
-					particle.N() = AccumulateNeighbor<
+					const auto thisN = AccumulateNeighbor<
 #ifdef MPS_SPP
 						Detail::Field::Name::ID,
 #endif
@@ -789,6 +800,13 @@ namespace { namespace OpenMps
 #endif
 							Particle::W(R(thisX, x), r_e);
 					});
+
+#ifdef MPS_SPP
+					nWithoutSpp[i] = thisN;
+					particle.N() = std::max(thisN, n0); // SPPによって粒子数密度が足りない時には充填される
+#else
+					particle.N() = thisN;
+#endif
 				}
 			}
 		}
@@ -817,11 +835,7 @@ namespace { namespace OpenMps
 			const auto thisN = particles[i].N();
 
 			// 標準MPS法：b_i = (n_i - n0)/Δt
-			const auto result = 
-#ifdef MPS_SPP
-				(thisN <= n0) ? 0 : // SPPによって粒子数密度が足りない時に充填されたとする
-#endif
-				(thisN - n0) / dt;
+			const auto result = (thisN - n0) / dt;
 #endif
 			return result;
 		}
@@ -1212,9 +1226,6 @@ namespace { namespace OpenMps
 					// 対角項を設定
 					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
 					[&thisX = particles[i].X(), r_e, n0, surfaceRatio,
-#ifdef MPS_SPP
-						& thisN = particles[i].N(),
-#endif
 #ifndef MPS_HL
 						lambda,
 #endif
@@ -1235,17 +1246,13 @@ namespace { namespace OpenMps
 							const auto a_ij = (5 - DIM) * r_e / n0 / (r*r*r);
 #else
 							// 標準MPS法：2D/(λn0) w
-							const double w = 
-#ifdef MPS_SPP
-								(j < 0) ? (n0 - thisN) : 
-#endif
-								Particle::W(r, r_e);
+							const double w = Particle::W(r, r_e);
 							const auto a_ij = (2 * DIM / lambda / n0) * w;
 #endif
 
 #ifdef MPS_SPP
 							// SPPの場合は非対角項は設定しない
-							if(j > 0)
+							if(j >= 0)
 #else
 							// 自由表面の場合は非対角項は設定しない
 							if (!IsSurface(n, n0, surfaceRatio))
@@ -1542,7 +1549,11 @@ namespace { namespace OpenMps
 						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const auto j, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
-						if(type != Particle::Type::Dummy)
+						if((type != Particle::Type::Dummy)
+#ifdef MPS_SPP
+							&& (j >= 0) // SPP粒子も除く
+#endif
+							)
 						{
 							namespace ublas = boost::numeric::ublas;
 
@@ -1644,7 +1655,12 @@ namespace { namespace OpenMps
 #ifdef MPS_ECS
 			ecs(std::move(src.ecs)),
 #endif
+#ifdef MPS_DS
 			originalX(std::move(src.originalX)),
+#endif
+#ifdef MPS_SPP
+			nWithoutSpp(std::move(src.nWithoutSpp)),
+#endif
 			positionWall(std::move(src.positionWall)),
 			positionWallPre(std::move(src.positionWallPre))
 		{}
@@ -1726,6 +1742,9 @@ namespace { namespace OpenMps
 #endif
 #ifdef MPS_DS
 			originalX.resize(n);
+#endif
+#ifdef MPS_SPP
+			nWithoutSpp.resize(n);
 #endif
 		}
 
