@@ -33,7 +33,7 @@
 // HL法（高精度ラプラシアン）, Khayyer and Gotoh (2010)
 //   長所：高精度化
 //   短所：なし
-//#define MPS_HL
+#define MPS_HL
 
 // ECS法（誤差修正項）, Khayyer and Gotoh (2011)
 //   長所：高精度化・安定化
