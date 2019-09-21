@@ -818,9 +818,19 @@ namespace { namespace OpenMps
 		{
 #ifdef MPS_HS
 			const auto r_e = environment.R_e;
+#ifdef MPS_SPP
+			const auto thisN = nWithoutSpp[i];
+			const auto n0 = environment.N0();
+#endif
+
 
 			// HS法（高精度生成項）：-r_eΣ r・u / |r|^3
-			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U>(i, 0.0,
+			const auto result  =
+#ifdef MPS_SPP
+				(thisN < n0) ? 0.0 : 
+#endif
+
+				-r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U>(i, 0.0,
 				[&thisX = particles[i].X(), &thisU = particles[i].U()](const auto& x, const auto& u)
 			{
 				// ここは粒子数密度の計算なので、対ダミー粒子も含める
