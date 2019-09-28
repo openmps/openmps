@@ -4,6 +4,7 @@
 
 #pragma warning(push, 0)
 #include <vector>
+#include <limits>
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -651,7 +652,7 @@ namespace { namespace OpenMps
 				if (thisN < n0)
 				{
 					const auto r_g = std::sqrt(boost::numeric::ublas::inner_prod(dx_g, dx_g));
-					if (r_g > DBL_EPSILON) // 周囲に粒子が全く存在しない場合（0除算回避）
+					if (r_g > std::numeric_limits<double>::epsilon()) // 周囲に粒子が全く存在しない場合（0除算回避）
 					{
 						const auto w_spp = n0 - thisN;
 						const auto r_spp = r_e / (w_spp + 1);
