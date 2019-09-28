@@ -214,7 +214,9 @@ namespace
 		const double rho = xml.get<double>("openmps.environment.rho.<xmlattr>.value");
 		const double nu = xml.get<double>("openmps.environment.nu.<xmlattr>.value");
 		const double r_eByl_0 = xml.get<double>("openmps.environment.r_eByl_0.<xmlattr>.value");
+#ifndef MPS_SPP
 		const double surfaceRatio = xml.get<double>("openmps.environment.surfaceRatio.<xmlattr>.value");
+#endif
 #ifdef PRESSURE_EXPLICIT
 		const double c = xml.get<double>("openmps.environment.c.<xmlattr>.value");
 #endif
@@ -238,7 +240,11 @@ namespace
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			tooNearRatio, tooNearCoefficient,
 #endif
-			g, rho, nu, surfaceRatio, r_eByl_0,
+			g, rho, nu,
+#ifndef MPS_SPP
+			surfaceRatio,
+#endif
+			r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 			c,
 #endif
@@ -289,6 +295,7 @@ int main(const int argc, const char* const argv[])
 	System("mkdir result");
 
 	const auto filename = (argc == 1) ? "../../Benchmark/DamBreak/Sample.xml" : argv[1];
+	std::cout << "Input XML file: " << filename << std::endl;
 	auto xml = std::make_unique<boost::property_tree::ptree>();
 	boost::property_tree::read_xml(filename, *xml);
 

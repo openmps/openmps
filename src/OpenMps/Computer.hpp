@@ -4,6 +4,7 @@
 
 #pragma warning(push, 0)
 #include <vector>
+#include <limits>
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -68,7 +69,7 @@ namespace { namespace OpenMps
 			};
 
 			template<typename T, typename PARTICLES>
-			using Getter = T (*)(const PARTICLES& particles, const std::size_t i);
+			using Getter = T (*)(const PARTICLES&, const std::ptrdiff_t);
 
 			template<Name NAME>
 			struct GetGetter;
@@ -76,54 +77,54 @@ namespace { namespace OpenMps
 			struct GetGetter<Name::ID> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES&, const std::size_t i)
+				static auto Get(const PARTICLES&, const std::ptrdiff_t j)
 				{
-					return i;
+					return j;
 				}
 			};
 			template<>
 			struct GetGetter<Name::X> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].X();
+					return particles[j].X();
 				}
 			};
 			template<>
 			struct GetGetter<Name::U> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].U();
+					return particles[j].U();
 				}
 			};
 			template<>
 			struct GetGetter<Name::P> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].P();
+					return particles[j].P();
 				}
 			};
 			template<>
 			struct GetGetter<Name::N> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].N();
+					return particles[j].N();
 				}
 			};
 			template<>
 			struct GetGetter<Name::Type> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j)
 				{
-					return particles[i].TYPE();
+					return particles[j].TYPE();
 				}
 			};
 
@@ -154,7 +155,7 @@ namespace { namespace OpenMps
 			struct GetArg<TUPLE, I, true> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES&, const std::size_t, TUPLE)
+				static auto Get(const PARTICLES&, const std::ptrdiff_t, TUPLE)
 				{
 					return std::make_tuple();
 				}
@@ -163,18 +164,18 @@ namespace { namespace OpenMps
 			struct GetArg<TUPLE, I, false> final
 			{
 				template<typename PARTICLES>
-				static auto Get(const PARTICLES& particles, const std::size_t i, TUPLE getters)
+				static auto Get(const PARTICLES& particles, const std::ptrdiff_t j, TUPLE getters)
 				{
 					return std::tuple_cat(
-						std::make_tuple(std::get<I>(getters)(particles, i)),
-						GetArg<TUPLE, I+1>::Get(particles, i, getters));
+						std::make_tuple(std::get<I>(getters)(particles, j)),
+						GetArg<TUPLE, I+1>::Get(particles, j, getters));
 				}
 			};
 
 			template<typename PARTICLES, typename... Ts>
-			auto Get(const PARTICLES& particles, const std::size_t i, std::tuple<Getter<Ts, PARTICLES>...> getters)
+			auto Get(const PARTICLES& particles, const std::ptrdiff_t j, std::tuple<Getter<Ts, PARTICLES>...> getters)
 			{
-				return GetArg<decltype(getters)>::Get(particles, i, getters);
+				return GetArg<decltype(getters)>::Get(particles, j, getters);
 			}
 		}
 
@@ -532,6 +533,11 @@ namespace { namespace OpenMps
 		std::vector<Vector> originalX;
 #endif
 
+#ifdef MPS_SPP
+		// SPP補正を入れない粒子数密度
+		std::vector<double> nWithoutSpp;
+#endif
+
 		// 壁の移動
 		const POSITION_WALL positionWall;
 
@@ -555,6 +561,7 @@ namespace { namespace OpenMps
 			return R(p1.X(), p2.X());
 		}
 
+#ifndef MPS_SPP
 		// 自由表面かどうかの判定
 		// @param n 粒子数密度
 		// @param n0 基準粒子数密度
@@ -563,6 +570,7 @@ namespace { namespace OpenMps
 		{
 			return n / n0 < surfaceRatio;
 		}
+#endif
 
 		// 近傍粒子数
 		// @param i 対象の粒子番号
@@ -605,7 +613,12 @@ namespace { namespace OpenMps
 
 			auto sum = std::move(zero);
 
-			const auto r_e2 = environment.R_e * environment.R_e;
+			const auto r_e = environment.R_e;
+			const auto r_e2 = r_e * r_e;
+
+#ifdef MPS_SPP
+			auto dx_g = VectorZero; // 近傍粒子の重心位置ベクトル
+#endif
 
 			// 他の粒子に対して
 			const auto n = NeighborCount(i);
@@ -624,12 +637,45 @@ namespace { namespace OpenMps
 					{
 						// 近傍粒子を生成する時に無効粒子と自分自身は除外されているので特になにもしない
 						sum += Detail::Invoke(Detail::Field::Get(particles, j, getter), func);
+#ifdef MPS_SPP
+						dx_g += Particle::W(std::sqrt(r2), r_e) * dx;
+#endif
 					}
 				}
 			}
 
+#ifdef MPS_SPP
+			// SPP粒子に対して
+			{
+				const auto thisN = nWithoutSpp[i];
+				const auto n0 = environment.N0();
+				dx_g /= n0;
+
+				// 基準粒子数密度以上ならSPPの重みはゼロなのでなにもしない
+				if (thisN < n0)
+				{
+					const auto r_g = std::sqrt(boost::numeric::ublas::inner_prod(dx_g, dx_g));
+					if (r_g > std::numeric_limits<double>::epsilon()) // 周囲に粒子が全く存在しない場合（0除算回避）
+					{
+						const auto w_spp = n0 - thisN;
+						const auto r_spp = r_e / (w_spp + 1);
+
+						const Vector x_spp = thisX - (r_spp / r_g) * dx_g;
+
+						auto p_spp = Particle(Particle::Type::IncompressibleNewton);
+						p_spp.X() = x_spp;
+						p_spp.U() = particles[i].U();
+
+						auto&& particles_spp = std::array<Particle, 2>{std::move(p_spp), Particle(Particle::Type::Dummy)};
+						constexpr auto getter_spp = Detail::Field::GetGetters<Particle*, FIELDS...>();
+						constexpr auto SPP_INDEX = std::ptrdiff_t{ -1 }; // SPP粒子の番号を負にしておくことで、SPP粒子を計算から除外するなどの判定が可能にする
+						sum += Detail::Invoke(Detail::Field::Get(particles_spp.data() + 1, SPP_INDEX, getter_spp), func);
+					}
+				}
+			}
+#endif
 			return sum;
-		};
+		}
 
 		// 近傍粒子探索
 		void SearchNeighbor()
@@ -717,6 +763,9 @@ namespace { namespace OpenMps
 		void ComputeNeighborDensities()
 		{
 			const double r_e = environment.R_e;
+#ifdef MPS_SPP
+			const auto n0 = environment.N0();
+#endif
 
 			// 全粒子で
 			const auto n = particles.size();
@@ -730,15 +779,38 @@ namespace { namespace OpenMps
 			{
 #endif
 				auto& particle = particles[i];
+#ifdef MPS_SPP
+				nWithoutSpp[i] = n0;
+#endif
 
 				// ダミー粒子と無効粒子を除く
 				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
 					// 粒子数密度を計算する
-					particle.N() = AccumulateNeighbor<Detail::Field::Name::X>(i, 0.0, [&thisX = particle.X(), &r_e](const Vector& x)
+					const auto thisN = AccumulateNeighbor<
+#ifdef MPS_SPP
+						Detail::Field::Name::ID,
+#endif
+						Detail::Field::Name::X>(i, 0.0, [&thisX = particle.X(), &r_e](
+#ifdef MPS_SPP
+							const auto j,
+#endif
+							const auto& x)
 					{
-						return Particle::W(R(thisX, x), r_e);
+						return
+#ifdef MPS_SPP
+							// SPPは粒子数密度に加えない
+							(j < 0) ? 0 :
+#endif
+							Particle::W(R(thisX, x), r_e);
 					});
+
+#ifdef MPS_SPP
+					nWithoutSpp[i] = thisN;
+					particle.N() = std::max(thisN, n0); // SPPによって粒子数密度が足りない時には充填される
+#else
+					particle.N() = thisN;
+#endif
 				}
 			}
 		}
@@ -750,10 +822,20 @@ namespace { namespace OpenMps
 		{
 #ifdef MPS_HS
 			const auto r_e = environment.R_e;
+#ifdef MPS_SPP
+			const auto thisN = nWithoutSpp[i];
+			const auto n0 = environment.N0();
+#endif
+
 
 			// HS法（高精度生成項）：-r_eΣ r・u / |r|^3
-			const auto result = -r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U>(i, 0.0,
-				[&thisX = particles[i].X(), &thisU = particles[i].U()](const Vector& x, const Vector& u)
+			const auto result  =
+#ifdef MPS_SPP
+				(thisN < n0) ? 0.0 : 
+#endif
+
+				-r_e * AccumulateNeighbor<Detail::Field::Name::X, Detail::Field::Name::U>(i, 0.0,
+				[&thisX = particles[i].X(), &thisU = particles[i].U()](const auto& x, const auto& u)
 			{
 				// ここは粒子数密度の計算なので、対ダミー粒子も含める
 				const Vector dx = x - thisX;
@@ -778,7 +860,9 @@ namespace { namespace OpenMps
 		void ComputeErrorCorrection()
 		{
 			const auto n0 = environment.N0();
+#ifndef MPS_SPP
 			const auto surfaceRatio = environment.SurfaceRatio;
+#endif
 
 			// 全粒子で
 			const auto n = particles.size();
@@ -796,13 +880,13 @@ namespace { namespace OpenMps
 				// ダミー粒子と無効粒子以外
 				if((particle.TYPE() != Particle::Type::Dummy) && (particle.TYPE() != Particle::Type::Disabled))
 				{
-					const auto nn = particle.N();
+					const auto thisN = particle.N();
 
 					// ECS法の誤差修正項：α Dn/Dt + β (n-n0)/n0
 					// α=|(n-n0)/n0|
 					// β=|Dn/Dt|
 					const auto speed = NeighborDensitiyVariationSpeed(i);
-					const auto error = IsSurface(nn, n0, surfaceRatio) ? 0 : (nn - n0) / n0; // 自由表面付近の粒子数密度が足りないのは当然なので訂正しない
+					const auto error = (thisN - n0) / n0;
 					ecs[i] = std::abs(error) * speed + std::abs(speed) * error;
 				}
 			}
@@ -853,7 +937,7 @@ namespace { namespace OpenMps
 #ifndef MPS_HL
 						lambda,
 #endif
-						nu](const Vector& u, const Vector& x, const Particle::Type type)
+						nu](const auto& u, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -984,13 +1068,14 @@ namespace { namespace OpenMps
 				// ダミー粒子と無効粒子は除く
 				if ((particles[i].TYPE() != Particle::Type::Dummy) && (particles[i].TYPE() != Particle::Type::Disabled))
 				{
-					const auto n0 = environment.N0();
-					const auto surfaceRatio = environment.SurfaceRatio;
-
-					// 負圧であったり自由表面の場合は圧力0
+					// 負圧は圧力0
 					const double p = ppe.x(i);
-					const auto nn = particles[i].N();
-					particles[i].P() = ((p < 0) || IsSurface(nn, n0, surfaceRatio)) ? 0 : p;
+					particles[i].P() = ((p < 0)
+#ifndef MPS_SPP
+						// 自由表面も0
+						|| IsSurface(particles[i].N(), environment.N0(), environment.SurfaceRatio)
+#endif
+						) ? 0 : p;
 				}
 			}
 #endif
@@ -1044,7 +1129,9 @@ namespace { namespace OpenMps
 		{
 			const auto n0 = environment.N0();
 			const auto dt = environment.Dt();
+#ifndef MPS_SPP
 			const auto surfaceRatio = environment.SurfaceRatio;
+#endif
 			const auto r_e = environment.R_e;
 			const auto rho = environment.Rho;
 #ifndef MPS_HL
@@ -1087,10 +1174,13 @@ namespace { namespace OpenMps
 			for (auto i = decltype(n){0}; i < n; i++)
 			{
 #endif
-				const auto thisN = particles[i].N();
-
-				// ダミー粒子と無効粒子と自由表面は0
-				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(thisN, n0, surfaceRatio))
+				// ダミー粒子と無効粒子は0
+				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled)
+#ifndef MPS_SPP
+					// 自由表面も0
+					|| IsSurface(particles[i].N(), n0, surfaceRatio)
+#endif
+					)
 				{
 					ppe.b(i) = 0;
 					ppe.x(i) = 0;
@@ -1135,8 +1225,13 @@ namespace { namespace OpenMps
 				auto& a_i = ppe.a_ij[i];
 				a_i.clear();
 #endif
-				// ダミー粒子と無効粒子と自由表面は対角項だけ1
-				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled) || IsSurface(particles[i].N(), n0, surfaceRatio))
+				// ダミー粒子と無効粒子は対角項だけ1
+				if((particles[i].TYPE() == Particle::Type::Dummy) || (particles[i].TYPE() == Particle::Type::Disabled)
+#ifndef MPS_SPP
+					// 自由表面も1
+					|| IsSurface(particles[i].N(), n0, surfaceRatio)
+#endif
+)
 				{
 #ifdef _OPENMP
 					a_i.emplace_back(i, 1.0);
@@ -1147,8 +1242,15 @@ namespace { namespace OpenMps
 				else
 				{
 					// 対角項を設定
-					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
-					[&thisX = particles[i].X(), r_e, n0, surfaceRatio,
+					const auto a_ii = AccumulateNeighbor<
+#ifndef MPS_SPP
+						Detail::Field::Name::N, 
+#endif
+						Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, 0.0,
+					[&thisX = particles[i].X(), r_e, n0,
+#ifndef MPS_SPP
+						surfaceRatio,
+#endif
 #ifndef MPS_HL
 						lambda,
 #endif
@@ -1157,7 +1259,11 @@ namespace { namespace OpenMps
 #else
 						&A, i
 #endif
-					](const std::size_t j, const Vector& x, const double n, const Particle::Type type)
+					](
+#ifndef MPS_SPP
+						const auto n, 
+#endif
+						const auto j, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1169,11 +1275,17 @@ namespace { namespace OpenMps
 							const auto a_ij = (5 - DIM) * r_e / n0 / (r*r*r);
 #else
 							// 標準MPS法：2D/(λn0) w
-							const auto a_ij = (2 * DIM / lambda / n0) * Particle::W(r, r_e);
+							const double w = Particle::W(r, r_e);
+							const auto a_ij = (2 * DIM / lambda / n0) * w;
 #endif
 
+#ifdef MPS_SPP
+							// SPPの場合は非対角項は設定しない
+							if(j >= 0)
+#else
 							// 自由表面の場合は非対角項は設定しない
-							if(!IsSurface(n, n0, surfaceRatio))
+							if (!IsSurface(n, n0, surfaceRatio))
+#endif
 							{
 #ifdef _OPENMP
 								a_i.emplace_back(j, a_ij);
@@ -1330,7 +1442,7 @@ namespace { namespace OpenMps
 #ifdef MPS_GC
 					// 勾配修正行列を計算
 					auto invC = AccumulateNeighbor<Detail::Field::Name::X>(i, Detail::MatrixZero,
-						[&thisX = particle.X(), r_e](const Vector& x)
+						[&thisX = particle.X(), r_e](const auto& x)
 					{
 						namespace ublas = boost::numeric::ublas;
 
@@ -1347,7 +1459,7 @@ namespace { namespace OpenMps
 					// 速度修正量を計算
 					const Vector d = (-dt * particle.N() / (rho * n0)) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 						[&thisP = particle.P(), &thisX = particle.X(), r_e, &C]
-						(const double p, const Vector& x, const Particle::Type type)
+						(const auto p, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1375,7 +1487,7 @@ namespace { namespace OpenMps
 					// 速度修正量を計算
 					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
 					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&thisP = particle.P(), &thisX = particle.X(), &r_e](const double p, const Vector& x, const Particle::Type type)
+						[thisP = particle.P(), thisX = particle.X(), r_e](const auto p, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
@@ -1384,7 +1496,7 @@ namespace { namespace OpenMps
 
 							const auto dx = x - thisX;
 							const auto r2 = ublas::inner_prod(dx, dx);
-							const Vector result = (p + thisP) / r2 * Particle::W(R(x, thisX), r_e) * dx;
+							const Vector result = ((p + thisP) / r2 * Particle::W(std::sqrt(r2), r_e)) * dx;
 							return result;
 						}
 						else
@@ -1463,10 +1575,14 @@ namespace { namespace OpenMps
 					// DS法：Λ = -1/(2 n0 Δt) Σ(√(d^2 - r⊥^2) - r||) x/r
 					const auto& thisX = particle.X();
 					const Vector result = -1.0/(2 * dt * n0) * AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
-						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const std::size_t j, const Vector& x, const Particle::Type type)
+						[&x0 = originalX[i], &originalX = this->originalX, &thisX, d2 = d*d](const auto j, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
-						if(type != Particle::Type::Dummy)
+						if((type != Particle::Type::Dummy)
+#ifdef MPS_SPP
+							&& (j >= 0) // SPP粒子も除く
+#endif
+							)
 						{
 							namespace ublas = boost::numeric::ublas;
 
@@ -1568,7 +1684,12 @@ namespace { namespace OpenMps
 #ifdef MPS_ECS
 			ecs(std::move(src.ecs)),
 #endif
+#ifdef MPS_DS
 			originalX(std::move(src.originalX)),
+#endif
+#ifdef MPS_SPP
+			nWithoutSpp(std::move(src.nWithoutSpp)),
+#endif
 			positionWall(std::move(src.positionWall)),
 			positionWallPre(std::move(src.positionWallPre))
 		{}
@@ -1650,6 +1771,9 @@ namespace { namespace OpenMps
 #endif
 #ifdef MPS_DS
 			originalX.resize(n);
+#endif
+#ifdef MPS_SPP
+			nWithoutSpp.resize(n);
 #endif
 		}
 
