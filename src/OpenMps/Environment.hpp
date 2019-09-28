@@ -59,8 +59,10 @@ namespace { namespace OpenMps
 		// 動粘性係数
 		const double Nu;
 
+#ifndef MPS_SPP
 		// 自由表面を判定する係数
 		const double SurfaceRatio;
+#endif
 
 		// 計算空間の最小座標
 		const Vector MinX;
@@ -73,13 +75,17 @@ namespace { namespace OpenMps
 
 		// @param maxDt 最大時間刻み（出力時間刻み以下など）
 		// @param courant クーラン数
+#ifdef ARTIFICIAL_COLLISION_FORCE
 		// @param tooNearRatio 過剰接近粒子と判定される距離（初期粒子間距離との比）
 		// @param tooNearCoeffcient 過剰接近粒子から受ける修正量の係数
+#endif
 		// @param g 重力加速度
 		// @param rho 密度
 		// @param nu 動粘性係数
 		// @param r_eByl_0 影響半径と初期粒子間距離の比
+#ifndef MPS_SPP
 		// @param surfaceRatio 自由表面判定の係数
+#endif
 		// @param c 音速
 		// @param l_0 初期粒子間距離
 		// @param minX 計算空間の最小X座標
@@ -102,7 +108,9 @@ namespace { namespace OpenMps
 			const double g,
 			const double rho,
 			const double nu,
+#ifndef MPS_SPP
 			const double surfaceRatio,
+#endif
 			const double r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 			const double c,
@@ -142,7 +150,9 @@ namespace { namespace OpenMps
 #endif
 			Rho(rho),
 			Nu(nu),
+#ifndef MPS_SPP
 			SurfaceRatio(surfaceRatio),
+#endif
 #ifdef DIM3
 			MinX(CreateVector(minX, minY, minZ)), MaxX(CreateVector(maxX, maxY, maxZ)),
 #else
@@ -253,7 +263,9 @@ namespace { namespace OpenMps
 			const_cast<Vector&>(this->G) = src.G;
 			const_cast<double&>(this->Rho) = src.Rho;
 			const_cast<double&>(this->Nu) = src.Nu;
+#ifndef MPS_SPP
 			const_cast<double&>(this->SurfaceRatio) = src.SurfaceRatio;
+#endif
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			const_cast<double&>(TooNearLength) = src.TooNearLength;
 			const_cast<double&>(TooNearCoefficient) = src.TooNearCoefficient;

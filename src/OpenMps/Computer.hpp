@@ -857,7 +857,9 @@ namespace { namespace OpenMps
 		void ComputeErrorCorrection()
 		{
 			const auto n0 = environment.N0();
+#ifndef MPS_SPP
 			const auto surfaceRatio = environment.SurfaceRatio;
+#endif
 
 			// 全粒子で
 			const auto n = particles.size();
@@ -1124,7 +1126,9 @@ namespace { namespace OpenMps
 		{
 			const auto n0 = environment.N0();
 			const auto dt = environment.Dt();
+#ifndef MPS_SPP
 			const auto surfaceRatio = environment.SurfaceRatio;
+#endif
 			const auto r_e = environment.R_e;
 			const auto rho = environment.Rho;
 #ifndef MPS_HL
@@ -1240,7 +1244,10 @@ namespace { namespace OpenMps
 						Detail::Field::Name::N, 
 #endif
 						Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, 0.0,
-					[&thisX = particles[i].X(), r_e, n0, surfaceRatio,
+					[&thisX = particles[i].X(), r_e, n0,
+#ifndef MPS_SPP
+						surfaceRatio,
+#endif
 #ifndef MPS_HL
 						lambda,
 #endif
