@@ -1235,7 +1235,11 @@ namespace { namespace OpenMps
 				else
 				{
 					// 対角項を設定
-					const auto a_ii = AccumulateNeighbor<Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::N, Detail::Field::Name::Type>(i, 0.0,
+					const auto a_ii = AccumulateNeighbor<
+#ifndef MPS_SPP
+						Detail::Field::Name::N, 
+#endif
+						Detail::Field::Name::ID, Detail::Field::Name::X, Detail::Field::Name::Type>(i, 0.0,
 					[&thisX = particles[i].X(), r_e, n0, surfaceRatio,
 #ifndef MPS_HL
 						lambda,
@@ -1245,7 +1249,11 @@ namespace { namespace OpenMps
 #else
 						&A, i
 #endif
-					](const auto j, const auto& x, const auto n, const auto type)
+					](
+#ifndef MPS_SPP
+						const auto n, 
+#endif
+						const auto j, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
 						if(type != Particle::Type::Dummy)
