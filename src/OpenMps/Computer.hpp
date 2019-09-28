@@ -663,7 +663,7 @@ namespace { namespace OpenMps
 						p_spp.X() = x_spp;
 						p_spp.U() = particles[i].U();
 
-						auto& particles_spp = std::array<Particle, 2>{std::move(p_spp), Particle(Particle::Type::Dummy)};
+						auto&& particles_spp = std::array<Particle, 2>{std::move(p_spp), Particle(Particle::Type::Dummy)};
 						constexpr auto getter_spp = Detail::Field::GetGetters<Particle*, FIELDS...>();
 						constexpr auto SPP_INDEX = std::ptrdiff_t{ -1 }; // SPP粒子の番号を負にしておくことで、SPP粒子を計算から除外するなどの判定が可能にする
 						sum += Detail::Invoke(Detail::Field::Get(particles_spp.data() + 1, SPP_INDEX, getter_spp), func);
