@@ -3,6 +3,7 @@
 #define TEST_CONSTRUCTOR
 #include "../Computer.hpp"
 #include "../Particle.hpp"
+#include "../Environment.hpp"
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
@@ -18,7 +19,9 @@ namespace {
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
 	static constexpr double r_eByl_0 = 2.4;
+#ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
+#endif
 	static constexpr double minX = -0.004;
 	static constexpr double minZ = -0.004;
 	static constexpr double maxX = 0.053;
@@ -53,7 +56,11 @@ namespace OpenMps
 		virtual void SetUp()
 		{
 			auto&& environment = OpenMps::Environment(dt_step, courant,
-				g, rho, nu, surfaceRatio, r_eByl_0,
+				g, rho, nu,
+#ifndef MPS_SPP
+				surfaceRatio,
+#endif
+				r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 				c,
 #endif
@@ -121,7 +128,9 @@ namespace OpenMps
 		ASSERT_DOUBLE_EQ( env.Nu, nu );
 
 		// 粒子法パラメータ
+#ifndef MPS_SPP
 		ASSERT_DOUBLE_EQ( env.SurfaceRatio, surfaceRatio );
+#endif
 		ASSERT_DOUBLE_EQ( env.L_0, l0 );
 		ASSERT_DOUBLE_EQ( env.R_e, r_eByl_0*l0 );
 

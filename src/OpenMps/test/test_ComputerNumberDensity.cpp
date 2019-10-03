@@ -21,7 +21,9 @@ namespace {
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
 	static constexpr double r_eByl_0 = 2.1;
+#ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
+#endif
 	static constexpr double minX = -0.004;
 	static constexpr double minZ = -0.004;
 	static constexpr double maxX = 0.053;
@@ -55,7 +57,11 @@ namespace OpenMps
 		virtual void SetUp()
 		{
 			auto&& environment = OpenMps::Environment(dt_step, courant,
-				g, rho, nu, surfaceRatio, r_eByl_0,
+				g, rho, nu,
+#ifndef MPS_SPP
+				surfaceRatio,
+#endif
+				r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 				c,
 #endif
