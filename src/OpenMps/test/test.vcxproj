@@ -138,7 +138,7 @@
     <ClCompile Include="test_ComputerConstructor.cpp" />
     <ClCompile Include="test_ComputerMatrix.cpp" />
     <ClCompile Include="test_ComputerNumberDensity.cpp" />
-    <ClCompile Include="test_ComputerXXX.cpp" />
+    <ClCompile Include="test_ComputerExplicitForces.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
