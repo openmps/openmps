@@ -28,8 +28,8 @@ namespace {
 	static constexpr double maxZ = 0.1;
 
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr int num_ps_x = 7;
-	static constexpr int num_ps_z = 9;
+	static constexpr size_t num_x = 7;
+	static constexpr size_t num_z = 9;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
@@ -80,11 +80,21 @@ namespace OpenMps
 
 			std::vector<OpenMps::Particle> particles;
 
-			// 1辺l0, num_ps_x*num_ps_zの格子状に粒子を配置
-			for(int j = 0; j < num_ps_z; ++j)
+			// 1辺l0, num_x*num_zの格子状に粒子を配置
+#ifdef SIGNED_LOOP_COUNTER
+			for (auto jj = std::make_signed_t<decltype(num_z)>{0}; jj < static_cast<std::make_signed_t<decltype(num_z)>>(num_z); jj++)
 			{
-				for(int i = 0; i < num_ps_x; ++i)
+				const auto j = static_cast<decltype(num_z)>(jj);
+
+				for (auto ii = std::make_signed_t<decltype(num_x)>{0}; ii < static_cast<std::make_signed_t<decltype(num_x)>>(num_x); ii++)
 				{
+					const auto i = static_cast<decltype(num_x)>(ii);
+#else
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			{
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				{
+#endif
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					particle.X()[OpenMps::AXIS_X] = i*l0;
 					particle.X()[OpenMps::AXIS_Z] = j*l0;;
@@ -161,16 +171,16 @@ namespace OpenMps
 		const auto& particles = computer->Particles();
 
 		// 粒子数チェック
-		ASSERT_EQ( particles.size(), num_ps_x*num_ps_z );
+		ASSERT_EQ( particles.size(), num_x*num_z );
 
-		// 辺の長さが num_ps_x*l0, num_ps_z*l0 の長方形の内部に存在するか？
+		// 辺の長さが num_x*l0, num_z*l0 の長方形の内部に存在するか？
 		for(const auto& p : particles)
 		{
 			const double px = p.X()[OpenMps::AXIS_X];
 			const double pz = p.X()[OpenMps::AXIS_Z];
-			ASSERT_LE( px, (num_ps_x-1)*l0 );
+			ASSERT_LE( px, (num_x-1)*l0 );
 			ASSERT_GE( px, 0 );
-			ASSERT_LE( pz, (num_ps_z-1)*l0 );
+			ASSERT_LE( pz, (num_z-1)*l0 );
 			ASSERT_GE( pz, 0 );
 		}
 	}
