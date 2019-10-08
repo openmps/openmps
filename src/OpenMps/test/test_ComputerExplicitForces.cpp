@@ -177,7 +177,7 @@ namespace {
 			ComputeExplicitForces();
 			const auto v1 = particles[id].U();
 
-			auto accNum = (v1 - v0) / dt_step;
+			const auto accNum = (v1 - v0) / dt_step;
 
 			// ‘Š‘ÎŒë·‚ğ•]‰¿
 			const auto gvec = CreateVector(0.0, -g);
@@ -253,7 +253,7 @@ namespace {
 			const auto v0 = particles[id].U();
 			ComputeExplicitForces();
 			const auto v1 = particles[id].U();
-			auto accNum = (v1 - v0) / dt_step;
+			const auto accNum = (v1 - v0) / dt_step;
 
 			// ‘Š‘ÎŒë·‚ğ•]‰¿
 			const auto gvec = CreateVector(0.0, -g);
