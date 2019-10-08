@@ -7,14 +7,8 @@ namespace {
 		double d = 0.0;
 		constexpr std::size_t dim = OpenMps::DIM;
 
-#ifdef SIGNED_LOOP_COUNTER
-		for (auto ii = std::make_signed_t<decltype(dim*dim)>{0}; ii < static_cast<std::make_signed_t<decltype(dim*dim)>>(dim*dim); ii++)
-		{
-			const auto i = static_cast<decltype(dim*dim)>(ii);
-#else
 		for (auto i = decltype(dim*dim){0}; i < dim*dim; i++)
 		{
-#endif
 			const double diff = M1[i] - M2[i];
 			d += diff*diff;
 		}

@@ -133,20 +133,10 @@ namespace {
 			// 1辺l0, num_x*num_zの格子状に粒子を配置
 			std::vector<OpenMps::Particle> particles0;
 
-#ifdef SIGNED_LOOP_COUNTER
-			for (auto jj = std::make_signed_t<decltype(num_z)>{0}; jj < static_cast<std::make_signed_t<decltype(num_z)>>(num_z); jj++)
-			{
-				const auto j = static_cast<decltype(num_z)>(jj);
-
-				for (auto ii = std::make_signed_t<decltype(num_x)>{0}; ii < static_cast<std::make_signed_t<decltype(num_x)>>(num_x); ii++)
-				{
-					const auto i = static_cast<decltype(num_x)>(ii);
-#else
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
 				for (auto i = decltype(num_x){0}; i < num_x; i++)
 				{
-#endif
 
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					const double x = i * l0;
@@ -208,20 +198,10 @@ namespace {
 
 			// 1辺l0, num_x*num_zの格子状に粒子を配置
 			std::vector<OpenMps::Particle> particles0;
-#ifdef SIGNED_LOOP_COUNTER
-			for (auto jj = std::make_signed_t<decltype(num_z)>{0}; jj < static_cast<std::make_signed_t<decltype(num_z)>>(num_z); jj++)
-			{
-				const auto j = static_cast<decltype(num_z)>(jj);
-
-				for (auto ii = std::make_signed_t<decltype(num_x)>{0}; ii < static_cast<std::make_signed_t<decltype(num_x)>>(num_x); ii++)
-				{
-					const auto i = static_cast<decltype(num_x)>(ii);
-#else
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
 				for (auto i = decltype(num_x){0}; i < num_x; i++)
 				{
-#endif
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					const double x = i * l0;
 					const double z = j * l0;

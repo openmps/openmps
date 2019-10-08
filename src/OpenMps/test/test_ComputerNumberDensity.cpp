@@ -82,20 +82,10 @@ namespace OpenMps
 			std::vector<OpenMps::Particle> particles;
 
 			// 1辺l0, num_x*num_zの格子状に粒子を配置
-#ifdef SIGNED_LOOP_COUNTER
-			for (auto jj = std::make_signed_t<decltype(num_z)>{0}; jj < static_cast<std::make_signed_t<decltype(num_z)>>(num_z); jj++)
-			{
-				const auto j = static_cast<decltype(num_z)>(jj);
-
-				for (auto ii = std::make_signed_t<decltype(num_x)>{0}; ii < static_cast<std::make_signed_t<decltype(num_x)>>(num_x); ii++)
-				{
-					const auto i = static_cast<decltype(num_x)>(ii);
-#else
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
 				for (auto i = decltype(num_x){0}; i < num_x; i++)
 				{
-#endif
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					particle.X()[OpenMps::AXIS_X] = i * l0;
 					particle.X()[OpenMps::AXIS_Z] = j * l0;
