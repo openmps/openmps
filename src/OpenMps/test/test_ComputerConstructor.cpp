@@ -3,6 +3,7 @@
 #define TEST_CONSTRUCTOR
 #include "../Computer.hpp"
 #include "../Particle.hpp"
+#include "../Environment.hpp"
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
@@ -18,15 +19,17 @@ namespace {
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
 	static constexpr double r_eByl_0 = 2.4;
+#ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
+#endif
 	static constexpr double minX = -0.004;
 	static constexpr double minZ = -0.004;
 	static constexpr double maxX = 0.053;
 	static constexpr double maxZ = 0.1;
 
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr int num_ps_x = 7;
-	static constexpr int num_ps_z = 9;
+	static constexpr std::size_t num_x = 7;
+	static constexpr std::size_t num_z = 9;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
@@ -53,7 +56,11 @@ namespace OpenMps
 		virtual void SetUp()
 		{
 			auto&& environment = OpenMps::Environment(dt_step, courant,
-				g, rho, nu, surfaceRatio, r_eByl_0,
+				g, rho, nu,
+#ifndef MPS_SPP
+				surfaceRatio,
+#endif
+				r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 				c,
 #endif
@@ -73,10 +80,10 @@ namespace OpenMps
 
 			std::vector<OpenMps::Particle> particles;
 
-			// 1辺l0, num_ps_x*num_ps_zの格子状に粒子を配置
-			for(int j = 0; j < num_ps_z; ++j)
+			// 1辺l0, num_x*num_zの格子状に粒子を配置
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
-				for(int i = 0; i < num_ps_x; ++i)
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
 				{
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					particle.X()[OpenMps::AXIS_X] = i*l0;
@@ -121,7 +128,9 @@ namespace OpenMps
 		ASSERT_DOUBLE_EQ( env.Nu, nu );
 
 		// 粒子法パラメータ
+#ifndef MPS_SPP
 		ASSERT_DOUBLE_EQ( env.SurfaceRatio, surfaceRatio );
+#endif
 		ASSERT_DOUBLE_EQ( env.L_0, l0 );
 		ASSERT_DOUBLE_EQ( env.R_e, r_eByl_0*l0 );
 
@@ -152,16 +161,16 @@ namespace OpenMps
 		const auto& particles = computer->Particles();
 
 		// 粒子数チェック
-		ASSERT_EQ( particles.size(), num_ps_x*num_ps_z );
+		ASSERT_EQ( particles.size(), num_x*num_z );
 
-		// 辺の長さが num_ps_x*l0, num_ps_z*l0 の長方形の内部に存在するか？
+		// 辺の長さが num_x*l0, num_z*l0 の長方形の内部に存在するか？
 		for(const auto& p : particles)
 		{
 			const double px = p.X()[OpenMps::AXIS_X];
 			const double pz = p.X()[OpenMps::AXIS_Z];
-			ASSERT_LE( px, (num_ps_x-1)*l0 );
+			ASSERT_LE( px, (num_x-1)*l0 );
 			ASSERT_GE( px, 0 );
-			ASSERT_LE( pz, (num_ps_z-1)*l0 );
+			ASSERT_LE( pz, (num_z-1)*l0 );
 			ASSERT_GE( pz, 0 );
 		}
 	}

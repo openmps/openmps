@@ -441,6 +441,9 @@ namespace { namespace OpenMps
 #ifdef TEST_NUMBERDENSITY
 	friend class NumberDensityTest;
 #endif
+#ifdef TEST_EXPLICITFORCES
+	friend class ExplicitForcesTest;
+#endif
 
 	private:
 		// 粒子リスト

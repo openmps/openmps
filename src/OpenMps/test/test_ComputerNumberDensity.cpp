@@ -21,15 +21,17 @@ namespace {
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
 	static constexpr double r_eByl_0 = 2.1;
+#ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
+#endif
 	static constexpr double minX = -0.004;
 	static constexpr double minZ = -0.004;
 	static constexpr double maxX = 0.053;
 	static constexpr double maxZ = 0.1;
 
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr int num_x = 7;
-	static constexpr int num_z = 7;
+	static constexpr std::size_t num_x = 7;
+	static constexpr std::size_t num_z = 7;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
@@ -55,7 +57,11 @@ namespace OpenMps
 		virtual void SetUp()
 		{
 			auto&& environment = OpenMps::Environment(dt_step, courant,
-				g, rho, nu, surfaceRatio, r_eByl_0,
+				g, rho, nu,
+#ifndef MPS_SPP
+				surfaceRatio,
+#endif
+				r_eByl_0,
 #ifdef PRESSURE_EXPLICIT
 				c,
 #endif
@@ -76,9 +82,9 @@ namespace OpenMps
 			std::vector<OpenMps::Particle> particles;
 
 			// 1辺l0, num_x*num_zの格子状に粒子を配置
-			for (int j = 0; j < num_z; ++j)
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
-				for (int i = 0; i < num_x; ++i)
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
 				{
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					particle.X()[OpenMps::AXIS_X] = i * l0;
