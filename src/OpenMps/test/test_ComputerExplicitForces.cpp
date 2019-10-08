@@ -26,8 +26,8 @@ namespace {
 	static constexpr double surfaceRatio = 0.95;
 #endif
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr size_t num_x = 13;
-	static constexpr size_t num_z = 13;
+	static constexpr std::size_t num_x = 13;
+	static constexpr std::size_t num_z = 13;
 
 	// サイズ上限を 横 2*l0*num_x, 縦 2*l0*num_z とする
 	static constexpr double minX = -l0 * num_x;

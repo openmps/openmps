@@ -28,8 +28,8 @@ namespace {
 	static constexpr double maxZ = 0.1;
 
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr size_t num_x = 7;
-	static constexpr size_t num_z = 9;
+	static constexpr std::size_t num_x = 7;
+	static constexpr std::size_t num_z = 9;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
