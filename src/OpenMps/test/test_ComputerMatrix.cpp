@@ -5,10 +5,17 @@
 namespace {
 	double dist_matrix(const double* M1, const double* M2){
 		double d = 0.0;
-		constexpr double dim = OpenMps::DIM;
+		constexpr std::size_t dim = OpenMps::DIM;
 
-		for(int k = 0; k < dim*dim; ++k){
-			const double diff = M1[k] - M2[k];
+#ifdef SIGNED_LOOP_COUNTER
+		for (auto ii = std::make_signed_t<decltype(dim*dim)>{0}; ii < static_cast<std::make_signed_t<decltype(dim*dim)>>(dim*dim); ii++)
+		{
+			const auto i = static_cast<decltype(dim*dim)>(ii);
+#else
+		for (auto i = decltype(dim*dim){0}; i < dim*dim; i++)
+		{
+#endif
+			const double diff = M1[i] - M2[i];
 			d += diff*diff;
 		}
 		return sqrt(d);
