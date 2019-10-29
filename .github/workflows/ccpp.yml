@@ -11,6 +11,8 @@ jobs:
     - uses: actions/checkout@v1
       with:
         submodules: recursive
+    - name: apt
+      run: sudo apt install libboost-dev
     - name: make test
       run: make
       working-directory: src/OpenMps/test
