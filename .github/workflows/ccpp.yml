@@ -13,7 +13,12 @@ jobs:
         submodules: recursive
     - name: apt
       run: sudo apt install libboost-dev
+    - name: build googletest
+      run: |
+        cmake .
+        make -j4
+      working-directory: src/googletest
     - name: make test
-      run: make
+      run: make -j4
       working-directory: src/OpenMps/test
 
