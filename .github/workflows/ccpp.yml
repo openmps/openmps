@@ -9,8 +9,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+      with:
+        submodules: recursive
     - name: make test
-      run: | 
-        make
+      run: make
       working-directory: src/OpenMps/test
 
