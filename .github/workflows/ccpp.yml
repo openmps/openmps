@@ -1,0 +1,24 @@
+name: C/C++ CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: apt
+      run: sudo apt install libboost-dev
+    - name: build googletest
+      run: |
+        cmake .
+        make -j4
+      working-directory: src/googletest
+    - name: make test
+      run: make -j4
+      working-directory: src/OpenMps/test
+

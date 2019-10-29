@@ -155,7 +155,6 @@ namespace {
 			computer->AddParticles(std::move(particles0));
 
 			// 近傍粒子探索・粒子数密度計算
-			const auto& env = computer->GetEnvironment();
 			SearchNeighbor();
 			ComputeNeighborDensities();
 
@@ -218,7 +217,6 @@ namespace {
 			}
 			computer->AddParticles(std::move(particles0));
 
-			const auto& env = computer->GetEnvironment();
 			SearchNeighbor();
 			ComputeNeighborDensities();
 
