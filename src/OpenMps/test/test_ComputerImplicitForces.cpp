@@ -159,7 +159,7 @@ namespace {
 			{
 				const auto& env = computer->GetEnvironment();
 				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled &&
-					OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
+					!OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
 			}
 
 			auto& getPpe()
@@ -196,7 +196,7 @@ namespace {
 				{
 					if (j != i)
 					{
-						ASSERT_NEAR(ppe.A(i, j) - ppe.A(j, i), 0.0, 1e-5);
+						ASSERT_NEAR(ppe.A(i, j) - ppe.A(j, i), 0.0, testAccuracy);
 					}
 				}
 			}
@@ -230,7 +230,7 @@ namespace {
 						sum_nondiag += ppe.A(i, j);
 					}
 				}
-				ASSERT_NEAR(ppe.A(i, i), -sum_nondiag, 1e-5);
+				ASSERT_NEAR(ppe.A(i, i), -sum_nondiag, testAccuracy);
 			}
 		}
 
@@ -271,7 +271,7 @@ namespace {
 					{
 						if (std::find(neighList.begin(), neighList.end(), j) == neighList.end()) // j‚ªi‹ß–TƒŠƒXƒg‚É‘®‚µ‚È‚¢
 						{
-							ASSERT_NEAR(ppe.A(i, j), 0.0, 1e-5);
+							ASSERT_NEAR(ppe.A(i, j), 0.0, testAccuracy);
 						}
 					}
 				}
