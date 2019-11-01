@@ -153,8 +153,7 @@ namespace {
 			bool IsAlive(const Particle& p)
 			{
 				const auto& env = computer->GetEnvironment();
-				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled &&
-					!OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
+				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled && !OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
 			}
 
 			auto& getPpe()
@@ -171,11 +170,10 @@ namespace {
 		// 係数行列は対称行列であるか？
 		TEST_F(ImplicitForcesTest, MatrixSymmetry)
 		{
-			const auto& env = computer->GetEnvironment();
 			SearchNeighbor();
 			ComputeNeighborDensities();
+			SetPressurePoissonEquation();
 
-			ComputeImplicitForces();
 			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
 
@@ -196,18 +194,17 @@ namespace {
 		// (dummy, disable, free surface粒子は除外)
 		TEST_F(ImplicitForcesTest, MatrixDiagIdentity)
 		{
-			const auto& env = computer->GetEnvironment();
 			SearchNeighbor();
 			ComputeNeighborDensities();
-
 			SetPressurePoissonEquation();
+
 			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
 
 			const auto& particles = GetParticles();
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
-				if (!IsAlive(particles[i]) || ppe.A(i,i) == 1.0)
+				if (!IsAlive(particles[i]) || ppe.A(i, i) == 1.0)
 				{
 					continue;
 				}
@@ -228,14 +225,12 @@ namespace {
 		// (dummy, disable, free surface粒子は除外)
 		TEST_F(ImplicitForcesTest, MatrixNeighborNonzero)
 		{
-			const auto& env = computer->GetEnvironment();
 			SearchNeighbor();
 			ComputeNeighborDensities();
-
 			SetPressurePoissonEquation();
+
 			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
-
 			const auto& particles = GetParticles();
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
@@ -248,7 +243,7 @@ namespace {
 				std::vector<decltype(i)> neighList; // iの近傍粒子リスト
 				for (auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
-					auto j = Neighbor(i, idx);
+					const auto j = Neighbor(i, idx);
 					if (IsAlive(particles[j]))
 					{
 						neighList.push_back(j);
@@ -257,12 +252,9 @@ namespace {
 
 				for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 				{
-					if (j != i)
+					if (j != i && std::find(neighList.begin(), neighList.end(), j) == neighList.end()) // jがi近傍リストに属しない
 					{
-						if (std::find(neighList.begin(), neighList.end(), j) == neighList.end()) // jがi近傍リストに属しない
-						{
-							ASSERT_NEAR(ppe.A(i, j), 0.0, testAccuracy);
-						}
+						ASSERT_NEAR(ppe.A(i, j), 0.0, testAccuracy);
 					}
 				}
 			}
