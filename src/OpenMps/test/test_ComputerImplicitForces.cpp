@@ -24,8 +24,8 @@ namespace {
 	static constexpr double surfaceRatio = 0.95;
 #endif
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr std::size_t num_x = 10;
-	static constexpr std::size_t num_z = 10;
+	static constexpr std::size_t num_x = 7;
+	static constexpr std::size_t num_z = 7;
 
 	// サイズ上限を 横 2*l0*num_x, 縦 2*l0*num_z とする
 	static constexpr double minX = -l0 * num_x;
@@ -156,6 +156,12 @@ namespace {
 				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled && !OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
 			}
 
+			bool IsSurface(const Particle& p)
+			{
+				const auto& env = computer->GetEnvironment();
+				return OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
+			}
+
 			auto& getPpe()
 			{
 				return computer->ppe;
@@ -191,6 +197,7 @@ namespace {
 		}
 
 		// 係数行列 a_ii = -Σa_ij (i!=j) という恒等式は成立するか？
+		// 境界から離れた中央粒子においてテスト
 		// (dummy, disable, free surface粒子は除外)
 		TEST_F(ImplicitForcesTest, MatrixDiagIdentity)
 		{
@@ -202,23 +209,19 @@ namespace {
 			const auto Ndim = num_x * num_z;
 
 			const auto& particles = GetParticles();
-			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
-			{
-				if (!IsAlive(particles[i]) || ppe.A(i, i) == 1.0)
-				{
-					continue;
-				}
+			const auto ic = (num_x - 1) / 2 * (num_z + 1); // 中央粒子のindex
 
-				double sum_nondiag = 0.0;
-				for (auto j = decltype(Ndim){0}; j < Ndim; j++)
-				{
-					if (j != i && IsAlive(particles[j]))
+			double sum_nondiag = 0.0;
+			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
+			{
+				if (j != ic) {
+					if (IsAlive(particles[j]))
 					{
-						sum_nondiag += ppe.A(i, j);
+						sum_nondiag += ppe.A(ic, j);
 					}
 				}
-				ASSERT_NEAR(ppe.A(i, i), -sum_nondiag, testAccuracy);
 			}
+			ASSERT_NEAR(ppe.A(ic, ic), -sum_nondiag, testAccuracy);
 		}
 
 		// 粒子i の 近傍粒子j に対応する成分が a_ij != 0 であること
@@ -235,7 +238,7 @@ namespace {
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
-				if (!IsAlive(particles[i]))
+				if (!IsAlive(particles[i]) || IsSurface(particles[i]))
 				{
 					continue;
 				}
