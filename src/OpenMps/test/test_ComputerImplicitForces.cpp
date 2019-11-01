@@ -192,7 +192,6 @@ namespace {
 
 		// 係数行列 a_ii = -Σa_ij (i!=j) という恒等式は成立するか？
 		// 境界から離れた中央粒子においてテスト
-		// (dummy, disable, free surface粒子は除外)
 		TEST_F(ImplicitForcesTest, MatrixDiagIdentity)
 		{
 			SearchNeighbor();
@@ -208,11 +207,9 @@ namespace {
 			double sum_nondiag = 0.0;
 			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 			{
-				if (j != ic) {
-					if (IsAlive(particles[j]))
-					{
-						sum_nondiag += ppe.A(ic, j);
-					}
+				if (j != ic)
+				{
+					sum_nondiag += ppe.A(ic, j); // disable,dummy,free surface particleは寄与しない
 				}
 			}
 			ASSERT_NEAR(ppe.A(ic, ic), -sum_nondiag, testAccuracy);
