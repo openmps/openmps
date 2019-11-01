@@ -200,7 +200,6 @@ namespace {
 			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
 
-			const auto& particles = GetParticles();
 			const auto ic = (num_x - 1) / 2 * (num_z + 1); // ’†‰›—±Žq‚Ìindex
 
 			double sum_nondiag = 0.0;
