@@ -152,7 +152,6 @@ namespace {
 
 			bool IsAlive(const Particle& p)
 			{
-				const auto& env = computer->GetEnvironment();
 				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled;
 			}
 
