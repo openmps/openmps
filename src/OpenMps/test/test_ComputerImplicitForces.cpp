@@ -135,11 +135,6 @@ namespace {
 				computer->ComputeNeighborDensities();
 			}
 
-			void ComputeExplicitForces()
-			{
-				computer->ComputeExplicitForces();
-			}
-
 			void ComputeImplicitForces()
 			{
 				computer->ComputeImplicitForces();
@@ -165,11 +160,6 @@ namespace {
 			auto& getPpe()
 			{
 				return computer->ppe;
-			}
-
-			auto& getA()
-			{
-				return computer->ppe.A;
 			}
 
 			virtual void TearDown()
