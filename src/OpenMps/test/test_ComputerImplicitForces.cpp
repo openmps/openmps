@@ -153,13 +153,7 @@ namespace {
 			bool IsAlive(const Particle& p)
 			{
 				const auto& env = computer->GetEnvironment();
-				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled && !OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
-			}
-
-			bool IsSurface(const Particle& p)
-			{
-				const auto& env = computer->GetEnvironment();
-				return OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), env.SurfaceRatio);
+				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled;
 			}
 
 			auto& getPpe()
@@ -238,7 +232,7 @@ namespace {
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
-				if (!IsAlive(particles[i]) || IsSurface(particles[i]))
+				if (!IsAlive(particles[i]))
 				{
 					continue;
 				}
