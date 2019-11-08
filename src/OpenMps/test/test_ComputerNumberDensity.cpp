@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 
 #define TEST_NUMBERDENSITY
 #include "../Computer.hpp"
@@ -29,7 +29,7 @@ namespace {
 	static constexpr double maxX = 0.053;
 	static constexpr double maxZ = 0.1;
 
-	// Šiqó‚É”z’u‚·‚éÛ‚Ì1•Ó‚ ‚½‚è‚Ì—±q”
+	// æ ¼å­çŠ¶ã«é…ç½®ã™ã‚‹éš›ã®1è¾ºã‚ãŸã‚Šã®ç²’å­æ•°
 	static constexpr std::size_t num_x = 7;
 	static constexpr std::size_t num_z = 7;
 
@@ -81,7 +81,7 @@ namespace OpenMps
 
 			std::vector<OpenMps::Particle> particles;
 
-			// 1•Ól0, num_x*num_z‚ÌŠiqó‚É—±q‚ğ”z’u
+			// 1è¾ºl0, num_x*num_zã®æ ¼å­çŠ¶ã«ç²’å­ã‚’é…ç½®
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
 				for (auto i = decltype(num_x){0}; i < num_x; i++)
@@ -156,7 +156,7 @@ namespace OpenMps
 		ASSERT_DOUBLE_EQ(R(p1, p2), std::sqrt(1.0*1.0+2.0*2.0));
 	}
 
-	// “_“ü‚ê‘Ö‚¦‚É‚Â‚¢‚Ä‘ÎÌ‚©H
+	// ç‚¹å…¥ã‚Œæ›¿ãˆã«ã¤ã„ã¦å¯¾ç§°ã‹ï¼Ÿ
 	TEST_F(NumberDensityTest, DistanceSymmetry)
 	{
 		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
@@ -172,7 +172,7 @@ namespace OpenMps
 	}
 
 
-	// Vector, Particle‚Ì‹——£ŒvZ‚ªˆê’v‚·‚é‚©H
+	// Vector, Particleã®è·é›¢è¨ˆç®—ãŒä¸€è‡´ã™ã‚‹ã‹ï¼Ÿ
 	TEST_F(NumberDensityTest, DistanceOverload)
 	{
 		auto p1 = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
@@ -202,13 +202,13 @@ namespace OpenMps
 		p3.X()[OpenMps::AXIS_X] = 100.0;
 		p3.X()[OpenMps::AXIS_Z] = -30.8;
 
-		// OŠp•s“™®‚Í¬—§‚·‚é‚©H
+		// ä¸‰è§’ä¸ç­‰å¼ã¯æˆç«‹ã™ã‚‹ã‹ï¼Ÿ
 		ASSERT_LE(R(p1, p2), R(p1, p3) + R(p2, p3));
 		ASSERT_LE(R(p2, p3), R(p1, p2) + R(p1, p3));
 		ASSERT_LE(R(p3, p1), R(p1, p2) + R(p2, p3));
 	}
 
-	// ‹ßÚ‚·‚é2—±q‚ÍŒİ‚¢‚ğ‹ß–T—±q‚Æ‚µ‚Ä•Û‚µ‚Ä‚¢‚é‚©H
+	// è¿‘æ¥ã™ã‚‹2ç²’å­ã¯äº’ã„ã‚’è¿‘å‚ç²’å­ã¨ã—ã¦ä¿æŒã—ã¦ã„ã‚‹ã‹ï¼Ÿ
 	TEST_F(NumberDensityTest, NeighborSymmetry)
 	{
 		SearchNeighbor();
@@ -216,8 +216,8 @@ namespace OpenMps
 		const auto& particles = GetParticles();
 		const auto n = particles.size();
 
-		// i: ê‚É‘¶İ‚·‚é—±q‚ğ‘–¸
-		// j: i”Ô–Ú—±q‚Ì‹ß–T—±q‚ğ‘–¸
+		// i: å ´ã«å­˜åœ¨ã™ã‚‹ç²’å­ã‚’èµ°æŸ»
+		// j: iç•ªç›®ç²’å­ã®è¿‘å‚ç²’å­ã‚’èµ°æŸ»
 		for(auto i = decltype(n){0}; i < n; i++)
 		{
 			if(particles[i].TYPE() != Particle::Type::Disabled)
@@ -226,7 +226,7 @@ namespace OpenMps
 				{
 					const auto j = Neighbor(i, idx);
 
-					// j—±q‚Ì‹ß–T‚Éi—±q‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‚©H
+					// jç²’å­ã®è¿‘å‚ã«iç²’å­ãŒå«ã¾ã‚Œã¦ã„ã‚‹ã‹ï¼Ÿ
 					bool j_has_i = false;
 					for (auto idxj = decltype(i){0}; idxj < NeighborCount(j); idxj++)
 					{
@@ -239,7 +239,7 @@ namespace OpenMps
 		}
 	}
 
-	// —±q‚Í©•ª©g‚ğ‹ß–T—±q‚Æ‚µ‚ÄŠÜ‚ñ‚Å‚¢‚È‚¢‚©H
+	// ç²’å­ã¯è‡ªåˆ†è‡ªèº«ã‚’è¿‘å‚ç²’å­ã¨ã—ã¦å«ã‚“ã§ã„ãªã„ã‹ï¼Ÿ
 	TEST_F(NumberDensityTest, NeighborMyself)
 	{
 		SearchNeighbor();
@@ -262,7 +262,7 @@ namespace OpenMps
 
 	}
 
-	// —±q”–§“x‚Í—˜_’l‚Æˆê’v‚·‚é‚©H
+	// ç²’å­æ•°å¯†åº¦ã¯ç†è«–å€¤ã¨ä¸€è‡´ã™ã‚‹ã‹ï¼Ÿ
 	TEST_F(NumberDensityTest, NeighDensity)
 	{
 		SearchNeighbor();
@@ -271,8 +271,8 @@ namespace OpenMps
 
 		const auto& particles = GetParticles();
 
-		// ƒeƒLƒXƒg Koshizuka et al.,2014 ‚É‚æ‚é’l‚Æ”äŠr
-		// ID 24‚Í’†S—±q‚ğ•\‚·B‰Šú—±qID‚ª‹ß–T’Tõˆ—Œã‚àˆÛ‚³‚ê‚é‚Æ‚¢‚¤‰¼’è‚É’ˆÓ
+		// ãƒ†ã‚­ã‚¹ãƒˆ Koshizuka et al.,2014 ã«ã‚ˆã‚‹å€¤ã¨æ¯”è¼ƒ
+		// ID 24ã¯ä¸­å¿ƒç²’å­ã‚’è¡¨ã™ã€‚åˆæœŸç²’å­IDãŒè¿‘å‚æ¢ç´¢å‡¦ç†å¾Œã‚‚ç¶­æŒã•ã‚Œã‚‹ã¨ã„ã†ä»®å®šã«æ³¨æ„
 		static constexpr double density_koshizuka2014 = 6.539696962;
 		ASSERT_NEAR(particles[24].N(), density_koshizuka2014, 1e-5);
 	}
