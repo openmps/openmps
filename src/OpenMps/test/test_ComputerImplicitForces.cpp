@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 
 #define TEST_IMPLICITFORCES
 #include "../Computer.hpp"
@@ -18,22 +18,22 @@ namespace {
 
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
-	static constexpr double r_eByl_0 = 1.5; // ƒeƒXƒg—p‚ÌŠÈ—ª‰»‚Æ‚µ‚Ä, ¬‚³‚ß‚Éİ’è.
+	static constexpr double r_eByl_0 = 1.5; // ãƒ†ã‚¹ãƒˆç”¨ã®ç°¡ç•¥åŒ–ã¨ã—ã¦, å°ã•ã‚ã«è¨­å®š.
 
 #ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
 #endif
-	// Šiqó‚É”z’u‚·‚éÛ‚Ì1•Ó‚ ‚½‚è‚Ì—±q”
+	// æ ¼å­çŠ¶ã«é…ç½®ã™ã‚‹éš›ã®1è¾ºã‚ãŸã‚Šã®ç²’å­æ•°
 	static constexpr std::size_t num_x = 7;
 	static constexpr std::size_t num_z = 7;
 
-	// ƒTƒCƒYãŒÀ‚ğ ‰¡ 2*l0*num_x, c 2*l0*num_z ‚Æ‚·‚é
+	// ã‚µã‚¤ã‚ºä¸Šé™ã‚’ æ¨ª 2*l0*num_x, ç¸¦ 2*l0*num_z ã¨ã™ã‚‹
 	static constexpr double minX = -l0 * num_x;
 	static constexpr double minZ = -l0 * num_z;
 	static constexpr double maxX = l0 * num_x;
 	static constexpr double maxZ = l0 * num_z;
 
-	// ‹–—e‚·‚é‘Š‘ÎŒë·
+	// è¨±å®¹ã™ã‚‹ç›¸å¯¾èª¤å·®
 	static constexpr double testAccuracy = 1e-3;
 
 
@@ -166,7 +166,7 @@ namespace {
 			}
 		};
 
-		// ŒW”s—ñ‚Í‘ÎÌs—ñ‚Å‚ ‚é‚©H
+		// ä¿‚æ•°è¡Œåˆ—ã¯å¯¾ç§°è¡Œåˆ—ã§ã‚ã‚‹ã‹ï¼Ÿ
 		TEST_F(ImplicitForcesTest, MatrixSymmetry)
 		{
 			SearchNeighbor();
@@ -189,8 +189,8 @@ namespace {
 			}
 		}
 
-		// ŒW”s—ñ a_ii = -ƒ°a_ij (i!=j) ‚Æ‚¢‚¤P“™®‚Í¬—§‚·‚é‚©H
-		// ‹«ŠE‚©‚ç—£‚ê‚½’†‰›—±q‚É‚¨‚¢‚ÄƒeƒXƒg
+		// ä¿‚æ•°è¡Œåˆ— a_ii = -Î£a_ij (i!=j) ã¨ã„ã†æ’ç­‰å¼ã¯æˆç«‹ã™ã‚‹ã‹ï¼Ÿ
+		// å¢ƒç•Œã‹ã‚‰é›¢ã‚ŒãŸä¸­å¤®ç²’å­ã«ãŠã„ã¦ãƒ†ã‚¹ãƒˆ
 		TEST_F(ImplicitForcesTest, MatrixDiagIdentity)
 		{
 			SearchNeighbor();
@@ -200,21 +200,21 @@ namespace {
 			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
 
-			const auto ic = (num_x - 1) / 2 * (num_z + 1); // ’†‰›—±q‚Ìindex
+			const auto ic = (num_x - 1) / 2 * (num_z + 1); // ä¸­å¤®ç²’å­ã®index
 
 			double sum_nondiag = 0.0;
 			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 			{
 				if (j != ic)
 				{
-					sum_nondiag += ppe.A(ic, j); // disable,dummy,free surface particle‚ÍŠñ—^‚µ‚È‚¢
+					sum_nondiag += ppe.A(ic, j); // disable,dummy,free surface particleã¯å¯„ä¸ã—ãªã„
 				}
 			}
 			ASSERT_NEAR(ppe.A(ic, ic), -sum_nondiag, testAccuracy);
 		}
 
-		// —±qi ‚Ì ‹ß–T—±qj ‚É‘Î‰‚·‚é¬•ª‚ª a_ij != 0 ‚Å‚ ‚é‚±‚Æ
-		// (dummy, disable, free surface—±q‚ÍœŠO)
+		// ç²’å­i ã® è¿‘å‚ç²’å­j ã«å¯¾å¿œã™ã‚‹æˆåˆ†ãŒ a_ij != 0 ã§ã‚ã‚‹ã“ã¨
+		// (dummy, disable, free surfaceç²’å­ã¯é™¤å¤–)
 		TEST_F(ImplicitForcesTest, MatrixNeighborNonzero)
 		{
 			SearchNeighbor();
@@ -232,7 +232,7 @@ namespace {
 					continue;
 				}
 
-				std::vector<decltype(i)> neighList; // i‚Ì‹ß–T—±qƒŠƒXƒg
+				std::vector<decltype(i)> neighList; // iã®è¿‘å‚ç²’å­ãƒªã‚¹ãƒˆ
 				for (auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
 					const auto j = Neighbor(i, idx);
@@ -244,7 +244,7 @@ namespace {
 
 				for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 				{
-					if (j != i && std::find(neighList.begin(), neighList.end(), j) == neighList.end()) // j‚ªi‹ß–TƒŠƒXƒg‚É‘®‚µ‚È‚¢
+					if (j != i && std::find(neighList.begin(), neighList.end(), j) == neighList.end()) // jãŒiè¿‘å‚ãƒªã‚¹ãƒˆã«å±ã—ãªã„
 					{
 						ASSERT_NEAR(ppe.A(i, j), 0.0, testAccuracy);
 					}

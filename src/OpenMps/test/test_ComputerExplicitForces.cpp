@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 
 #define TEST_EXPLICITFORCES
 #include "../Computer.hpp"
@@ -25,17 +25,17 @@ namespace {
 #ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
 #endif
-	// Šiqó‚É”z’u‚·‚éÛ‚Ì1•Ó‚ ‚½‚è‚Ì—±q”
+	// æ ¼å­çŠ¶ã«é…ç½®ã™ã‚‹éš›ã®1è¾ºã‚ãŸã‚Šã®ç²’å­æ•°
 	static constexpr std::size_t num_x = 13;
 	static constexpr std::size_t num_z = 13;
 
-	// ƒTƒCƒYãŒÀ‚ğ ‰¡ 2*l0*num_x, c 2*l0*num_z ‚Æ‚·‚é
+	// ã‚µã‚¤ã‚ºä¸Šé™ã‚’ æ¨ª 2*l0*num_x, ç¸¦ 2*l0*num_z ã¨ã™ã‚‹
 	static constexpr double minX = -l0 * num_x;
 	static constexpr double minZ = -l0 * num_z;
 	static constexpr double maxX = l0 * num_x;
 	static constexpr double maxZ = l0 * num_z;
 
-	// ‹–—e‚·‚é‘Š‘ÎŒë·
+	// è¨±å®¹ã™ã‚‹ç›¸å¯¾èª¤å·®
 	static constexpr double testAccuracy = 1e-3;
 
 
@@ -115,9 +115,9 @@ namespace {
 			}
 		};
 
-		// ”S«‰—Í+d—Í‚ÌŒvZ’l‚Í‰ğÍ‰ğ‚Æˆê’v‚·‚é‚©H
-		// “ñŸ‘½€® ax^2 + bxy + cy^2 + d,
-		// ƒ‰ƒvƒ‰ƒVƒAƒ“ 2(a+c)
+		// ç²˜æ€§å¿œåŠ›+é‡åŠ›ã®è¨ˆç®—å€¤ã¯è§£æè§£ã¨ä¸€è‡´ã™ã‚‹ã‹ï¼Ÿ
+		// äºŒæ¬¡å¤šé …å¼ ax^2 + bxy + cy^2 + d,
+		// ãƒ©ãƒ—ãƒ©ã‚·ã‚¢ãƒ³ 2(a+c)
 		TEST_F(ExplicitForcesTest, ForceValuePolynomial)
 		{
 			static constexpr double cx1 = -3.0;
@@ -130,7 +130,7 @@ namespace {
 			static constexpr double cz3 = -7.0;
 			static constexpr double cz4 = 8.0;
 
-			// 1•Ól0, num_x*num_z‚ÌŠiqó‚É—±q‚ğ”z’u
+			// 1è¾ºl0, num_x*num_zã®æ ¼å­çŠ¶ã«ç²’å­ã‚’é…ç½®
 			std::vector<OpenMps::Particle> particles0;
 
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
@@ -154,11 +154,11 @@ namespace {
 			}
 			computer->AddParticles(std::move(particles0));
 
-			// ‹ß–T—±q’TõE—±q”–§“xŒvZ
+			// è¿‘å‚ç²’å­æ¢ç´¢ãƒ»ç²’å­æ•°å¯†åº¦è¨ˆç®—
 			SearchNeighbor();
 			ComputeNeighborDensities();
 
-			// ’†‰›—±q‚Ì‰Á‘¬“x‚ğæ“¾
+			// ä¸­å¤®ç²’å­ã®åŠ é€Ÿåº¦ã‚’å–å¾—
 			const auto& particles = GetParticles();
 			const auto id = (num_x - 1) / 2 * (num_z + 1);
 
@@ -168,7 +168,7 @@ namespace {
 
 			const auto accNum = (v1 - v0) / dt_step;
 
-			// ‘Š‘ÎŒë·‚ğ•]‰¿
+			// ç›¸å¯¾èª¤å·®ã‚’è©•ä¾¡
 			const auto gvec = CreateVector(0.0, -g);
 			const auto visc = CreateVector(2 * (cx1 + cx3) * nu, 2 * (cz1 + cz3) * nu);
 			const auto accAnaly = gvec + visc;
@@ -181,10 +181,10 @@ namespace {
 			ASSERT_NEAR(errz, 0.0, testAccuracy);
 		}
 
-		// OŠpŠÖ” a sin(om * x) + b cos(om' * z) 
+		// ä¸‰è§’é–¢æ•° a sin(om * x) + b cos(om' * z) 
 		TEST_F(ExplicitForcesTest, ForceValueSinCos)
 		{
-			// ‰ŠúğŒ‘¬“xê‚ÌŒW”
+			// åˆæœŸæ¡ä»¶é€Ÿåº¦å ´ã®ä¿‚æ•°
 			static constexpr double cx1 = -3.0;
 			static constexpr double cx2 = 4.0;
 			static constexpr double ox1 = 0.1;
@@ -195,7 +195,7 @@ namespace {
 			static constexpr double oz1 = -0.3;
 			static constexpr double oz2 = 0.2;
 
-			// 1•Ól0, num_x*num_z‚ÌŠiqó‚É—±q‚ğ”z’u
+			// 1è¾ºl0, num_x*num_zã®æ ¼å­çŠ¶ã«ç²’å­ã‚’é…ç½®
 			std::vector<OpenMps::Particle> particles0;
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
@@ -220,7 +220,7 @@ namespace {
 			SearchNeighbor();
 			ComputeNeighborDensities();
 
-			// ’†‰›—±q‚Ì‰Á‘¬“x‚ğæ“¾
+			// ä¸­å¤®ç²’å­ã®åŠ é€Ÿåº¦ã‚’å–å¾—
 			const auto& particles = GetParticles();
 			const auto id = (num_x - 1) / 2 * (num_z + 1);
 
@@ -233,7 +233,7 @@ namespace {
 			const auto v1 = particles[id].U();
 			const auto accNum = (v1 - v0) / dt_step;
 
-			// ‘Š‘ÎŒë·‚ğ•]‰¿
+			// ç›¸å¯¾èª¤å·®ã‚’è©•ä¾¡
 			const auto gvec = CreateVector(0.0, -g);
 			const auto visc = CreateVector((-ox1 * ox1 * cx1 * sin(ox1 * x) - ox2 * ox2 * cx2 * cos(ox2 * z)) * nu,
 				(-oz1 * oz1 * cz1 * sin(oz1 * x) - oz2 * oz2 * cz2 * cos(oz2 * z)) * nu);
