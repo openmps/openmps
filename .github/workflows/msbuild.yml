@@ -1,9 +1,12 @@
-name: MSBuild
-on: push
+name: MSBuild CI
+
+on: [push]
+
 jobs:
   build:
-    name: MSBuild
+
     runs-on: windows-latest
+
     steps:
     - uses: actions/checkout@v1
       with:
@@ -15,12 +18,12 @@ jobs:
     - name: Setup NuGet.exe
       uses: warrenbuckley/Setup-Nuget@v1
 
-    - name: NuGet
+    - name: NuGet boost
       run: |
-         mkdir packages
-         cd packages
-         nuget install boost -Version 1.70.0
-         nuget install boost_serialization-vc142 -Version 1.70.0
+        mkdir packages
+        cd packages
+        nuget install boost -Version 1.70.0
+        nuget install boost_serialization-vc142 -Version 1.70.0
       shell: cmd
       working-directory: src
 
