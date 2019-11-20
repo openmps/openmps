@@ -21,4 +21,6 @@ jobs:
     - name: make test
       run: make -j4
       working-directory: src/OpenMps/test
-
+    - name: testrun
+      run: ./test_OpenMps
+      working-directory: src/OpenMps/test
