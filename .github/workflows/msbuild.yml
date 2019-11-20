@@ -15,10 +15,10 @@ jobs:
     - name: build googletest
       run: |
         cmake .
-        make -j4
+        msbuild ALL_BUILD.vcxproj
       working-directory: src/googletest
 
     - name: build MSBuild
-      run: msbuild test.sln -p:OutDir="out/"
+      run: msbuild test.sln
       shell: cmd
       working-directory: src/OpenMps/test
