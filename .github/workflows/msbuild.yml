@@ -18,6 +18,12 @@ jobs:
       shell: cmd
       working-directory: src/OpenMps/test
 
+    - name: build googletest
+      run: |
+        cmake .
+        make -j4
+      working-directory: src/googletest
+
     - name: build MSBuild
       run: msbuild test.sln -p:OutDir="out/"
       shell: cmd
