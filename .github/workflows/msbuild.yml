@@ -16,7 +16,9 @@ jobs:
       uses: warrenbuckley/Setup-Nuget@v1
 
     - name: NuGet
-      run: nuget restore test.sln
+      run: |
+        nuget install boost -Version 1.70.0
+        nuget install boost_serialization-vc142 -Version 1.70.0
       shell: cmd
       working-directory: src/OpenMps/test
 
