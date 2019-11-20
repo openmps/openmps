@@ -10,6 +10,11 @@ jobs:
     - name: Setup MSBuild.exe
       uses: warrenbuckley/Setup-MSBuild@v1
 
+    - name: NuGet
+      run: nuget restore test.sln
+      shell: cmd
+      working-directory: src/OpenMps/test
+
     - name: build MSBuild
       run: msbuild test.sln -p:OutDir="out/"
       shell: cmd
