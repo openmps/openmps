@@ -18,7 +18,7 @@ namespace {
 
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
-	static constexpr double r_eByl_0 = 1.5; // テスト用の簡略化として, 小さめに設定.
+	static constexpr double r_eByl_0 = 1.5;
 
 #ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
@@ -85,64 +85,6 @@ namespace {
 #endif
 						environment,
 						positionWall, positionWallPre)));
-
-				std::vector<OpenMps::Particle> particles0;
-
-				for (auto j = decltype(num_z){0}; j < num_z; j++)
-				{
-					for (auto i = decltype(num_x){0}; i < num_x; i++)
-					{
-
-						auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
-						const double x = i * l0;
-						const double z = j * l0;
-						particle.X()[OpenMps::AXIS_X] = x;
-						particle.X()[OpenMps::AXIS_Z] = z;
-
-						particle.U()[OpenMps::AXIS_X] = 0.0;
-						particle.U()[OpenMps::AXIS_Z] = 0.0;
-						particle.P() = 0.0;
-						particle.N() = 0.0;
-
-						particles0.push_back(std::move(particle));
-					}
-				}
-				computer->AddParticles(std::move(particles0));
-			}
-
-			auto& GetParticles()
-			{
-				return computer->particles;
-			}
-
-			void SearchNeighbor()
-			{
-				computer->SearchNeighbor();
-			}
-
-			auto& Neighbor(const std::size_t i, const std::size_t idx)
-			{
-				return computer->Neighbor(i, idx);
-			}
-
-			auto& NeighborCount(const std::size_t i)
-			{
-				return computer->NeighborCount(i);
-			}
-
-			void ComputeNeighborDensities()
-			{
-				computer->ComputeNeighborDensities();
-			}
-
-			void ComputeImplicitForces()
-			{
-				computer->ComputeImplicitForces();
-			}
-
-			void SetPressurePoissonEquation()
-			{
-				computer->SetPressurePoissonEquation();
 			}
 
 			void SolvePressurePoissonEquation()
@@ -150,14 +92,25 @@ namespace {
 				computer->SolvePressurePoissonEquation();
 			}
 
-			bool IsAlive(const Particle& p)
-			{
-				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled;
-			}
-
 			auto& getPpe()
 			{
 				return computer->ppe;
+			}
+
+			void setMatrixDim(std::size_t n)
+			{
+				auto& ppe = getPpe();
+				using Ppe = typename OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::Ppe;
+				ppe.A = Ppe::Matrix{n,n};
+				ppe.A = Ppe::Matrix{n,n};
+				ppe.x = Ppe::LongVector(n);
+				ppe.b = Ppe::LongVector(n);
+				ppe.cg.r = Ppe::LongVector(n);
+				ppe.cg.p = Ppe::LongVector(n);
+				ppe.cg.Ap = Ppe::LongVector(n);
+	#ifdef USE_VIENNACL
+				ppe.tempA = Ppe::TempMatrix(n, n);
+	#endif
 			}
 
 			virtual void TearDown()
@@ -168,12 +121,9 @@ namespace {
 
 		TEST_F(ConjugateGradientTest, SolveIdentityMatrix)
 		{
-			SearchNeighbor();
-			ComputeNeighborDensities();
-			SetPressurePoissonEquation();
-
-			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
+			setMatrixDim(Ndim);
+			auto& ppe = getPpe();
 
 			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 			{
@@ -197,17 +147,14 @@ namespace {
 				diff += abs(static_cast<double>(i) - ppe.x(i));
 			}
 
-			ASSERT_NEAR(diff / num_x, 0.0, 1e-5);
+			ASSERT_NEAR(diff / num_x, 0.0, testAccuracy);
 		}
 
 		TEST_F(ConjugateGradientTest, Solve4x4Matrix)
 		{
-			SearchNeighbor();
-			ComputeNeighborDensities();
-			SetPressurePoissonEquation();
-
-			auto& ppe = getPpe();
 			const auto Ndim = num_x * num_z;
+			setMatrixDim(Ndim);
+			auto& ppe = getPpe();
 
 			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 			{
@@ -250,10 +197,10 @@ namespace {
 
 			SolvePressurePoissonEquation();
 
-			ASSERT_NEAR(ppe.x(0), 2.0, 1e-5);
-			ASSERT_NEAR(ppe.x(1), 4.0, 1e-5);
-			ASSERT_NEAR(ppe.x(2), 6.0, 1e-5);
-			ASSERT_NEAR(ppe.x(3), 8.0, 1e-5);
+			ASSERT_NEAR(ppe.x(0), 2.0, testAccuracy);
+			ASSERT_NEAR(ppe.x(1), 4.0, testAccuracy);
+			ASSERT_NEAR(ppe.x(2), 6.0, testAccuracy);
+			ASSERT_NEAR(ppe.x(3), 8.0, testAccuracy);
 		}
 	}
 
