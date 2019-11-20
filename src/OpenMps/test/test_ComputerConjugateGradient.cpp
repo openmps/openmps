@@ -121,7 +121,7 @@ namespace {
 
 		TEST_F(ConjugateGradientTest, SolveIdentityMatrix)
 		{
-			const auto Ndim = num_x * num_z;
+			const auto Ndim = 10;
 			setMatrixDim(Ndim);
 			auto& ppe = getPpe();
 
@@ -152,23 +152,8 @@ namespace {
 
 		TEST_F(ConjugateGradientTest, Solve4x4Matrix)
 		{
-			const auto Ndim = num_x * num_z;
-			setMatrixDim(Ndim);
+			setMatrixDim(4);
 			auto& ppe = getPpe();
-
-			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
-			{
-				ppe.b(j) = 0.0;
-				for (auto i = decltype(Ndim){0}; i < Ndim; i++)
-				{
-					if (i == j)
-					{
-						ppe.A(i, j) = 1.0;
-					} else {
-						ppe.A(i, j) = 0.0;
-					}
-				}
-			}
 
 			ppe.A(0, 0) = 1.0;
 			ppe.A(0, 1) = 1.0;
