@@ -1,4 +1,4 @@
-name: MSBuild CI
+name: Windows MSBuild CI
 
 on: [push]
 
