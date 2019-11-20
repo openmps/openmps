@@ -1,0 +1,16 @@
+name: MSBuild
+on: push
+jobs:
+  build:
+    name: MSBuild
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Setup MSBuild.exe
+      uses: warrenbuckley/Setup-MSBuild@v1
+
+    - name: build MSBuild
+      run: msbuild test.sln
+      shell: cmd
+      working-directory: src/OpenMps/test
