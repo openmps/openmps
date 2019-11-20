@@ -27,7 +27,7 @@ jobs:
     - name: build googletest
       run: |
         cmake .
-        msbuild ALL_BUILD.vcxproj
+        msbuild googletest-distribution.sln -p:Configuration=Release
       working-directory: src/googletest
 
     - name: build MSBuild
