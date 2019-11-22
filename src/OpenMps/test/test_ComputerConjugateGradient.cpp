@@ -3,6 +3,10 @@
 #define TEST_CONJUGATEGRADIENT
 #include "../Computer.hpp"
 
+
+#include <iostream>
+#include <cstdio>
+
 namespace {
 #ifndef PRESSURE_EXPLICIT
 	static constexpr double eps = 1e-7;
@@ -180,6 +184,50 @@ namespace {
 			ASSERT_NEAR(ppe.x(1), 4.0, testAccuracy);
 			ASSERT_NEAR(ppe.x(2), 6.0, testAccuracy);
 			ASSERT_NEAR(ppe.x(3), 8.0, testAccuracy);
+		}
+
+		// TODO: ソース関数 g(x) を入れてテスト
+		TEST_F(ConjugateGradientTest, Solve1DPoissonEqn)
+		{
+			const size_t nx = 10; // bulkの自由度
+			double dx = 1.0 / nx;
+			double dx2 = dx * dx;
+
+			double a = 1.0;
+			double b = 0.0;
+
+			setMatrixDim(nx);
+			auto& ppe = getPpe();
+
+			// ゼロ初期化
+			for (auto j = decltype(nx){0}; j < nx; j++)
+			{
+				for (auto i = decltype(nx){0}; i < nx; i++)
+				{
+					ppe.A(i, j) = 0.0;
+				}
+				ppe.b(j) = 0.0;
+			}
+
+			// 係数行列設定
+			for (auto j = decltype(nx){1}; j < nx-1; j++)
+			{
+				ppe.A(j - 1, j) = 1.0/dx2;
+				ppe.A(j, j) = -0.5/dx2;
+				ppe.A(j + 1, j) = 1.0/dx2;
+			}
+
+			// 境界条件設定
+			ppe.A(0, 0) = -0.5/dx2;
+			ppe.A(1, 0) = 1.0/dx2;
+
+			ppe.A(nx-1, nx-1) = -0.5/dx2;
+			ppe.A(nx-2, nx-1) = 1.0/dx2;
+
+			ppe.b(0) = -1.0 / dx2 * a;
+			ppe.b(nx - 1) = -1.0 / dx2 * b;
+
+			SolvePressurePoissonEquation();
 		}
 	}
 
