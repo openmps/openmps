@@ -3,7 +3,7 @@ name: Windows MSBuild CI
 on: [push]
 
 jobs:
-  build:
+  testrun:
     runs-on: windows-latest
 
     steps:
@@ -18,8 +18,12 @@ jobs:
       uses: warrenbuckley/Setup-Nuget@v1
 
     - name: NuGet boost
-      run: msbuild -t:restore 
-      working-directory: src/OpenMps
+      run: |
+        mkdir packages
+        cd packages
+        nuget install boost -Version 1.70.0
+        nuget install boost_serialization-vc142 -Version 1.70.0
+      working-directory: src
 
     - name: build googletest
       run: |
@@ -28,9 +32,9 @@ jobs:
       working-directory: src/googletest
 
     - name: build test
-      run: msbuild test.sln -t:restore,build -p:Configuration=Release -p:OutDir="out/"
+      run: msbuild test.sln -p:Configuration=Release -p:OutDir="out/"
       working-directory: src/OpenMps/test
 
-    - name: testrun
+    - name: run
       run: ./test.exe
       working-directory: src/OpenMps/test/out
