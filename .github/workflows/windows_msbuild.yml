@@ -19,7 +19,7 @@ jobs:
 
     - name: NuGet boost
       run: msbuild -t:restore 
-      working-directory: src/OpenMps/test
+      working-directory: src/OpenMps
 
     - name: build googletest
       run: |
