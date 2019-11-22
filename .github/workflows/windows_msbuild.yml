@@ -28,7 +28,7 @@ jobs:
       working-directory: src/googletest
 
     - name: build test
-      run: msbuild test.sln -p:Configuration=Release -p:OutDir="out/"
+      run: msbuild test.sln -t:restore,build -p:Configuration=Release -p:OutDir="out/"
       working-directory: src/OpenMps/test
 
     - name: testrun
