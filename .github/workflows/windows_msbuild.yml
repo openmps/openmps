@@ -35,6 +35,6 @@ jobs:
       run: msbuild test.sln -p:Configuration=Release -p:OutDir="out/"
       working-directory: src/OpenMps/test
 
-    - name: run
+    - name: testrun
       run: ./test.exe
       working-directory: src/OpenMps/test/out

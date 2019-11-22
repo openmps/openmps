@@ -3,8 +3,7 @@ name: Ubuntu-GCC CI
 on: [push]
 
 jobs:
-  build:
-
+  unittest:
     runs-on: ubuntu-latest
     
     steps:
