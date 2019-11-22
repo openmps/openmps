@@ -4,7 +4,6 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
@@ -37,6 +36,9 @@ jobs:
       run: msbuild test.sln -p:Configuration=Release -p:OutDir="out/"
       working-directory: src/OpenMps/test
 
+  testrun:
+    runs-on: windows-latest
+    steps:
     - name: testrun
       run: ./test.exe
       working-directory: src/OpenMps/test/out
