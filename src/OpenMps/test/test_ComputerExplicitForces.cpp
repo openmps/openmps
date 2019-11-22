@@ -115,7 +115,7 @@ namespace {
 			}
 		};
 
-		/* MPS_HSをONにするとラプラシアン計算が解析解と不一致であるバグのため、コメントアウト
+		/* TODO: MPS_HSをONにするとラプラシアン計算が解析解と不一致であるバグがあるためコメントアウト, issue #30, https://github.com/openmps/openmps/issues/30
 		// 粘性応力+重力の計算値は解析解と一致するか？
 		// 二次多項式 ax^2 + bxy + cy^2 + d,
 		// ラプラシアン 2(a+c)
