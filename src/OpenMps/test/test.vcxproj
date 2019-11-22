@@ -82,6 +82,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="test_ComputerConjugateGradient.cpp" />
     <ClCompile Include="test_ComputerConstructor.cpp" />
     <ClCompile Include="test_ComputerImplicitForces.cpp" />
     <ClCompile Include="test_ComputerMatrix.cpp" />
