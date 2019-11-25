@@ -186,15 +186,14 @@ namespace {
 			ASSERT_NEAR(ppe.x(3), 8.0, testAccuracy);
 		}
 
-		// TODO: ソース関数 g(x) を入れてテスト
 		TEST_F(ConjugateGradientTest, Solve1DPoissonEqn)
 		{
-			const size_t nx = 10; // bulkの自由度
-			double dx = 1.0 / nx;
+			const size_t nx = 20; // bulkの自由度
+			double dx = 1.0 / (nx+2);
 			double dx2 = dx * dx;
 
-			double a = 1.0;
-			double b = 0.0;
+			double a = 0.0;
+			double b = 1.0;
 
 			setMatrixDim(nx);
 			auto& ppe = getPpe();
@@ -212,22 +211,38 @@ namespace {
 			// 係数行列設定
 			for (auto j = decltype(nx){1}; j < nx-1; j++)
 			{
-				ppe.A(j - 1, j) = 1.0/dx2;
-				ppe.A(j, j) = -0.5/dx2;
-				ppe.A(j + 1, j) = 1.0/dx2;
+				ppe.A(j - 1, j) = 1.0/1.00;
+				ppe.A(j, j) = -2.0/1.00;
+				ppe.A(j + 1, j) = 1.0/1.00;
 			}
 
 			// 境界条件設定
-			ppe.A(0, 0) = -0.5/dx2;
-			ppe.A(1, 0) = 1.0/dx2;
+			ppe.A(0, 0) = -2.0/1.00;
+			ppe.A(1, 0) = 1.0/1.00;
 
-			ppe.A(nx-1, nx-1) = -0.5/dx2;
-			ppe.A(nx-2, nx-1) = 1.0/dx2;
+			ppe.A(nx-1, nx-1) = -2.0/1.00;
+			ppe.A(nx-2, nx-1) = 1.0/1.00;
 
-			ppe.b(0) = -1.0 / dx2 * a;
-			ppe.b(nx - 1) = -1.0 / dx2 * b;
+			ppe.b(0) = -1.0 / 1.00 * a;
+			ppe.b(nx - 1) = -1.0 / 1.00 * b;
+
+			for (auto i = decltype(nx){0}; i < nx; i++)
+			{
+				for (auto j = decltype(nx){0}; j < nx; j++)
+				{
+					if (j != i)
+					{
+						ASSERT_NEAR(ppe.A(i, j) - ppe.A(j, i), 0.0, testAccuracy);
+					}
+				}
+			}
 
 			SolvePressurePoissonEquation();
+				std::cout << -1 << ": " << a << std::endl;
+			for (int j = 0; j < nx; ++j) {
+				std::cout << j << ": " << ppe.x(j) << std::endl;
+			}
+				std::cout << nx+1 << ": " << b << std::endl;
 		}
 	}
 
