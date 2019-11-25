@@ -3,10 +3,6 @@
 #define TEST_CONJUGATEGRADIENT
 #include "../Computer.hpp"
 
-
-#include <iostream>
-#include <cstdio>
-
 namespace {
 #ifndef PRESSURE_EXPLICIT
 	static constexpr double eps = 1e-7;
@@ -119,7 +115,7 @@ namespace {
 
 		TEST_F(ConjugateGradientTest, SolveIdentityMatrix)
 		{
-			const auto Ndim = 10;
+			constexpr auto Ndim = 10;
 			setMatrixDim(Ndim);
 			auto& ppe = getPpe();
 
@@ -186,19 +182,20 @@ namespace {
 			ASSERT_NEAR(ppe.x(3), 8.0, testAccuracy);
 		}
 
-		TEST_F(ConjugateGradientTest, Solve1DPoissonEqn)
+		// 1次元常微分方程式 d^2f/dx^2 = x を共役勾配法で解き、解析解と比較
+		// f(0) = a,  f(1) = b のとき、f(x) = 1/6 x^3 + (b-a-1/6)x + a
+		TEST_F(ConjugateGradientTest, Solve1dODE)
 		{
-			const size_t nx = 20; // bulkの自由度
-			double dx = 1.0 / (nx+2);
-			double dx2 = dx * dx;
+			constexpr auto nx = 10; // 境界を含めた点数がnx+2
+			constexpr double dx = 1.0 / (nx+1);
+			constexpr double dx2 = dx * dx;
 
-			double a = 0.0;
-			double b = 1.0;
+			constexpr double a = 0.0;
+			constexpr double b = 1.0;
 
 			setMatrixDim(nx);
 			auto& ppe = getPpe();
 
-			// ゼロ初期化
 			for (auto j = decltype(nx){0}; j < nx; j++)
 			{
 				for (auto i = decltype(nx){0}; i < nx; i++)
@@ -208,42 +205,36 @@ namespace {
 				ppe.b(j) = 0.0;
 			}
 
-			// 係数行列設定
 			for (auto j = decltype(nx){1}; j < nx-1; j++)
 			{
-				ppe.A(j - 1, j) = 1.0/1.00;
-				ppe.A(j, j) = -2.0/1.00;
-				ppe.A(j + 1, j) = 1.0/1.00;
+				ppe.A(j - 1, j) = 1.0/dx2;
+				ppe.A(j, j) = -2.0/dx2;
+				ppe.A(j + 1, j) = 1.0/dx2;
+
+				ppe.b(j) = dx * (j+1);
 			}
 
-			// 境界条件設定
-			ppe.A(0, 0) = -2.0/1.00;
-			ppe.A(1, 0) = 1.0/1.00;
+			ppe.A(0, 0) = -2.0/dx2;
+			ppe.A(1, 0) = 1.0/dx2;
+			ppe.A(nx-1, nx-1) = -2.0/dx2;
+			ppe.A(nx-2, nx-1) = 1.0/dx2;
 
-			ppe.A(nx-1, nx-1) = -2.0/1.00;
-			ppe.A(nx-2, nx-1) = 1.0/1.00;
-
-			ppe.b(0) = -1.0 / 1.00 * a;
-			ppe.b(nx - 1) = -1.0 / 1.00 * b;
-
-			for (auto i = decltype(nx){0}; i < nx; i++)
-			{
-				for (auto j = decltype(nx){0}; j < nx; j++)
-				{
-					if (j != i)
-					{
-						ASSERT_NEAR(ppe.A(i, j) - ppe.A(j, i), 0.0, testAccuracy);
-					}
-				}
-			}
+			ppe.b(0) = -1.0 / dx2 * a + dx;
+			ppe.b(nx - 1) = - 1.0 / dx2 * b + (1.0-dx);
 
 			SolvePressurePoissonEquation();
-				std::cout << -1 << ": " << a << std::endl;
-			for (int j = 0; j < nx; ++j) {
-				std::cout << j << ": " << ppe.x(j) << std::endl;
+
+			// 解析解との相対誤差を計算
+			double diff = 0.0;
+			for (auto j = decltype(nx){0}; j < nx; j++)
+			{
+				const double x = dx * (j+1);
+				const double analy = 1.0 / 6.0 * x * x * x + (b - a - 1.0 / 6.0) * x + a;
+				diff += abs((ppe.x(j) - analy) / analy);
 			}
-				std::cout << nx+1 << ": " << b << std::endl;
+			ASSERT_NEAR(diff/nx, 0.0, testAccuracy);
 		}
 	}
 
 }
+
