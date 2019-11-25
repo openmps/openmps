@@ -187,7 +187,7 @@ namespace {
 		TEST_F(ConjugateGradientTest, Solve1dODE)
 		{
 			constexpr auto nx = 10; // ‹«ŠE‚ğŠÜ‚ß‚½“_”‚ªnx+2
-			constexpr double dx = 1.0 / (nx+1);
+			constexpr double dx = 1.0 / (nx + 1);
 			constexpr double dx2 = dx * dx;
 
 			constexpr double a = 0.0;
@@ -205,22 +205,22 @@ namespace {
 				ppe.b(j) = 0.0;
 			}
 
-			for (auto j = decltype(nx){1}; j < nx-1; j++)
+			for (auto j = decltype(nx){1}; j < nx - 1; j++)
 			{
-				ppe.A(j - 1, j) = 1.0/dx2;
-				ppe.A(j, j) = -2.0/dx2;
-				ppe.A(j + 1, j) = 1.0/dx2;
+				ppe.A(j - 1, j) = 1.0 / dx2;
+				ppe.A(j, j) = -2.0 / dx2;
+				ppe.A(j + 1, j) = 1.0 / dx2;
 
-				ppe.b(j) = dx * (j+1);
+				ppe.b(j) = dx * (j + 1);
 			}
 
-			ppe.A(0, 0) = -2.0/dx2;
-			ppe.A(1, 0) = 1.0/dx2;
-			ppe.A(nx-1, nx-1) = -2.0/dx2;
-			ppe.A(nx-2, nx-1) = 1.0/dx2;
+			ppe.A(0, 0) = -2.0 / dx2;
+			ppe.A(1, 0) = 1.0 / dx2;
+			ppe.A(nx - 1, nx - 1) = -2.0 / dx2;
+			ppe.A(nx - 2, nx - 1) = 1.0 / dx2;
 
 			ppe.b(0) = -1.0 / dx2 * a + dx;
-			ppe.b(nx - 1) = - 1.0 / dx2 * b + (1.0-dx);
+			ppe.b(nx - 1) = -1.0 / dx2 * b + (1.0 - dx);
 
 			SolvePressurePoissonEquation();
 
@@ -228,11 +228,11 @@ namespace {
 			double diff = 0.0;
 			for (auto j = decltype(nx){0}; j < nx; j++)
 			{
-				const double x = dx * (j+1);
+				const double x = dx * (j + 1);
 				const double analy = 1.0 / 6.0 * x * x * x + (b - a - 1.0 / 6.0) * x + a;
 				diff += abs((ppe.x(j) - analy) / analy);
 			}
-			ASSERT_NEAR(diff/nx, 0.0, testAccuracy);
+			ASSERT_NEAR(diff / nx, 0.0, testAccuracy);
 		}
 	}
 
