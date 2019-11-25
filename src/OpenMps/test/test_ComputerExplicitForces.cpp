@@ -2,8 +2,6 @@
 
 #define TEST_EXPLICITFORCES
 #include "../Computer.hpp"
-#include "../Particle.hpp"
-#include "../Vector.hpp"
 
 #include <cmath>
 

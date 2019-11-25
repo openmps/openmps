@@ -2,8 +2,6 @@
 
 #define TEST_IMPLICITFORCES
 #include "../Computer.hpp"
-#include "../Particle.hpp"
-#include "../Vector.hpp"
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
@@ -255,3 +253,4 @@ namespace {
 	}
 
 }
+

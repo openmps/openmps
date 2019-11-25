@@ -2,8 +2,6 @@
 
 #define TEST_CONSTRUCTOR
 #include "../Computer.hpp"
-#include "../Particle.hpp"
-#include "../Environment.hpp"
 
 namespace {
 #ifndef PRESSURE_EXPLICIT

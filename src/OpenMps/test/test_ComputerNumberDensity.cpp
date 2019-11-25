@@ -2,8 +2,6 @@
 
 #define TEST_NUMBERDENSITY
 #include "../Computer.hpp"
-#include "../Particle.hpp"
-#include "../Vector.hpp"
 
 #include <cmath>
 
@@ -278,3 +276,4 @@ namespace OpenMps
 	}
 }
 }
+
