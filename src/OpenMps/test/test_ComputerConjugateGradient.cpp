@@ -196,14 +196,8 @@ namespace {
 			setMatrixDim(nx);
 			auto& ppe = getPpe();
 
-			for (auto j = decltype(nx){0}; j < nx; j++)
-			{
-				for (auto i = decltype(nx){0}; i < nx; i++)
-				{
-					ppe.A(i, j) = 0.0;
-				}
-				ppe.b(j) = 0.0;
-			}
+			ppe.A.clear();
+			ppe.b.clear();
 
 			for (auto j = decltype(nx){1}; j < nx - 1; j++)
 			{
