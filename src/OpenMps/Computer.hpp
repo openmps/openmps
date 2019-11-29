@@ -447,6 +447,9 @@ namespace { namespace OpenMps
 #ifdef TEST_IMPLICITFORCES
 	friend class ImplicitForcesTest;
 #endif
+#ifdef TEST_CONJUGATEGRADIENT
+	friend class ConjugateGradientTest;
+#endif
 
 	private:
 		// 粒子リスト
