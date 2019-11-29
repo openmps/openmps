@@ -3,7 +3,6 @@
 #define TEST_PRESSUREGRADIENT
 #include "../Computer.hpp"
 
-#include <iostream>
 #include <cmath>
 
 namespace {
@@ -141,7 +140,6 @@ namespace OpenMps
 
 		ModifyByPressureGradientTest();
 
-		// íÜêSidxÇ™ÇŸÇµÇ¢
 		auto p = GetParticles();
 		auto env = GetEnvironment();
 		const double r_e = env.R_e;
@@ -149,11 +147,9 @@ namespace OpenMps
 		const double rho = env.Rho;
 		const double n0 = env.N0();
 
-		double vx = p[12].U()[OpenMps::AXIS_X];
-		double vz = p[12].U()[OpenMps::AXIS_Z];
 		auto prefact = (-dt / rho * DIM / n0);
-		std::cout << "dpx: " << vx/prefact << std::endl;
-		std::cout << "dpz: " << vz/prefact << std::endl;
+		double dpx = p[12].U()[OpenMps::AXIS_X] / prefact;
+		double dpy = p[12].U()[OpenMps::AXIS_Z] / prefact;
 	}
 
 }
