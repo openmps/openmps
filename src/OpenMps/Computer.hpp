@@ -1288,9 +1288,14 @@ namespace { namespace OpenMps
 							// HL法（高精度ラプラシアン）: (5-D)r_e/n0 / r^3
 							const auto a_ij = (5 - DIM) * r_e / n0 / (r*r*r);
 #else
+							const auto w = Particle::W(r, r_e);
+#ifdef MPS_1L
+							// 1次精度ラプラシアン：D^2/n_0 w/r^2
+							const auto a_ij = DIM * DIM / n0 * w / (r * r);
+#else
 							// 標準MPS法：2D/(λn0) w
-							const double w = Particle::W(r, r_e);
 							const auto a_ij = (2 * DIM / lambda / n0) * w;
+#endif
 #endif
 
 #ifdef MPS_SPP
