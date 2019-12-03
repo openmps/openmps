@@ -33,7 +33,11 @@
 // HL法（高精度ラプラシアン）, Khayyer and Gotoh (2010)
 //   長所：高精度化
 //   短所：なし
-#define MPS_HL
+//#define MPS_HL
+
+
+// 1次精度ラプラシアン（λへの置き換えを行わないモデル）, 後藤(2018)『粒子法』(3.151)
+#define MPS_1L
 
 // ECS法（誤差修正項）, Khayyer and Gotoh (2011)
 //   長所：高精度化・安定化
