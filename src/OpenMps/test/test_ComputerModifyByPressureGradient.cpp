@@ -3,8 +3,6 @@
 #define TEST_PRESSUREGRADIENT
 #include "../Computer.hpp"
 
-#include <cmath>
-
 namespace {
 #ifndef PRESSURE_EXPLICIT
 	static constexpr double eps = 1e-10;
@@ -27,7 +25,6 @@ namespace {
 	static constexpr double maxX = 10.0 * l0;
 	static constexpr double maxZ = 10.0 * l0;
 
-	// �i�q���ɔz�u�����ۂ�1�ӂ������̗��q��
 	static constexpr std::size_t num_x = 5;
 	static constexpr std::size_t num_z = 5;
 
@@ -72,7 +69,6 @@ namespace OpenMps
 
 			environment.Dt() = dt_step;
 			environment.SetNextT();
-
 
 			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(
 				OpenMps::CreateComputer(
@@ -119,7 +115,6 @@ namespace OpenMps
 		std::vector<OpenMps::Particle> particles;
 		constexpr auto gradp = 0.0;
 
-		// 1��l0, num_x*num_z�̊i�q���ɗ��q���z�u
 		for (auto j = decltype(num_z){0}; j < num_z; j++)
 		{
 			for (auto i = decltype(num_x){0}; i < num_x; i++)
