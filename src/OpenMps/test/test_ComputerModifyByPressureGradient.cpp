@@ -22,18 +22,20 @@ namespace {
 #ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
 #endif
-	static constexpr double minX = -10*l0;
-	static constexpr double minZ = -10*l0;
-	static constexpr double maxX = 10 * l0;
-	static constexpr double maxZ = 10 * l0;
+	static constexpr double minX = -10.0*l0;
+	static constexpr double minZ = -10.0*l0;
+	static constexpr double maxX = 10.0 * l0;
+	static constexpr double maxZ = 10.0 * l0;
 
-	// Šiqó‚É”z’u‚·‚éÛ‚Ì1•Ó‚ ‚½‚è‚Ì—±q”
+	// ï¿½iï¿½qï¿½ï¿½ï¿½É”zï¿½uï¿½ï¿½ï¿½ï¿½ï¿½Û‚ï¿½1ï¿½Ó‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì—ï¿½ï¿½qï¿½ï¿½
 	static constexpr std::size_t num_x = 5;
 	static constexpr std::size_t num_z = 5;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
 #endif
+
+static constexpr double testAccuracy = 1e-3;
 
 namespace OpenMps
 {
@@ -112,11 +114,12 @@ namespace OpenMps
 		}
 	};
 
-	TEST_F(PressureGradientTest, DistanceValue)
+	TEST_F(PressureGradientTest, GradValue)
 	{
 		std::vector<OpenMps::Particle> particles;
+		constexpr auto gradp = 0.0;
 
-		// 1•Ól0, num_x*num_z‚ÌŠiqó‚É—±q‚ğ”z’u
+		// 1ï¿½ï¿½l0, num_x*num_zï¿½ÌŠiï¿½qï¿½ï¿½ï¿½É—ï¿½ï¿½qï¿½ï¿½ï¿½zï¿½u
 		for (auto j = decltype(num_z){0}; j < num_z; j++)
 		{
 			for (auto i = decltype(num_x){0}; i < num_x; i++)
@@ -127,7 +130,7 @@ namespace OpenMps
 
 				particle.U()[OpenMps::AXIS_X] = 0.0;
 				particle.U()[OpenMps::AXIS_Z] = 0.0;
-				particle.P() = j*10.0;
+				particle.P() = j*gradp;
 				particle.N() = 0.0;
 
 				particles.push_back(std::move(particle));
@@ -142,14 +145,12 @@ namespace OpenMps
 
 		auto p = GetParticles();
 		auto env = GetEnvironment();
-		const double r_e = env.R_e;
-		const double dt = env.Dt();
-		const double rho = env.Rho;
-		const double n0 = env.N0();
+		const auto prefact = (-env.Dt())/env.Rho;
+		const double dpx = p[12].U()[OpenMps::AXIS_X] / prefact;
+		const double dpz = p[12].U()[OpenMps::AXIS_Z] / prefact;
 
-		auto prefact = (-dt / rho * DIM / n0);
-		double dpx = p[12].U()[OpenMps::AXIS_X] / prefact;
-		double dpy = p[12].U()[OpenMps::AXIS_Z] / prefact;
+		ASSERT_NEAR(dpx, 0.0, testAccuracy);
+		ASSERT_NEAR(dpz, gradp, testAccuracy);
 	}
 
 }
