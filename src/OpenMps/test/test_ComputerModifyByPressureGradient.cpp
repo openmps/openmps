@@ -25,9 +25,6 @@ namespace {
 	static constexpr double maxX = 10.0 * l0;
 	static constexpr double maxZ = 10.0 * l0;
 
-	static constexpr std::size_t num_x = 5;
-	static constexpr std::size_t num_z = 5;
-
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
 #endif
@@ -113,7 +110,9 @@ namespace OpenMps
 	TEST_F(PressureGradientTest, GradValue)
 	{
 		std::vector<OpenMps::Particle> particles;
-		constexpr auto gradp = 0.0;
+		static constexpr std::size_t num_x = 5;
+		static constexpr std::size_t num_z = 5;
+		constexpr auto gradp = 10.0;
 
 		for (auto j = decltype(num_z){0}; j < num_z; j++)
 		{
