@@ -205,7 +205,7 @@ namespace {
 			{
 				if (j != id)
 				{
-					sum_nondiag += ppe.A(ic, j); // disable,dummy,free surface particleは寄与しない
+					sum_nondiag += ppe.A(id, j); // disable,dummy,free surface particleは寄与しない
 				}
 			}
 			ASSERT_NEAR(ppe.A(id, id), -sum_nondiag, testAccuracy);
