@@ -141,10 +141,11 @@ namespace OpenMps
 		auto p = GetParticles();
 		auto env = GetEnvironment();
 		const auto prefact = (-env.Dt())/env.Rho;
-		const double du = p[12].U()[OpenMps::AXIS_X];
-		const double dv = p[12].U()[OpenMps::AXIS_Z];
-		const double dx = p[12].X()[OpenMps::AXIS_X] - 2*l0;
-		const double dz = p[12].X()[OpenMps::AXIS_Z] - 2*l0;
+		constexpr auto id = (num_x - 1) / 2 * (num_z + 1);
+		const double du = p[id].U()[OpenMps::AXIS_X];
+		const double dv = p[id].U()[OpenMps::AXIS_Z];
+		const double dx = p[id].X()[OpenMps::AXIS_X] - (num_z-1)/2*l0;
+		const double dz = p[id].X()[OpenMps::AXIS_Z] - (num_z-1)/2*l0;
 
 		ASSERT_NEAR(du, 0.0, testAccuracy);
 		ASSERT_NEAR(dv, gradp*prefact, testAccuracy);
