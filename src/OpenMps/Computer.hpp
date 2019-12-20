@@ -1534,6 +1534,8 @@ namespace { namespace OpenMps
 					});
 #endif
 #endif
+					std::cout << "du[" << i << "]: += " << d[OpenMps::AXIS_X] << std::endl;
+					std::cout << "dv[" << i << "]: += " << d[OpenMps::AXIS_Z] << std::endl;
 					du[i] = d;
 				}
 			}
