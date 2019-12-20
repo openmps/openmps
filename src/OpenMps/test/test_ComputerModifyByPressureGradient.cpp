@@ -112,8 +112,8 @@ namespace OpenMps
 		std::vector<OpenMps::Particle> particles;
 		static constexpr std::size_t num_x = 15;
 		static constexpr std::size_t num_z = 15;
-		constexpr auto dpx = 12.3;
-		constexpr auto waveNumZ = 2.0*M_PI/num_z/l0;
+		static constexpr auto dpx = 12.3;
+		static constexpr auto waveNumZ = 2.0*M_PI/num_z/l0;
 
 		for (auto j = decltype(num_z){0}; j < num_z; j++)
 		{
@@ -143,11 +143,11 @@ namespace OpenMps
 		const auto p = GetParticles();
 		const auto env = GetEnvironment();
 		const auto prefact = -env.Dt() / env.Rho;
-		const auto blankWidth = 3;
+		static constexpr auto blankWidth = 3;
 
 		for (auto j = decltype(num_z){blankWidth}; j < num_z - blankWidth; j++)
 		{
-			for (auto i = decltype(num_x){3}; i < num_x - 3; i++)
+			for (auto i = decltype(num_x){blankWidth}; i < num_x - blankWidth; i++)
 			{
 				const auto id = i + j * num_x;
 				const double du = p[id].U()[OpenMps::AXIS_X];
