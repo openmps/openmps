@@ -3,6 +3,8 @@
 #define TEST_PRESSUREGRADIENT
 #include "../Computer.hpp"
 
+#include <iostream>
+
 namespace {
 #ifndef PRESSURE_EXPLICIT
 	static constexpr double eps = 1e-10;
@@ -110,8 +112,8 @@ namespace OpenMps
 	TEST_F(PressureGradientTest, CompareGradientProfile)
 	{
 		std::vector<OpenMps::Particle> particles;
-		static constexpr std::size_t num_x = 15;
-		static constexpr std::size_t num_z = 15;
+		static constexpr std::size_t num_x = 10;
+		static constexpr std::size_t num_z = 10;
 		static constexpr auto dpx = 12.3;
 		static constexpr auto waveNumZ = 2.0*M_PI/num_z/l0;
 
@@ -157,6 +159,8 @@ namespace OpenMps
 
 				const double x = p[id].X()[OpenMps::AXIS_X];
 				const double z = p[id].X()[OpenMps::AXIS_Z];
+				std::cout << "du: " << du << std::endl;
+				std::cout << "dpx*x*prefact: " << dpx*x*prefact << std::endl;
 				ASSERT_NEAR(du, dpx * x * prefact, testAccuracy);
 				ASSERT_NEAR(dv, waveNumZ * cos(waveNumZ * z) * prefact, testAccuracy);
 				ASSERT_NEAR(dx, du * env.Dt(), testAccuracy);
