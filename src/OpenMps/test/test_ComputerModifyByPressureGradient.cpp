@@ -3,6 +3,9 @@
 #define TEST_PRESSUREGRADIENT
 #include "../Computer.hpp"
 
+#include <iostream>
+#include <cstdio>
+
 namespace {
 #ifndef PRESSURE_EXPLICIT
 	static constexpr double eps = 1e-10;
@@ -145,6 +148,10 @@ namespace OpenMps
 		const double dv = p[id].U()[OpenMps::AXIS_Z];
 		const double dx = p[id].X()[OpenMps::AXIS_X] - (num_z-1)/2*l0;
 		const double dz = p[id].X()[OpenMps::AXIS_Z] - (num_z-1)/2*l0;
+
+		std::cout << "dv: " << dv << std::endl;
+		std::cout << "gradp*prefact: " << gradp*prefact << std::endl;
+		printf("dv,gradp*prefact: %f, %f", dv, gradp*prefact);
 
 		ASSERT_NEAR(du, 0.0, testAccuracy);
 		ASSERT_NEAR(dv, gradp*prefact, testAccuracy);
