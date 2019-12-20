@@ -154,9 +154,9 @@ namespace OpenMps
 		printf("dv,gradp*prefact: %f, %f", dv, gradp*prefact);
 
 		ASSERT_NEAR(du, 0.0, testAccuracy);
-		ASSERT_NEAR(dv, gradp*prefact, testAccuracy);
+		ASSERT_NEAR((dv-gradp*prefact)/(gradp*prefact), 0.0, testAccuracy);
 		ASSERT_NEAR(dx, 0.0, testAccuracy);
-		ASSERT_NEAR(dz, gradp*prefact*env.Dt(), testAccuracy);
+		ASSERT_NEAR((dz-gradp*prefact*env.Dt())/(gradp*prefact*env.Dt()), 0.0, testAccuracy);
 	}
 
 }
