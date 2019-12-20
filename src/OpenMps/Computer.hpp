@@ -1429,6 +1429,7 @@ namespace { namespace OpenMps
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient()
 		{
+			std::cout << "ModifyByPressureGradient() Called" << std::endl;
 			// 全粒子で
 			const auto n = particles.size();
 			OMP_PARALLEL_FOR
@@ -1556,6 +1557,8 @@ namespace { namespace OpenMps
 					Vector thisDu = du[i];
 					particles[i].U() += thisDu;
 					particles[i].X() += thisDu * dt;
+					std::cout << "p[" << i << "].u: += " << thisDu[OpenMps::AXIS_X] << std::endl;
+					std::cout << "p[" << i << "].v: += " << thisDu[OpenMps::AXIS_Z] << std::endl;
 				}
 			}
 		}
