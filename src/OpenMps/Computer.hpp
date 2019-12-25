@@ -1429,12 +1429,10 @@ namespace { namespace OpenMps
 		// 圧力勾配によって速度と位置を修正する
 		void ModifyByPressureGradient()
 		{
-			std::cout << "ModifyByPressureGradient() Called" << std::endl;
 			// 全粒子で
 			const auto n = particles.size();
 			for(auto i = decltype(n){0}; i < n; i++)
 			{
-				printf("[%lu] x=%f,z=%f,u=%f,v=%f,p=%f\n", i,particles[i].X()[OpenMps::AXIS_X],
 				particles[i].X()[OpenMps::AXIS_Z], particles[i].U()[OpenMps::AXIS_X], particles[i].U()[OpenMps::AXIS_Z],
 				particles[i].P());
 			}
@@ -1505,7 +1503,7 @@ namespace { namespace OpenMps
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
 					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
-					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+					const Vector d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 						[thisP = particle.P(), thisX = particle.X(), r_e](const auto p, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
@@ -1516,14 +1514,10 @@ namespace { namespace OpenMps
 							const auto dx = x - thisX;
 							const auto r2 = ublas::inner_prod(dx, dx);
 							const Vector result = ((p + thisP) / r2 * Particle::W(std::sqrt(r2), r_e)) * dx;
-							printf("[gradp midp] thisP: %f, p: %f, result: %f,%f\n", thisP, p, result[OpenMps::AXIS_X], result[OpenMps::AXIS_Z]);
-							std::cout << typeid(result).name() << std::endl;
-							std::cout << typeid(result[OpenMps::AXIS_X]).name() << std::endl;
 							return result;
 						}
 						else
 						{
-							printf("[gradp midp] thisP: %f, p: %f, dummy\n", thisP, p);
 							return VectorZero;
 						}
 					});
@@ -1540,14 +1534,10 @@ namespace { namespace OpenMps
 						[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
 					{
 						auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
-						printf("[gradp center] du: %f, dv: %f\n", du[OpenMps::AXIS_X], du[OpenMps::AXIS_Z]);
 						return (Vector)(sum + du);
 					});
 #endif
 #endif
-					printf("id[%lu] du: %f, dv: %f\n",i, d[OpenMps::AXIS_X], d[OpenMps::AXIS_Z]);
-					std::cout << typeid(d).name() << std::endl;
-					std::cout << typeid(d[OpenMps::AXIS_X]).name() << std::endl;
 					du[i] = d;
 				}
 			}
@@ -1571,7 +1561,6 @@ namespace { namespace OpenMps
 					Vector thisDu = du[i];
 					particles[i].U() += thisDu;
 					particles[i].X() += thisDu * dt;
-					printf("[update vel] id[%lu] u: %f, v: %f\n", i, thisDu[OpenMps::AXIS_X], thisDu[OpenMps::AXIS_Z]);
 				}
 			}
 		}
