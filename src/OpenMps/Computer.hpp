@@ -450,6 +450,9 @@ namespace { namespace OpenMps
 #ifdef TEST_CONJUGATEGRADIENT
 	friend class ConjugateGradientTest;
 #endif
+#ifdef TEST_PRESSUREGRADIENT
+	friend class PressureGradientTest;
+#endif
 
 	private:
 		// 粒子リスト
