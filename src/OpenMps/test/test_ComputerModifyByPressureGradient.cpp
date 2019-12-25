@@ -125,6 +125,7 @@ namespace OpenMps
 				particle.X()[OpenMps::AXIS_X] = i * l0;
 				particle.X()[OpenMps::AXIS_Z] = j * l0;
 
+
 				particle.U()[OpenMps::AXIS_X] = 0.0;
 				particle.U()[OpenMps::AXIS_Z] = 0.0;
 				particle.P() = j*gradp;
