@@ -1516,10 +1516,12 @@ namespace { namespace OpenMps
 							const auto dx = x - thisX;
 							const auto r2 = ublas::inner_prod(dx, dx);
 							const Vector result = ((p + thisP) / r2 * Particle::W(std::sqrt(r2), r_e)) * dx;
+							printf("[gradp midp] thisP: %f, p: %f, result: %f,%f\n", thisP, p, result[OpenMps::AXIS_X], result[OpenMps::AXIS_Z]);
 							return result;
 						}
 						else
 						{
+							printf("[gradp midp] thisP: %f, p: %f, dummy\n", thisP, p);
 							return VectorZero;
 						}
 					});
@@ -1536,6 +1538,7 @@ namespace { namespace OpenMps
 						[this, &r_e, &dt, &rho, &n0, &minPparticle](const Vector& sum, const Particle::Ptr& particle)
 					{
 						auto du = particle->PressureGradientTo(*this, (*minPparticle)->p, r_e, dt, rho, n0);
+						printf("[gradp center] du: %f, dv: %f\n", du[OpenMps::AXIS_X], du[OpenMps::AXIS_Z]);
 						return (Vector)(sum + du);
 					});
 #endif
