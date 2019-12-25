@@ -21,7 +21,9 @@ jobs:
       working-directory: src/googletest
 
     - name: make test
-      run: make -j4
+      run: |
+        g++ --version
+        make -j4
       working-directory: src/OpenMps/test
 
     - name: testrun
