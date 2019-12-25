@@ -1517,6 +1517,8 @@ namespace { namespace OpenMps
 							const auto r2 = ublas::inner_prod(dx, dx);
 							const Vector result = ((p + thisP) / r2 * Particle::W(std::sqrt(r2), r_e)) * dx;
 							printf("[gradp midp] thisP: %f, p: %f, result: %f,%f\n", thisP, p, result[OpenMps::AXIS_X], result[OpenMps::AXIS_Z]);
+							std::cout << typeid(result).name() << std::endl;
+							std::cout << typeid(result[OpenMps::AXIS_X]).name() << std::endl;
 							return result;
 						}
 						else
@@ -1543,7 +1545,9 @@ namespace { namespace OpenMps
 					});
 #endif
 #endif
-					printf("du: %f, dv: %f\n",d[OpenMps::AXIS_X], d[OpenMps::AXIS_Z]);
+					printf("id[%lu] du: %f, dv: %f\n",i, d[OpenMps::AXIS_X], d[OpenMps::AXIS_Z]);
+					std::cout << typeid(d).name() << std::endl;
+					std::cout << typeid(d[OpenMps::AXIS_X]).name() << std::endl;
 					du[i] = d;
 				}
 			}
