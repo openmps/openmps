@@ -450,9 +450,6 @@ namespace { namespace OpenMps
 #ifdef TEST_CONJUGATEGRADIENT
 	friend class ConjugateGradientTest;
 #endif
-#ifdef TEST_PRESSUREGRADIENT
-	friend class PressureGradientTest;
-#endif
 
 	private:
 		// 粒子リスト
@@ -1431,11 +1428,6 @@ namespace { namespace OpenMps
 		{
 			// 全粒子で
 			const auto n = particles.size();
-			for(auto i = decltype(n){0}; i < n; i++)
-			{
-				particles[i].X()[OpenMps::AXIS_Z], particles[i].U()[OpenMps::AXIS_X], particles[i].U()[OpenMps::AXIS_Z],
-				particles[i].P());
-			}
 			OMP_PARALLEL_FOR
 #ifdef SIGNED_LOOP_COUNTER
 			for (auto ii = std::make_signed_t<decltype(n)>{0}; ii < static_cast<std::make_signed_t<decltype(n)>>(n); ii++)
