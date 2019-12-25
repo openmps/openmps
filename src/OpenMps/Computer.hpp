@@ -1543,8 +1543,7 @@ namespace { namespace OpenMps
 					});
 #endif
 #endif
-					std::cout << "du[" << i << "]: += " << d[OpenMps::AXIS_X] << std::endl;
-					std::cout << "dv[" << i << "]: += " << d[OpenMps::AXIS_Z] << std::endl;
+					printf("du: %f, dv: %f\n",d[OpenMps::AXIS_X], d[OpenMps::AXIS_Z]);
 					du[i] = d;
 				}
 			}
@@ -1568,8 +1567,7 @@ namespace { namespace OpenMps
 					Vector thisDu = du[i];
 					particles[i].U() += thisDu;
 					particles[i].X() += thisDu * dt;
-					std::cout << "p[" << i << "].u: += " << thisDu[OpenMps::AXIS_X] << std::endl;
-					std::cout << "p[" << i << "].v: += " << thisDu[OpenMps::AXIS_Z] << std::endl;
+					printf("[update vel] id[%lu] u: %f, v: %f\n", i, thisDu[OpenMps::AXIS_X], thisDu[OpenMps::AXIS_Z]);
 				}
 			}
 		}
