@@ -15,7 +15,6 @@
 #include <boost/numeric/ublas/matrix.hpp>
 
 #ifdef USE_VIENNACL
-#include <viennacl/linalg/vector_operations.hpp>
 #include <viennacl/vector.hpp>
 #include <viennacl/compressed_matrix.hpp>
 #include <viennacl/linalg/inner_prod.hpp>
