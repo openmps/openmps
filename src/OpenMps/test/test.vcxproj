@@ -88,6 +88,7 @@
     <ClCompile Include="test_ComputerMatrix.cpp" />
     <ClCompile Include="test_ComputerNumberDensity.cpp" />
     <ClCompile Include="test_ComputerExplicitForces.cpp" />
+    <ClCompile Include="test_ComputerPresureGradient.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Computer.hpp" />

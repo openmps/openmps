@@ -450,6 +450,9 @@ namespace { namespace OpenMps
 #ifdef TEST_CONJUGATEGRADIENT
 	friend class ConjugateGradientTest;
 #endif
+#ifdef TEST_PRESSUREGRADIENT
+	friend class PressureGradientTest;
+#endif
 
 	private:
 		// 粒子リスト
@@ -1495,7 +1498,7 @@ namespace { namespace OpenMps
 #ifdef PRESSURE_GRADIENT_MIDPOINT
 					// 速度修正量を計算
 					// 標準MPS法：-Δt/ρ D/n_0 (p_j + p_i)/r^2 w * dx
-					const auto d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
+					const Vector d = (-dt / rho * DIM / n0) * AccumulateNeighbor<Detail::Field::Name::P, Detail::Field::Name::X, Detail::Field::Name::Type>(i, VectorZero,
 						[thisP = particle.P(), thisX = particle.X(), r_e](const auto p, const auto& x, const auto type)
 					{
 						// ダミー粒子以外
