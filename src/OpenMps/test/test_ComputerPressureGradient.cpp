@@ -112,7 +112,7 @@ namespace {
 			}
 		};
 
-        // 2次、3次の多項式からなる圧力分布のテスト
+		// 2次、3次の多項式からなる圧力分布のテスト
 		// p(x,z) = a x^2 + b z^3 
 		TEST_F(PressureGradientTest, GradValuePolynomial)
 		{
@@ -183,7 +183,7 @@ namespace {
 			}
 		}
 
-        // 三角関数からなる圧力分布のテスト
+		// 三角関数からなる圧力分布のテスト
 		// p(x,z) = a cos(kx) + b sin(kz)
 		TEST_F(PressureGradientTest, GradValueTrignometric)
 		{
