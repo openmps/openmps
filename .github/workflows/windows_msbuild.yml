@@ -3,7 +3,7 @@ name: Windows MSBuild CI
 on: [push]
 
 jobs:
-  unittest:
+  unittest_visualstudio:
     runs-on: windows-latest
 
     steps:
