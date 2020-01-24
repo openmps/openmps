@@ -22,16 +22,19 @@ namespace {
 #ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
 #endif
-	static constexpr double minX = -100.0 * l0;
-	static constexpr double minZ = -100.0 * l0;
-	static constexpr double maxX = 100.0 * l0;
-	static constexpr double maxZ = 100.0 * l0;
+	static constexpr double minX = -50.0 * l0;
+	static constexpr double minZ = -50.0 * l0;
+	static constexpr double maxX = 50.0 * l0;
+	static constexpr double maxZ = 50.0 * l0;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
 #endif
 
-	static constexpr double testAccuracy = 1e-3;
+	static constexpr double testAccuracy = 0.05;
+	static constexpr std::size_t num_x = 20;
+	static constexpr std::size_t num_z = 20;
+	static constexpr std::size_t wallMargin = 5;
 
 	namespace OpenMps
 	{
@@ -110,12 +113,10 @@ namespace {
 		};
 
         // 2次、3次の多項式からなる圧力分布のテスト
-		// p(x,z) = a x^3 + b z^2 
+		// p(x,z) = a x^2 + b z^3 
 		TEST_F(PressureGradientTest, GradValuePolynomial)
 		{
 			std::vector<OpenMps::Particle> particles;
-			static constexpr std::size_t num_x = 30;
-			static constexpr std::size_t num_z = 30;
 
 			// dlは分布関数の空間変化スケール
 			// 最小長さである粒子相互作用半径の数倍に設定
@@ -136,7 +137,7 @@ namespace {
 
 					particle.U()[OpenMps::AXIS_X] = 0.0;
 					particle.U()[OpenMps::AXIS_Z] = 0.0;
-					particle.P() = 1.0/2.0 * (xij*xij) * gradpx + 1.0/2.0 * (zij*zij) * gradpz;
+					particle.P() = 1.0/2.0 * (xij*xij) * gradpx + 1.0/3.0 * (zij*zij*zij) * gradpz;
 					particle.N() = 0.0;
 
 					particles.push_back(std::move(particle));
@@ -154,58 +155,99 @@ namespace {
 			const auto prefact = (-env.Dt()) / env.Rho;
 
 			// 壁から離れた部分で圧力勾配を解析解と比較
-			for (auto j = decltype(num_z){3}; j < num_z-3; j++)
+			for (auto j = decltype(num_z){wallMargin}; j < num_z-wallMargin; j++)
 			{
-				for (auto i = decltype(num_x){3}; i < num_x-3; i++)
+				for (auto i = decltype(num_x){wallMargin}; i < num_x-wallMargin; i++)
 				{
 					const auto id = i + num_x * j;
 					const auto xij0 = static_cast<double>(i) * l0;
 					const auto zij0 = static_cast<double>(j) * l0;
-					/*
 					const auto xij = p[id].X()[OpenMps::AXIS_X];
 					const auto zij = p[id].X()[OpenMps::AXIS_Z];
-					*/
 
 					const double du = p[id].U()[OpenMps::AXIS_X];
 					const double dv = p[id].U()[OpenMps::AXIS_Z];
-
-					/*
 					const double dx = xij - xij0;
 					const double dz = zij - zij0;
-					*/
 
 					const double dpx_analy = gradpx * xij0;
-					const double dpz_analy = gradpz * zij0;
-					/*
+					const double dpz_analy = gradpz * zij0 * zij0;
 					const double dx_analy = prefact * dpx_analy * env.Dt(); 
 					const double dz_analy = prefact * dpz_analy * env.Dt(); 
-					*/
 
-					std::cout << "[i,j] = " << i << ", " << j << ": " << std::endl;
-/*
-					std::cout << "(x,z) = " << xij0 << ", " << zij0 << std::endl;
-					std::cout << "(x',z') = " << xij << ", " << zij << std::endl;
-					*/
-					std::cout << "dpx_num/dpx_analy: " << du/prefact <<  "/" << dpx_analy << ", relErr=" << (du/prefact-dpx_analy)/dpx_analy << std::endl;
-					std::cout << "dpz_num/dpz_analy: " << dv/prefact <<  "/" << dpz_analy << ", relErr=" << (dv/prefact-dpz_analy)/dpz_analy << std::endl;
-
-/*
-					if( (du/prefact - dpx_analy) / dpx_analy < testAccuracy && (dv/prefact - dpz_analy) / dpz_analy < testAccuracy ){
-						std::cout << "o" << std::endl;
-					}else{
-						std::cout << "x" << std::endl;
-					}
-					*/
-/*
-					ASSERT_NEAR((du/prefact - dpx_analy) / dpx_analy, 0.0, testAccuracy);
-					ASSERT_NEAR((dv/prefact - dpz_analy) / dpz_analy, 0.0, testAccuracy);
-					ASSERT_NEAR((dx - dx_analy) / dx_analy, 0.0, testAccuracy);
-					ASSERT_NEAR((dz - dz_analy) / dz_analy, 0.0, testAccuracy);
-					*/
+					ASSERT_NEAR(abs((du/prefact - dpx_analy) / dpx_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(abs((dv/prefact - dpz_analy) / dpz_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(abs((dx - dx_analy) / dx_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(abs((dz - dz_analy) / dz_analy), 0.0, testAccuracy);
 				}
 			}
+		}
 
+        // 三角関数からなる圧力分布のテスト
+		// p(x,z) = a cos(kx) + b sin(kz)
+		TEST_F(PressureGradientTest, GradValueTrignometric)
+		{
+			std::vector<OpenMps::Particle> particles;
 
+			static constexpr auto wavek = 2.0*M_PI / (10.0*r_eByl_0);
+			static constexpr auto gradpx = 1.0;
+			static constexpr auto gradpz = -1.0;
+
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			{
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i) * l0;
+					const auto zij = static_cast<double>(j) * l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = 0.0;
+					particle.U()[OpenMps::AXIS_Z] = 0.0;
+					particle.P() = gradpx * cos(wavek*xij) + gradpz * sin(wavek*zij);
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
+
+			SearchNeighbor();
+			ComputeNeighborDensities();
+
+			ModifyByPressureGradientTest();
+
+			auto p = GetParticles();
+			auto env = GetEnvironment();
+			const auto prefact = (-env.Dt()) / env.Rho;
+
+			for (auto j = decltype(num_z){wallMargin}; j < num_z-wallMargin; j++)
+			{
+				for (auto i = decltype(num_x){wallMargin}; i < num_x-wallMargin; i++)
+				{
+					const auto id = i + num_x * j;
+					const auto xij0 = static_cast<double>(i) * l0;
+					const auto zij0 = static_cast<double>(j) * l0;
+					const auto xij = p[id].X()[OpenMps::AXIS_X];
+					const auto zij = p[id].X()[OpenMps::AXIS_Z];
+
+					const double du = p[id].U()[OpenMps::AXIS_X];
+					const double dv = p[id].U()[OpenMps::AXIS_Z];
+					const double dx = xij - xij0;
+					const double dz = zij - zij0;
+
+					const double dpx_analy = -gradpx * sin(wavek * xij) * wavek;
+					const double dpz_analy = gradpz * cos(wavek * zij) * wavek;
+					const double dx_analy = prefact * dpx_analy * env.Dt(); 
+					const double dz_analy = prefact * dpz_analy * env.Dt(); 
+
+					ASSERT_NEAR(abs((du/prefact - dpx_analy) / dpx_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(abs((dv/prefact - dpz_analy) / dpz_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(abs((dx - dx_analy) / dx_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(abs((dz - dz_analy) / dz_analy), 0.0, testAccuracy);
+				}
+			}
 		}
 
 
