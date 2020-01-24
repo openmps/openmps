@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+ï»¿#include <gtest/gtest.h>
 
 #define TEST_CONJUGATEGRADIENT
 #include "../Computer.hpp"
@@ -27,7 +27,7 @@ namespace {
 	static constexpr double maxX = l0;
 	static constexpr double maxZ = l0;
 
-	// ‹–—e‚·‚é‘Š‘ÎŒë·
+	// è¨±å®¹ã™ã‚‹ç›¸å¯¾èª¤å·®
 	static constexpr double testAccuracy = 1e-3;
 
 
@@ -182,11 +182,11 @@ namespace {
 			ASSERT_NEAR(ppe.x(3), 8.0, testAccuracy);
 		}
 
-		// 1ŸŒ³í”÷•ª•û’ö® d^2f/dx^2 = x ‚ğ‹¤–ğŒù”z–@‚Å‰ğ‚«A‰ğÍ‰ğ‚Æ”äŠr
-		// f(0) = a,  f(1) = b ‚Ì‚Æ‚«Af(x) = 1/6 x^3 + (b-a-1/6)x + a
+		// 1æ¬¡å…ƒå¸¸å¾®åˆ†æ–¹ç¨‹å¼ d^2f/dx^2 = x ã‚’å…±å½¹å‹¾é…æ³•ã§è§£ãã€è§£æè§£ã¨æ¯”è¼ƒ
+		// f(0) = a,  f(1) = b ã®ã¨ãã€f(x) = 1/6 x^3 + (b-a-1/6)x + a
 		TEST_F(ConjugateGradientTest, Solve1dODE)
 		{
-			constexpr auto nx = 10; // ‹«ŠE‚ğŠÜ‚ß‚½“_”‚ªnx+2
+			constexpr auto nx = 10; // å¢ƒç•Œã‚’å«ã‚ãŸç‚¹æ•°ãŒnx+2
 			constexpr double dx = 1.0 / (nx + 1);
 			constexpr double dx2 = dx * dx;
 
@@ -218,7 +218,7 @@ namespace {
 
 			SolvePressurePoissonEquation();
 
-			// ‰ğÍ‰ğ‚Æ‚Ì‘Š‘ÎŒë·‚ğŒvZ
+			// è§£æè§£ã¨ã®ç›¸å¯¾èª¤å·®ã‚’è¨ˆç®—
 			double diff = 0.0;
 			for (auto j = decltype(nx){0}; j < nx; j++)
 			{

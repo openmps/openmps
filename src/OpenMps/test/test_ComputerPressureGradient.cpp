@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+﻿#include <gtest/gtest.h>
 
 #define TEST_PRESSUREGRADIENT
 #include "../Computer.hpp"
@@ -154,7 +154,7 @@ namespace {
 			auto p = GetParticles();
 			auto env = GetEnvironment();
 			const auto prefact = (-env.Dt()) / env.Rho;
-
+			
 			// 壁から離れた部分で圧力勾配を解析解と比較
 			for (auto j = decltype(num_z){wallMargin}; j < num_z-wallMargin; j++)
 			{
