@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
+﻿#include <gtest/gtest.h>
 
 #define TEST_PRESSUREGRADIENT
 #include "../Computer.hpp"
 #include <cmath>
 #include <iostream>
+#include <boost/math/constants/constants.hpp>
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
@@ -72,13 +73,12 @@ namespace {
 				environment.Dt() = dt_step;
 				environment.SetNextT();
 
-				computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(
-					OpenMps::CreateComputer(
+				computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(
 #ifndef PRESSURE_EXPLICIT
 						eps,
 #endif
 						environment,
-						positionWall, positionWallPre)));
+						positionWall, positionWallPre);
 			}
 
 			auto& GetEnvironment()
@@ -153,7 +153,7 @@ namespace {
 			auto p = GetParticles();
 			auto env = GetEnvironment();
 			const auto prefact = (-env.Dt()) / env.Rho;
-
+			
 			// 壁から離れた部分で圧力勾配を解析解と比較
 			for (auto j = decltype(num_z){wallMargin}; j < num_z-wallMargin; j++)
 			{
@@ -189,7 +189,9 @@ namespace {
 		{
 			std::vector<OpenMps::Particle> particles;
 
-			static constexpr auto wavek = 2.0*M_PI / (10.0*r_eByl_0);
+			constexpr auto PI = boost::math::constants::pi<double>();
+
+			static constexpr auto wavek = 2.0*PI / (10.0*r_eByl_0);
 			static constexpr auto gradpx = 1.0;
 			static constexpr auto gradpz = -1.0;
 

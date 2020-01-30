@@ -69,13 +69,12 @@ namespace OpenMps
 			);
 
 
-			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(
-				OpenMps::CreateComputer(
+			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(
 	#ifndef PRESSURE_EXPLICIT
 					eps,
 	#endif
 					environment,
-					positionWall, positionWallPre)));
+					positionWall, positionWallPre);
 
 			std::vector<OpenMps::Particle> particles;
 
