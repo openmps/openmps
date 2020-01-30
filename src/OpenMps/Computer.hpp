@@ -833,7 +833,7 @@ namespace { namespace OpenMps
 #if !defined(PRESSURE_EXPLICIT) || defined(MPS_ECS)
 		// 粒子数密度の瞬間増加速度(Dn/Dt)を計算する
 		// @param i 対象の粒子番号
-		auto NeighborDensitiyVariationSpeed(const std::size_t i)
+		auto NeighborDensityVariationSpeed(const std::size_t i)
 		{
 #ifdef MPS_HS
 			const auto r_e = environment.R_e;
@@ -900,7 +900,7 @@ namespace { namespace OpenMps
 					// ECS法の誤差修正項：α Dn/Dt + β (n-n0)/n0
 					// α=|(n-n0)/n0|
 					// β=|Dn/Dt|
-					const auto speed = NeighborDensitiyVariationSpeed(i);
+					const auto speed = NeighborDensityVariationSpeed(i);
 					const auto error = (thisN - n0) / n0;
 					ecs[i] = std::abs(error) * speed + std::abs(speed) * error;
 				}
@@ -1203,7 +1203,7 @@ namespace { namespace OpenMps
 				else
 				{
 					// 生成項を計算する：ρ/n0 Δt -Dn/Dt
-					const auto speed = NeighborDensitiyVariationSpeed(i);
+					const auto speed = NeighborDensityVariationSpeed(i);
 #ifdef MPS_ECS
 					const auto e = ecs[i];
 					ppe.b(i) = -rho / (n0 * dt) * (speed + e);
