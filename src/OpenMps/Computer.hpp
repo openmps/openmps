@@ -453,6 +453,9 @@ namespace { namespace OpenMps
 #ifdef TEST_PRESSUREGRADIENT
 	friend class PressureGradientTest;
 #endif
+#ifdef TEST_NEIGHBORDENSITY
+	friend class NeighborDensityTest;
+#endif
 
 	private:
 		// 粒子リスト
