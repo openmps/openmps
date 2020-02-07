@@ -123,6 +123,7 @@ namespace {
 
 			auto env = GetEnvironment();
 
+			// 粒子を(num_x, num_z)格子上に配置
 			for (auto j = decltype(num_z){0}; j < num_z; j++)
 			{
 				for (auto i = decltype(num_x){0}; i < num_x; i++)
@@ -143,11 +144,11 @@ namespace {
 			}
 			computer->AddParticles(std::move(particles));
 
+			// 追加した粒子に対して近傍探索処理
 			SearchNeighbor();
 			ComputeNeighborDensities();
 
 			auto p = GetParticles();
-			const auto prefact = (-env.Dt()) / env.Rho;
 
 			// wallMargin だけ離れた、中心付近において数値解と解析解を比較
 			for (auto j = decltype(num_z){wallMargin}; j < num_z - wallMargin; j++)
@@ -198,7 +199,6 @@ namespace {
 			ComputeNeighborDensities();
 
 			auto p = GetParticles();
-			const auto prefact = (-env.Dt()) / env.Rho;
 
 			for (auto j = decltype(num_z){wallMargin}; j < num_z - wallMargin; j++)
 			{
