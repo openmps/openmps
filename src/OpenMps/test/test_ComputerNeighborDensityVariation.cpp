@@ -2,9 +2,6 @@
 
 #define TEST_NEIGHBORDENSITY
 #include "../Computer.hpp"
-#include <cmath>
-#include <iostream>
-#include <boost/math/constants/constants.hpp>
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
