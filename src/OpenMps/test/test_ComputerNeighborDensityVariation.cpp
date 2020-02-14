@@ -148,9 +148,9 @@ namespace {
 			auto p = GetParticles();
 
 			// wallMargin だけ離れた、中心付近において数値解と解析解を比較
-			for (auto j = decltype(num_z){wallMargin}; j < num_z - wallMargin; j++)
+			for (auto j = wallMargin; j < num_z - wallMargin; j++)
 			{
-				for (auto i = decltype(num_x){wallMargin}; i < num_x - wallMargin; i++)
+				for (auto i = wallMargin; i < num_x - wallMargin; i++)
 				{
 					const auto id = i + num_x * j;
 					const auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
@@ -197,9 +197,9 @@ namespace {
 
 			auto p = GetParticles();
 
-			for (auto j = decltype(num_z){wallMargin}; j < num_z - wallMargin; j++)
+			for (auto j = wallMargin; j < num_z - wallMargin; j++)
 			{
-				for (auto i = decltype(num_x){wallMargin}; i < num_x - wallMargin; i++)
+				for (auto i = wallMargin; i < num_x - wallMargin; i++)
 				{
 					const auto id = i + num_x * j;
 					const auto xij = static_cast<double>(i)* l0;
