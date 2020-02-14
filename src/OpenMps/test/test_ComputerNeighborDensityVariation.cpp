@@ -110,7 +110,7 @@ namespace {
 		};
 
 		// 粒子は等間隔l0の格子上(num_x,num_z)に配置
-		// (u,v) = (ax,bz) 型の、発散が -(a+b) である速度場を与える
+		// (u,v) = (gradx x, gradz z) で発散が (gradx + gradz) である速度場を与える
 		TEST_F(NeighborDensityTest, ValueTestLinear)
 		{
 			std::vector<OpenMps::Particle> particles;
@@ -153,8 +153,8 @@ namespace {
 				for (auto i = decltype(num_x){wallMargin}; i < num_x - wallMargin; i++)
 				{
 					const auto id = i + num_x * j;
-					auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
-					auto dndt_analy = -(gradvx + gradvz);
+					const auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
+					const auto dndt_analy = -(gradvx + gradvz);
 
 					ASSERT_NEAR(std::abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
 				}
@@ -162,7 +162,7 @@ namespace {
 		}
 
 		// 粒子は等間隔l0の格子上(num_x,num_z)に配置
-		// (u,v) = (ax^2,bz^3) 型の、発散が -(2ax+3bz) である速度場を与える
+		// (u,v) = (1/2 gradx x^2,1/3 gradz z^3) で、発散が (gradx x + gradz z^3) である速度場を与える
 		TEST_F(NeighborDensityTest, ValueTestPolynomial)
 		{
 			std::vector<OpenMps::Particle> particles;
@@ -205,8 +205,8 @@ namespace {
 					const auto xij = static_cast<double>(i)* l0;
 					const auto zij = static_cast<double>(j)* l0;
 
-					auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
-					auto dndt_analy = -(gradvx * xij + gradvz * zij * zij);
+					const auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
+					const auto dndt_analy = -(gradvx * xij + gradvz * zij * zij);
 
 					ASSERT_NEAR(std::abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
 				}
