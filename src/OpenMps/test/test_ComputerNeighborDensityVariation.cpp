@@ -156,7 +156,7 @@ namespace {
 					auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
 					auto dndt_analy = -(gradvx + gradvz);
 
-					ASSERT_NEAR(abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(std::abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
 				}
 			}
 		}
@@ -208,7 +208,7 @@ namespace {
 					auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
 					auto dndt_analy = -(gradvx * xij + gradvz * zij * zij);
 
-					ASSERT_NEAR(abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
+					ASSERT_NEAR(std::abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
 				}
 			}
 		}
