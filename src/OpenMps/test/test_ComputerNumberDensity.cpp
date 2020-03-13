@@ -69,13 +69,12 @@ namespace OpenMps
 			);
 
 
-			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(
-				OpenMps::CreateComputer(
+			computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(
 	#ifndef PRESSURE_EXPLICIT
 					eps,
 	#endif
 					environment,
-					positionWall, positionWallPre)));
+					positionWall, positionWallPre);
 
 			std::vector<OpenMps::Particle> particles;
 
@@ -272,7 +271,8 @@ namespace OpenMps
 		// テキスト Koshizuka et al.,2014 による値と比較
 		// ID 24は中心粒子を表す。初期粒子IDが近傍探索処理後も維持されるという仮定に注意
 		static constexpr double density_koshizuka2014 = 6.539696962;
-		ASSERT_NEAR(particles[24].N(), density_koshizuka2014, 1e-5);
+		constexpr auto id = (num_x - 1) / 2 * (num_z + 1);
+		ASSERT_NEAR(particles[id].N(), density_koshizuka2014, 1e-5);
 	}
 }
 }

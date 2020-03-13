@@ -67,14 +67,12 @@ namespace OpenMps
 				maxX, maxZ
 				);
 
-			OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&> comp = OpenMps::CreateComputer(
+			computer = new OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&>(
 #ifndef PRESSURE_EXPLICIT
 				eps,
 #endif
 				environment,
 				positionWall, positionWallPre);
-
-			computer = new OpenMps::Computer<decltype(positionWall)&,decltype(positionWallPre)&>(std::move(comp));
 
 			std::vector<OpenMps::Particle> particles;
 

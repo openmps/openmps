@@ -76,13 +76,12 @@ namespace {
 				environment.Dt() = dt_step;
 				environment.SetNextT();
 
-				computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(std::move(
-					OpenMps::CreateComputer(
+				computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(
 #ifndef PRESSURE_EXPLICIT
 						eps,
 #endif
 						environment,
-						positionWall, positionWallPre)));
+						positionWall, positionWallPre);
 
 				std::vector<OpenMps::Particle> particles0;
 
@@ -172,7 +171,7 @@ namespace {
 			SetPressurePoissonEquation();
 
 			auto& ppe = getPpe();
-			const auto Ndim = num_x * num_z;
+			constexpr auto Ndim = num_x * num_z;
 
 			ASSERT_EQ(ppe.b.size(), Ndim);
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
@@ -196,19 +195,19 @@ namespace {
 			SetPressurePoissonEquation();
 
 			auto& ppe = getPpe();
-			const auto Ndim = num_x * num_z;
+			constexpr auto Ndim = num_x * num_z;
 
-			const auto ic = (num_x - 1) / 2 * (num_z + 1); // 中央粒子のindex
+			constexpr auto id = (num_x - 1) / 2 * (num_z + 1); // 中央粒子のindex
 
 			double sum_nondiag = 0.0;
 			for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 			{
-				if (j != ic)
+				if (j != id)
 				{
-					sum_nondiag += ppe.A(ic, j); // disable,dummy,free surface particleは寄与しない
+					sum_nondiag += ppe.A(id, j); // disable,dummy,free surface particleは寄与しない
 				}
 			}
-			ASSERT_NEAR(ppe.A(ic, ic), -sum_nondiag, testAccuracy);
+			ASSERT_NEAR(ppe.A(id, id), -sum_nondiag, testAccuracy);
 		}
 
 		// 粒子i の 近傍粒子j に対応する成分が a_ij != 0 であること
@@ -220,7 +219,7 @@ namespace {
 			SetPressurePoissonEquation();
 
 			auto& ppe = getPpe();
-			const auto Ndim = num_x * num_z;
+			constexpr auto Ndim = num_x * num_z;
 			const auto& particles = GetParticles();
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
