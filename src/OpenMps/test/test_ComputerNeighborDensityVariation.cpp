@@ -153,7 +153,7 @@ namespace {
 				for (auto i = wallMargin; i < num_x - wallMargin; i++)
 				{
 					const auto id = i + num_x * j;
-					const auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
+					const auto dndt = NeighborDensityVariationSpeed(id) / p[id].N();
 					const auto dndt_analy = -(gradvx + gradvz);
 
 					ASSERT_NEAR(std::abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
@@ -205,7 +205,7 @@ namespace {
 					const auto xij = static_cast<double>(i)* l0;
 					const auto zij = static_cast<double>(j)* l0;
 
-					const auto dndt = NeighborDensityVariationSpeed(id) / p[i].N();
+					const auto dndt = NeighborDensityVariationSpeed(id) / p[id].N();
 					const auto dndt_analy = -(gradvx * xij + gradvz * zij * zij);
 
 					ASSERT_NEAR(std::abs((dndt - dndt_analy) / dndt_analy), 0.0, testAccuracy);
