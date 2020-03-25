@@ -964,8 +964,8 @@ namespace { namespace OpenMps
 #else
 							const double w = Particle::W(r, r_e);
 #ifdef MPS_1L
-							// 1次精度ラプラシアン：ν*D^2/n_0 (u_j - u_i)/r^2 w
-							const Vector result = (nu * DIM * DIM / n0 * w / (r*r)) * (u - thisU);
+							// 1次精度ラプラシアン：ν*2D/n_0 (u_j - u_i)/r^2 w
+							const Vector result = (nu * 2 * DIM / n0 * w / (r*r)) * (u - thisU);
 #else
 							// 標準MPS法：ν*2D/λn0 (u_j - u_i) w
 							const Vector result = (nu * 2 * DIM / lambda / n0 * w)*(u - thisU);
@@ -1296,8 +1296,8 @@ namespace { namespace OpenMps
 #else
 							const auto w = Particle::W(r, r_e);
 #ifdef MPS_1L
-							// 1次精度ラプラシアン：D^2/n_0 w/r^2
-							const auto a_ij = DIM * DIM / n0 * w / (r * r);
+							// 1次精度ラプラシアン：2D/n_0 w/r^2
+							const auto a_ij = 2 * DIM / n0 * w / (r * r);
 #else
 							// 標準MPS法：2D/(λn0) w
 							const auto a_ij = (2 * DIM / lambda / n0) * w;
