@@ -130,11 +130,11 @@ namespace {
 				computer->SolvePressurePoissonEquation();
 			}
 
-			bool IsAlive(const Particle& p, const Environment& env)
+			bool IsAlive(const Particle& p)
 			{
 				return (p.TYPE() != Particle::Type::Dummy) && (p.TYPE() != Particle::Type::Disabled)
 #ifndef MPS_SPP
-					&& !OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), env.N0(), surfaceRatio)
+					&& !OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), computer->GetEnvironment().N0(), surfaceRatio)
 #endif
 					;
 			}
@@ -287,7 +287,7 @@ namespace {
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
-				if (!IsAlive(particles[i], env))
+				if (!IsAlive(particles[i]))
 				{
 					continue;
 				}
@@ -296,7 +296,7 @@ namespace {
 				for (auto idx = decltype(i){0}; idx < NeighborCount(i); idx++)
 				{
 					const auto j = Neighbor(i, idx);
-					if (IsAlive(particles[j], env))
+					if (IsAlive(particles[j]))
 					{
 						neighList.push_back(j);
 					}
@@ -358,7 +358,7 @@ namespace {
 				{
 					const auto id = ix + num_x * iz;
 
-					if (IsAlive(p[id], env))
+					if (IsAlive(p[id]))
 					{
 						const auto drhodt_analy = -(gradvx + gradvz) * p[id].N();
 						const auto b_analy = -env.Rho / (env.Dt() * env.N0()) * drhodt_analy;
@@ -421,7 +421,7 @@ namespace {
 							// 対角成分の値/行列の対称性は別テストに任せるため、本テストでは行列の半分のみ調べる
 							// + 計算に含めない粒子 と 隣接していない粒子 に対応する成分を除外
 							if (id_i >= id_j ||
-								(!IsAlive(p[id_i], env) || !IsAlive(p[id_j], env)) ||
+								(!IsAlive(p[id_i]) || !IsAlive(p[id_j])) ||
 								ppe.A(id_i, id_j) == 0.0)
 							{
 								continue;
