@@ -313,8 +313,8 @@ namespace {
 			}
 		}
 
-		// 行列成分値の解析値との一致をテスト
-		TEST_F(ImplicitForcesTest, MatrixValueTest)
+		// 粒子配置・速度に応じた密度変化であるベクトルbの値を解析解と比較
+		TEST_F(ImplicitForcesTest, VectorValue)
 		{
 			std::vector<OpenMps::Particle> particles;
 
@@ -362,10 +362,49 @@ namespace {
 					{
 						const auto drhodt_analy = -(gradvx + gradvz) * p[id].N();
 						const auto b_analy = -env.Rho / (env.Dt() * env.N0()) * drhodt_analy;
-						ASSERT_NEAR(std::abs((ppe.b(id) - b_analy) / b_analy), 0.0, testAccuracyDerv);
+						ASSERT_NEAR(std::abs((ppe.b(id) - b_analy) / b_analy), 0.0, testAccuracyDerv); // 微分値の比較なので許容誤差をゆるく取っている
 					}
 				}
 			}
+		}
+
+		// ラプラシアンの離散化から決まる係数である行列の成分をテスト
+		TEST_F(ImplicitForcesTest, MatrixValue)
+		{
+			std::vector<OpenMps::Particle> particles;
+
+			static constexpr auto gradvx = 1.0;
+			static constexpr auto gradvz = -0.3;
+
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			{
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i)* l0;
+					const auto zij = static_cast<double>(j)* l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = gradvx * xij;
+					particle.U()[OpenMps::AXIS_Z] = gradvz * zij;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
+
+			SearchNeighbor();
+			ComputeNeighborDensities();
+
+			SetPressurePoissonEquation();
+
+			auto& ppe = getPpe();
+
+			auto env = GetEnvironment();
+			auto p = GetParticles();
 
 			// 粒子i,jの格子座標(ix,iz), (jx,jz)
 			for (auto jz = decltype(num_z){wallMargin}; jz < num_z - wallMargin; jz++)
@@ -392,8 +431,15 @@ namespace {
 							const auto dzij = (static_cast<double>(iz) - static_cast<double>(jz))* l0;
 							const auto Rij = std::sqrt((dxij) * (dxij)+(dzij) * (dzij));
 
+#ifdef MPS_HL
+							// HL法（高精度ラプラシアン）: (5-D)r_e/n0 / r^3
 							const auto Aij_analy = (5 - DIM) * env.R_e / env.N0() / (Rij * Rij * Rij);
-							ASSERT_NEAR(std::abs((ppe.A(id_i, id_j) - Aij_analy) / ppe.A(id_i, id_j)), 0.0, testAccuracyDerv);
+#else
+							// 標準MPS法：2D/(λn0) w
+							const auto w = Particle::W(Rij, env.R_e);
+							const auto Aij_analy = (2 * DIM / env.Lambda() / env.N0()) * w;
+#endif
+							ASSERT_NEAR(std::abs((ppe.A(id_i, id_j) - Aij_analy) / ppe.A(id_i, id_j)), 0.0, testAccuracy);
 
 						}
 					}
