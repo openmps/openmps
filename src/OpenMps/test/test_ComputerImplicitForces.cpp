@@ -25,6 +25,9 @@ namespace {
 	static constexpr std::size_t num_x = 15;
 	static constexpr std::size_t num_z = 15;
 
+	static constexpr std::size_t num_x_small = 6;
+	static constexpr std::size_t num_z_small = 6;
+
 	// サイズ上限を 横 4*l0*num_x, 縦 4*l0*num_z とする
 	static constexpr double minX = -l0 * num_x * 2;
 	static constexpr double minZ = -l0 * num_z * 2;
@@ -165,9 +168,9 @@ namespace {
 		{
 			std::vector<OpenMps::Particle> particles;
 			// 粒子を(num_x, num_z)格子上に配置
-			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			for (auto j = decltype(num_z_small){0}; j < num_z_small; j++)
 			{
-				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				for (auto i = decltype(num_x_small){0}; i < num_x_small; i++)
 				{
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					const auto xij = static_cast<double>(i)* l0;
@@ -190,19 +193,22 @@ namespace {
 			SetPressurePoissonEquation();
 
 			auto& ppe = getPpe();
-			constexpr auto Ndim = num_x * num_z;
-
+			constexpr auto Ndim = num_x_small * num_z_small;
 			ASSERT_EQ(ppe.b.size(), Ndim);
+
+			auto err = 0.0;
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
 				for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 				{
-					if (j != i)
+					if (j < i)
 					{
-						ASSERT_NEAR(ppe.A(i, j) - ppe.A(j, i), 0.0, testAccuracy);
+						auto dA = ppe.A(i, j) - ppe.A(j, i);
+						err += dA * dA;
 					}
 				}
 			}
+			ASSERT_NEAR(std::sqrt(err), 0.0, testAccuracy);
 		}
 
 		// 係数行列 a_ii = -Σa_ij (i!=j) という恒等式は成立するか？
@@ -257,9 +263,9 @@ namespace {
 		{
 			std::vector<OpenMps::Particle> particles;
 			// 粒子を(num_x, num_z)格子上に配置
-			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			for (auto j = decltype(num_z_small){0}; j < num_z_small; j++)
 			{
-				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				for (auto i = decltype(num_x_small){0}; i < num_x_small; i++)
 				{
 					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
 					const auto xij = static_cast<double>(i)* l0;
@@ -283,7 +289,7 @@ namespace {
 
 			auto env = GetEnvironment();
 			auto& ppe = getPpe();
-			constexpr auto Ndim = num_x * num_z;
+			constexpr auto Ndim = num_x_small * num_z_small;
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
