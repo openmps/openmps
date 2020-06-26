@@ -348,7 +348,6 @@ namespace {
 			SetPressurePoissonEquation();
 
 			auto& ppe = getPpe();
-			constexpr auto Ndim = num_x * num_z;
 
 			auto env = GetEnvironment();
 			auto p = GetParticles();
@@ -389,15 +388,12 @@ namespace {
 								continue;
 							}
 
-							if (IsAlive(p[id_i], env) && IsAlive(p[id_j], env))
-							{
-								const auto dxij = (static_cast<double>(ix) - static_cast<double>(jx))* l0;
-								const auto dzij = (static_cast<double>(iz) - static_cast<double>(jz))* l0;
-								const auto Rij = std::sqrt((dxij) * (dxij)+(dzij) * (dzij));
+							const auto dxij = (static_cast<double>(ix) - static_cast<double>(jx))* l0;
+							const auto dzij = (static_cast<double>(iz) - static_cast<double>(jz))* l0;
+							const auto Rij = std::sqrt((dxij) * (dxij)+(dzij) * (dzij));
 
-								const auto Aij_analy = (5 - DIM) * env.R_e / env.N0() / (Rij * Rij * Rij);
-								ASSERT_NEAR(std::abs((ppe.A(id_i, id_j) - Aij_analy) / ppe.A(id_i, id_j)), 0.0, testAccuracyDerv);
-							}
+							const auto Aij_analy = (5 - DIM) * env.R_e / env.N0() / (Rij * Rij * Rij);
+							ASSERT_NEAR(std::abs((ppe.A(id_i, id_j) - Aij_analy) / ppe.A(id_i, id_j)), 0.0, testAccuracyDerv);
 
 						}
 					}
