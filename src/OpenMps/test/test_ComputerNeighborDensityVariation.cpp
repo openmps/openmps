@@ -1,6 +1,6 @@
 ﻿#include <gtest/gtest.h>
 
-#define TEST_NEIGHBORDENSITY
+#define TEST_NEIGHBORDENSITYVARIATION
 #include "../Computer.hpp"
 
 namespace {
@@ -46,7 +46,7 @@ namespace {
 			return 0.0;
 		}
 
-		class NeighborDensityTest : public ::testing::Test
+		class NeighborDensityVariationTest : public ::testing::Test
 		{
 		protected:
 			OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>* computer;
@@ -111,7 +111,7 @@ namespace {
 
 		// 粒子は等間隔l0の格子上(num_x,num_z)に配置
 		// (u,v) = (gradx x, gradz z) で発散が (gradx + gradz) である速度場を与える
-		TEST_F(NeighborDensityTest, ValueTestLinear)
+		TEST_F(NeighborDensityVariationTest, ValueTestLinear)
 		{
 			std::vector<OpenMps::Particle> particles;
 
@@ -163,7 +163,7 @@ namespace {
 
 		// 粒子は等間隔l0の格子上(num_x,num_z)に配置
 		// (u,v) = (1/2 gradx x^2,1/3 gradz z^3) で、発散が (gradx x + gradz z^3) である速度場を与える
-		TEST_F(NeighborDensityTest, ValueTestPolynomial)
+		TEST_F(NeighborDensityVariationTest, ValueTestPolynomial)
 		{
 			std::vector<OpenMps::Particle> particles;
 
