@@ -5,35 +5,44 @@
 
 namespace {
 #ifndef PRESSURE_EXPLICIT
-	static constexpr double eps = 1e-7;
+	static constexpr double eps = 1e-10;
 #endif
 
 	static constexpr double dt_step = 1.0 / 100;
 	static constexpr double courant = 0.1;
 
-	static constexpr double l0 = 0.01;
+	static constexpr double l0 = 1.0;
 	static constexpr double g = 9.8;
 
 	static constexpr double rho = 998.2;
 	static constexpr double nu = 1.004e-06;
-	static constexpr double r_eByl_0 = 1.5; // テスト用の簡略化として, 小さめに設定.
+	static constexpr double r_eByl_0 = 5.0;
 
 #ifndef MPS_SPP
 	static constexpr double surfaceRatio = 0.95;
 #endif
 	// 格子状に配置する際の1辺あたりの粒子数
-	static constexpr std::size_t num_x = 7;
-	static constexpr std::size_t num_z = 7;
+	static constexpr std::size_t num_x = 15;
+	static constexpr std::size_t num_z = 15;
 
-	// サイズ上限を 横 2*l0*num_x, 縦 2*l0*num_z とする
-	static constexpr double minX = -l0 * num_x;
-	static constexpr double minZ = -l0 * num_z;
-	static constexpr double maxX = l0 * num_x;
-	static constexpr double maxZ = l0 * num_z;
+	static constexpr std::size_t num_x_small = 6;
+	static constexpr std::size_t num_z_small = 6;
 
-	// 許容する相対誤差
+	// サイズ上限を 横 4*l0*num_x, 縦 4*l0*num_z とする
+	static constexpr double minX = -l0 * num_x * 2;
+	static constexpr double minZ = -l0 * num_z * 2;
+	static constexpr double maxX = l0 * num_x * 2;
+	static constexpr double maxZ = l0 * num_z * 2;
+
+	// 数値解/解析解を比較する際、壁の影響を排除するためのマージン
+	static constexpr std::size_t wallMargin = 6;
+
 	static constexpr double testAccuracy = 1e-3;
 
+	// 数値的に微分を評価する場合に許容する相対誤差
+	// 粒子数(num_x,num_z) と 近傍粒子の範囲r_eByl_0 を大きくすれば、より高精度が達成できる
+	// 計算負荷の都合で 10% としている
+	static constexpr double testAccuracyDerv = 1e-1;
 
 #ifdef PRESSURE_EXPLICIT
 	static constexpr double c = 1.0;
@@ -78,33 +87,10 @@ namespace {
 
 				computer = new OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>(
 #ifndef PRESSURE_EXPLICIT
-						eps,
+					eps,
 #endif
-						environment,
-						positionWall, positionWallPre);
-
-				std::vector<OpenMps::Particle> particles0;
-
-				for (auto j = decltype(num_z){0}; j < num_z; j++)
-				{
-					for (auto i = decltype(num_x){0}; i < num_x; i++)
-					{
-
-						auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
-						const double x = i * l0;
-						const double z = j * l0;
-						particle.X()[OpenMps::AXIS_X] = x;
-						particle.X()[OpenMps::AXIS_Z] = z;
-
-						particle.U()[OpenMps::AXIS_X] = 0.0;
-						particle.U()[OpenMps::AXIS_Z] = 0.0;
-						particle.P() = 0.0;
-						particle.N() = 0.0;
-
-						particles0.push_back(std::move(particle));
-					}
-				}
-				computer->AddParticles(std::move(particles0));
+					environment,
+					positionWall, positionWallPre);
 			}
 
 			auto& GetParticles()
@@ -149,7 +135,11 @@ namespace {
 
 			bool IsAlive(const Particle& p)
 			{
-				return p.TYPE() != Particle::Type::Dummy && p.TYPE() != Particle::Type::Disabled;
+				return (p.TYPE() != Particle::Type::Dummy) && (p.TYPE() != Particle::Type::Disabled)
+#ifndef MPS_SPP
+					&& !OpenMps::Computer<decltype(positionWall)&, decltype(positionWallPre)&>::IsSurface(p.N(), computer->GetEnvironment().N0(), surfaceRatio)
+#endif
+					;
 			}
 
 			auto& getPpe()
@@ -161,35 +151,92 @@ namespace {
 			{
 				delete computer;
 			}
+
+			auto NeighborDensityVariationSpeed(const std::size_t i)
+			{
+				return computer->NeighborDensityVariationSpeed(i);
+			}
+
+			auto& GetEnvironment()
+			{
+				return computer->GetEnvironment();
+			}
 		};
 
 		// 係数行列は対称行列であるか？
 		TEST_F(ImplicitForcesTest, MatrixSymmetry)
 		{
+			std::vector<OpenMps::Particle> particles;
+			// 粒子を(num_x, num_z)格子上に配置
+			for (auto j = decltype(num_z_small){0}; j < num_z_small; j++)
+			{
+				for (auto i = decltype(num_x_small){0}; i < num_x_small; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i)* l0;
+					const auto zij = static_cast<double>(j)* l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = 0.0;
+					particle.U()[OpenMps::AXIS_Z] = 0.0;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
+
 			SearchNeighbor();
 			ComputeNeighborDensities();
 			SetPressurePoissonEquation();
 
 			auto& ppe = getPpe();
-			constexpr auto Ndim = num_x * num_z;
-
+			constexpr auto Ndim = num_x_small * num_z_small;
 			ASSERT_EQ(ppe.b.size(), Ndim);
+
+			auto err = 0.0;
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
 				for (auto j = decltype(Ndim){0}; j < Ndim; j++)
 				{
-					if (j != i)
+					if (j < i)
 					{
-						ASSERT_NEAR(ppe.A(i, j) - ppe.A(j, i), 0.0, testAccuracy);
+						auto dA = ppe.A(i, j) - ppe.A(j, i);
+						err += dA * dA;
 					}
 				}
 			}
+			ASSERT_NEAR(std::sqrt(err), 0.0, testAccuracy);
 		}
 
 		// 係数行列 a_ii = -Σa_ij (i!=j) という恒等式は成立するか？
 		// 境界から離れた中央粒子においてテスト
 		TEST_F(ImplicitForcesTest, MatrixDiagIdentity)
 		{
+			std::vector<OpenMps::Particle> particles;
+			// 粒子を(num_x, num_z)格子上に配置
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			{
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i)* l0;
+					const auto zij = static_cast<double>(j)* l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = 0.0;
+					particle.U()[OpenMps::AXIS_Z] = 0.0;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+
+			computer->AddParticles(std::move(particles));
 			SearchNeighbor();
 			ComputeNeighborDensities();
 			SetPressurePoissonEquation();
@@ -207,20 +254,42 @@ namespace {
 					sum_nondiag += ppe.A(id, j); // disable,dummy,free surface particleは寄与しない
 				}
 			}
-			ASSERT_NEAR(ppe.A(id, id), -sum_nondiag, testAccuracy);
+			ASSERT_NEAR(std::abs((ppe.A(id, id) - (-sum_nondiag)) / ppe.A(id, id)), 0.0, testAccuracy);
 		}
 
 		// 粒子i の 近傍粒子j に対応する成分が a_ij != 0 であること
 		// (dummy, disable, free surface粒子は除外)
 		TEST_F(ImplicitForcesTest, MatrixNeighborNonzero)
 		{
+			std::vector<OpenMps::Particle> particles;
+			// 粒子を(num_x, num_z)格子上に配置
+			for (auto j = decltype(num_z_small){0}; j < num_z_small; j++)
+			{
+				for (auto i = decltype(num_x_small){0}; i < num_x_small; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i)* l0;
+					const auto zij = static_cast<double>(j)* l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = 0.0;
+					particle.U()[OpenMps::AXIS_Z] = 0.0;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
+
 			SearchNeighbor();
 			ComputeNeighborDensities();
 			SetPressurePoissonEquation();
 
+			auto env = GetEnvironment();
 			auto& ppe = getPpe();
-			constexpr auto Ndim = num_x * num_z;
-			const auto& particles = GetParticles();
+			constexpr auto Ndim = num_x_small * num_z_small;
 
 			for (auto i = decltype(Ndim){0}; i < Ndim; i++)
 			{
@@ -246,7 +315,143 @@ namespace {
 						ASSERT_NEAR(ppe.A(i, j), 0.0, testAccuracy);
 					}
 				}
+
 			}
+		}
+
+		// 粒子配置・速度に応じた密度変化であるベクトルbの値を解析解と比較
+		TEST_F(ImplicitForcesTest, VectorValue)
+		{
+			std::vector<OpenMps::Particle> particles;
+
+			static constexpr auto gradvx = 1.0;
+			static constexpr auto gradvz = -0.3;
+
+			// 粒子を(num_x, num_z)格子上に配置
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			{
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i)* l0;
+					const auto zij = static_cast<double>(j)* l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = gradvx * xij;
+					particle.U()[OpenMps::AXIS_Z] = gradvz * zij;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
+
+			SearchNeighbor();
+			ComputeNeighborDensities();
+
+			SetPressurePoissonEquation();
+
+			auto& ppe = getPpe();
+
+			auto env = GetEnvironment();
+			auto p = GetParticles();
+
+			for (auto iz = decltype(num_z){wallMargin}; iz < num_z - wallMargin; iz++)
+			{
+				for (auto ix = decltype(num_x){wallMargin}; ix < num_x - wallMargin; ix++)
+				{
+					const auto id = ix + num_x * iz;
+
+					if (IsAlive(p[id]))
+					{
+						const auto drhodt_analy = -(gradvx + gradvz) * p[id].N();
+						const auto b_analy = -env.Rho / (env.Dt() * env.N0()) * drhodt_analy;
+						ASSERT_NEAR(std::abs((ppe.b(id) - b_analy) / b_analy), 0.0, testAccuracyDerv); // 微分値の比較なので許容誤差をゆるく取っている
+					}
+				}
+			}
+		}
+
+		// ラプラシアンの離散化から決まる係数である行列の成分をテスト
+		TEST_F(ImplicitForcesTest, MatrixValue)
+		{
+			std::vector<OpenMps::Particle> particles;
+
+			static constexpr auto gradvx = 1.0;
+			static constexpr auto gradvz = -0.3;
+
+			for (auto j = decltype(num_z){0}; j < num_z; j++)
+			{
+				for (auto i = decltype(num_x){0}; i < num_x; i++)
+				{
+					auto particle = OpenMps::Particle(OpenMps::Particle::Type::IncompressibleNewton);
+					const auto xij = static_cast<double>(i)* l0;
+					const auto zij = static_cast<double>(j)* l0;
+					particle.X()[OpenMps::AXIS_X] = xij;
+					particle.X()[OpenMps::AXIS_Z] = zij;
+
+					particle.U()[OpenMps::AXIS_X] = gradvx * xij;
+					particle.U()[OpenMps::AXIS_Z] = gradvz * zij;
+					particle.P() = 0.0;
+					particle.N() = 0.0;
+
+					particles.push_back(std::move(particle));
+				}
+			}
+			computer->AddParticles(std::move(particles));
+
+			SearchNeighbor();
+			ComputeNeighborDensities();
+
+			SetPressurePoissonEquation();
+
+			auto& ppe = getPpe();
+
+			auto env = GetEnvironment();
+			auto p = GetParticles();
+
+			// 粒子i,jの格子座標(ix,iz), (jx,jz)
+			for (auto jz = decltype(num_z){wallMargin}; jz < num_z - wallMargin; jz++)
+			{
+				for (auto jx = decltype(num_x){wallMargin}; jx < num_x - wallMargin; jx++)
+				{
+					for (auto iz = decltype(num_z){wallMargin}; iz < num_z - wallMargin; iz++)
+					{
+						for (auto ix = decltype(num_x){wallMargin}; ix < num_x - wallMargin; ix++)
+						{
+							const auto id_i = ix + num_x * iz;
+							const auto id_j = jx + num_x * jz;
+
+							// 対角成分の値/行列の対称性は別テストに任せるため、本テストでは行列の半分のみ調べる
+							// + 計算に含めない粒子 と 隣接していない粒子 に対応する成分を除外
+							if (id_i >= id_j ||
+								(!IsAlive(p[id_i]) || !IsAlive(p[id_j])) ||
+								ppe.A(id_i, id_j) == 0.0)
+							{
+								continue;
+							}
+
+							const auto dxij = (static_cast<double>(ix) - static_cast<double>(jx))* l0;
+							const auto dzij = (static_cast<double>(iz) - static_cast<double>(jz))* l0;
+							const auto Rij = std::sqrt((dxij) * (dxij)+(dzij) * (dzij));
+
+#ifdef MPS_HL
+							// HL法（高精度ラプラシアン）: (5-D)r_e/n0 / r^3
+							const auto Aij_analy = (5 - DIM) * env.R_e / env.N0() / (Rij * Rij * Rij);
+#else
+							// 標準MPS法：2D/(λn0) w
+							const auto w = Particle::W(Rij, env.R_e);
+							const auto Aij_analy = (2 * DIM / env.Lambda() / env.N0()) * w;
+#endif
+							ASSERT_NEAR(std::abs((ppe.A(id_i, id_j) - Aij_analy) / ppe.A(id_i, id_j)), 0.0, testAccuracy);
+
+						}
+					}
+				}
+			}
+
 		}
 
 	}
