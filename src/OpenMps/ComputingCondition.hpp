@@ -47,7 +47,6 @@ namespace { namespace OpenMps
 
 		ComputingCondition(ComputingCondition&&) = default;
 		ComputingCondition(const ComputingCondition&) = delete;
-		ComputingCondition& operator = (const ComputingCondition&) = delete;
 	};
 }}
 #endif
