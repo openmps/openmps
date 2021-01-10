@@ -12,10 +12,10 @@ jobs:
         submodules: recursive
 
     - name: Setup MSBuild.exe
-      uses: warrenbuckley/Setup-MSBuild@v1
+      uses: microsoft/setup-msbuild@v1
 
     - name: Setup NuGet.exe
-      uses: warrenbuckley/Setup-Nuget@v1
+      uses: NuGet/setup-nuget@v1
 
     - name: NuGet boost
       run: |
