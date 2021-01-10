@@ -4,7 +4,7 @@
 #pragma warning(push, 0)
 #include <iterator>
 #include <array>
-#include <boost/multi_array.hpp>
+#include <memory>
 #pragma warning(pop)
 
 #include "Vector.hpp"
@@ -27,6 +27,8 @@ namespace { namespace OpenMps
 	public:
 		using ParticleID = std::size_t;
 
+		using Index = std::size_t;
+
 		// 探索対象ブロックの総数
 #ifdef DIM3
 		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3 * 3; // 3次元なので
@@ -34,7 +36,12 @@ namespace { namespace OpenMps
 		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3; // 2次元なので
 #endif
 
+		// 最大ブロック数
+		const std::array<const Index, DIM + 1> Size;
+
 	private:
+		static constexpr auto AXIS_PARTICLE = AXIS_Z + 1; // 粒子番号が入っている軸
+
 		// 1ブロックの長さ（影響半径に等しい）
 		const double blockLength;
 
@@ -42,14 +49,12 @@ namespace { namespace OpenMps
 		const Vector origin;
 
 		// 各ブロックの粒子番号
-		boost::multi_array<ParticleID, DIM + 1> data;
+		std::unique_ptr<ParticleID[]> data;
 
 #ifdef ATOMIC_LOCK
 		// 登録粒子数計算用のスレッドロック
-		boost::multi_array<::omp_lock_t, DIM> locks;
+		std::unique_ptr<::omp_lock_t[]> locks;
 #endif
-
-		using Index = decltype(data)::index;
 
 		static auto Ceil(const double a, const double b)
 		{
@@ -60,32 +65,59 @@ namespace { namespace OpenMps
 			return static_cast<Index>(std::floor(a / b));
 		}
 
-		// 最大ブロック数
-		template<decltype(AXIS_X) AXIS>
-		auto GridSize() const
+		// 各ブロック内の粒子
+		auto& Particle(const Index i,
+#ifdef DIM3
+			const Index j,
+#endif
+			const Index k, const Index l)
 		{
-			return static_cast<Index>(data.shape()[AXIS]);
+			return data[((i
+#ifdef DIM3
+				* Size[AXIS_Y] + j
+#endif
+				) * Size[AXIS_Z] + k) * Size[AXIS_PARTICLE] + l + 1]; // 先頭は粒子数を格納してある
+		}
+		auto Particle(const Index i,
+#ifdef DIM3
+			const Index j,
+#endif
+			const Index k, const Index l) const
+		{
+			return data[((i
+#ifdef DIM3
+				* Size[AXIS_Y] + j
+#endif
+				) * Size[AXIS_Z] + k) * Size[AXIS_PARTICLE] + l + 1]; // 先頭は粒子数を格納してある
 		}
 
+		// 各ブロック内の粒子数
+		auto& ParticleCount(const Index i,
 #ifdef DIM3
-		// 各ブロック内の粒子
-		auto& Particle(const Index i, const Index j, const Index k, const Index l)
+			const Index j,
+#endif
+			const Index k)
 		{
-			return data[i][j][k][l + 1]; // 先頭は粒子数を格納してある
+			return data[((i
+#ifdef DIM3
+				* Size[AXIS_Y] + j
+#endif
+				) * Size[AXIS_Z] + k) * Size[AXIS_PARTICLE] + 0]; // 先頭は粒子数を格納してある
 		}
-		auto Particle(const Index i, const Index j, const Index k, const Index l) const
+
+#ifdef ATOMIC_LOCK
+		// 各ブロックの登録粒子数計算用のスレッドロック
+		auto& Locks(const Index i,
+#ifdef DIM3
+			const Index j,
+#endif
+			const Index k)
 		{
-			return data[i][j][k][l + 1]; // 先頭は粒子数を格納してある
-		}
-#else
-		// 各ブロック内の粒子
-		auto& Particle(const Index i, const Index k, const Index l)
-		{
-			return data[i][k][l + 1]; // 先頭は粒子数を格納してある
-		}
-		auto Particle(const Index i, const Index k, const Index l) const
-		{
-			return data[i][k][l + 1]; // 先頭は粒子数を格納してある
+			return locks[(i
+#ifdef DIM3
+				* Size[AXIS_Y] + j
+#endif
+				) * Size[AXIS_Z] + k]; // 先頭は粒子数を格納してある
 		}
 #endif
 
@@ -105,33 +137,38 @@ namespace { namespace OpenMps
 		// @param maxX 計算空間の最大座標
 		Grid(const double neighborLength, const double l_0,
 			const Vector& minX, const Vector& maxX)
-			: blockLength(neighborLength), origin(minX),
-			data(boost::extents
-				[Ceil(maxX[AXIS_X] - minX[AXIS_X], neighborLength)+2] // 水平方向の最大ブロック数（近傍粒子探索の分を含める）
+			: Size({
+				Ceil(maxX[AXIS_X] - minX[AXIS_X], neighborLength) + 2, // 水平方向の最大ブロック数（近傍粒子探索の分を含める）
 #ifdef DIM3
-				[Ceil(maxX[AXIS_Y] - minX[AXIS_Y], neighborLength) + 2] // 奥行き方向の最大ブロック数（近傍粒子探索の分を含める）
+				Ceil(maxX[AXIS_Y] - minX[AXIS_Y], neighborLength) + 2, // 奥行き方向の最大ブロック数（近傍粒子探索の分を含める）
 #endif
-				[Ceil(maxX[AXIS_Z] - minX[AXIS_Z], neighborLength)+2] // 鉛直方向の最大ブロック数（近傍粒子探索の分を含める）
+				Ceil(maxX[AXIS_Z] - minX[AXIS_Z], neighborLength) + 2, // 鉛直方向の最大ブロック数（近傍粒子探索の分を含める）
 #ifdef DIM3
-				[1 + (Ceil(neighborLength, l_0) + 1)*(Ceil(neighborLength, l_0) + 1)*(Ceil(neighborLength, l_0) + 1)]) // 1ブロック内の最大粒子数＋存在する粒子数
+				1 + (Ceil(neighborLength, l_0) + 1) * (Ceil(neighborLength, l_0) + 1) * (Ceil(neighborLength, l_0) + 1) }) // 1ブロック内の最大粒子数＋存在する粒子数
 #else
-				[1 + (Ceil(neighborLength, l_0)+1)*(Ceil(neighborLength, l_0) + 1)]) // 1ブロック内の最大粒子数＋存在する粒子数
+				1 + (Ceil(neighborLength, l_0) + 1) * (Ceil(neighborLength, l_0) + 1) }), // 1ブロック内の最大粒子数＋存在する粒子数
 #endif
-#ifdef ATOMIC_LOCK
-			, locks(boost::extents
-				[data.shape()[AXIS_X]]
+			blockLength(neighborLength), origin(minX),
+			data(std::make_unique<decltype(data)::element_type[]>(Size[AXIS_X]*Size[AXIS_Z]*Size[AXIS_Z+1]
 #ifdef DIM3
-				[data.shape()[AXIS_Y]]
+				* Size[AXIS_Y]
 #endif
-				[data.shape()[AXIS_Z]])
+			))
+#ifdef ATOMIC_LOCK
+			, locks(std::make_unique<decltype(locks)::element_type[]>(
+				Size[AXIS_X] * Size[AXIS_Z]
+#ifdef DIM3
+				* Size[AXIS_Y]
+#endif
+			))
 #endif
 		{
 #ifdef ATOMIC_LOCK
-			const auto nx = GridSize<AXIS_X>();
+			const auto nx = Size[AXIS_X];
 #ifdef DIM3
-			const auto ny = GridSize<AXIS_Y>();
+			const auto ny = Size[AXIS_Y];
 #endif
-			const auto nz = GridSize<AXIS_Z>();
+			const auto nz = Size[AXIS_Z];
 			for (auto i = decltype(nx){0}; i < nx; i++)
 			{
 #ifdef DIM3
@@ -141,9 +178,9 @@ namespace { namespace OpenMps
 					for (auto k = decltype(nz){0}; k < nz; k++)
 					{
 #ifdef DIM3
-						::omp_init_lock(&(locks[i][j][k]));
+						::omp_init_lock(&Locks(i, j, k));
 #else
-						::omp_init_lock(&(locks[i][k]));
+						::omp_init_lock(&Locks(i, k));
 #endif
 					}
 #ifdef DIM3
@@ -156,11 +193,11 @@ namespace { namespace OpenMps
 #ifdef ATOMIC_LOCK
 		~Grid()
 		{
-			const auto nx = GridSize<AXIS_X>();
+			const auto nx = Size[AXIS_X];
 #ifdef DIM3
-			const auto ny = GridSize<AXIS_Y>();
+			const auto ny = Size[AXIS_Y];
 #endif
-			const auto nz = GridSize<AXIS_Z>();
+			const auto nz = Size[AXIS_Z];
 			for (auto i = decltype(nx){0}; i < nx; i++)
 			{
 #ifdef DIM3
@@ -170,9 +207,9 @@ namespace { namespace OpenMps
 					for (auto k = decltype(nz){0}; k < nz; k++)
 					{
 #ifdef DIM3
-						::omp_destroy_lock(&(locks[i][j][k]));
+						::omp_destroy_lock(&Locks(i, j, k));
 #else
-						::omp_destroy_lock(&(locks[i][k]));
+						::omp_destroy_lock(&Locks(i, k));
 #endif
 					}
 #ifdef DIM3
@@ -189,11 +226,11 @@ namespace { namespace OpenMps
 		// 全消去（全ブロックの粒子数を0にする）
 		void Clear()
 		{
-			const auto nx = GridSize<AXIS_X>();
+			const auto nx = Size[AXIS_X];
 #ifdef DIM3
-			const auto ny = GridSize<AXIS_Y>();
+			const auto ny = Size[AXIS_Y];
 #endif
-			const auto nz = GridSize<AXIS_Z>();
+			const auto nz = Size[AXIS_Z];
 			for (auto i = decltype(nx){0}; i < nx; i++)
 			{
 #ifdef DIM3
@@ -203,9 +240,9 @@ namespace { namespace OpenMps
 					for (auto k = decltype(nz){0}; k < nz; k++)
 					{
 #ifdef DIM3
-						data[i][j][k][0] = 0; // 先頭は粒子数を格納してある
+						ParticleCount(i, j, k) = 0;
 #else
-						data[i][k][0] = 0; // 先頭は粒子数を格納してある
+						ParticleCount(i, k) = 0;
 #endif
 					}
 #ifdef DIM3
@@ -222,32 +259,33 @@ namespace { namespace OpenMps
 		}
 
 		// 各ブロック内の粒子数
+		auto ParticleCount(const Index i,
 #ifdef DIM3
-		auto ParticleCount(const Index i, const Index j, const Index k) const
-		{
-			return data[i][j][k][0]; // 先頭は粒子数を格納してある
-		}
-#else
-		auto ParticleCount(const Index i, const Index k) const
-		{
-			return data[i][k][0]; // 先頭は粒子数を格納してある
-		}
+			const Index j,
 #endif
+			const Index k) const
+		{
+			return data[((i
+#ifdef DIM3
+				* Size[AXIS_Y] + j
+#endif
+				) * Size[AXIS_Z] + k) * Size[AXIS_PARTICLE] + 0]; // 先頭は粒子数を格納してある
+		}
 
 		// 1ブロック内の最大粒子数
 		auto MaxParticles() const
 		{
-			return static_cast<ParticleID>(data.shape()[AXIS_Z + 1]) - 1; // 先頭の粒子数の格納分を除く
+			return Size[AXIS_PARTICLE] - 1; // 先頭の粒子数の格納分を除く
 		}
 
 		// 粒子を格納する
 		bool Store(const Vector& x, const ParticleID particle)
 		{
-			const auto i = Block<AXIS_X>(x); const auto nx = GridSize<AXIS_X>();
+			const auto i = Block<AXIS_X>(x); const auto nx = Size[AXIS_X];
 #ifdef DIM3
-			const auto j = Block<AXIS_Y>(x); const auto ny = GridSize<AXIS_Y>();
+			const auto j = Block<AXIS_Y>(x); const auto ny = Size[AXIS_Y];
 #endif
-			const auto k = Block<AXIS_Z>(x); const auto nz = GridSize<AXIS_Z>();
+			const auto k = Block<AXIS_Z>(x); const auto nz = Size[AXIS_Z];
 
 			// 領域外なら格納しない
 			if(
@@ -257,26 +295,28 @@ namespace { namespace OpenMps
 #endif
 				(0 <= k) && (k < nz))
 			{
-				decltype(data)::element l;
+				decltype(data)::element_type l;
 #ifdef ATOMIC_LOCK
-				auto lock = &locks[i]
+				{
+					auto lock = &Locks(i,
 #ifdef DIM3
-					[j]
+						j,
 #endif
-					[k];
-				omp_set_lock(lock);
+						k);
+					omp_set_lock(lock);
 #else
 #ifdef _OPENMP
-				#pragma omp atomic capture
+					#pragma omp atomic capture
 #endif
 #endif
+					l = ParticleCount(i,
 #ifdef DIM3
-				l = data[i][j][k][0]++;
-#else
-				l = data[i][k][0]++;
+						j,
 #endif
+						k)++;
 #ifdef ATOMIC_LOCK
-				omp_unset_lock(lock);
+					omp_unset_lock(lock);
+				}
 #endif
 
 				const auto maxCount = MaxParticles();
@@ -424,11 +464,11 @@ namespace { namespace OpenMps
 					else
 					{
 						// 最終ブロック以外なら、次の有効なブロックまで移動
-						const auto nx = grid.GridSize<AXIS_X>();
+						const auto nx = grid.Size[AXIS_X];
 #ifdef DIM3
-						const auto ny = grid.GridSize<AXIS_Y>();
+						const auto ny = grid.Size[AXIS_Y];
 #endif
-						const auto nz = grid.GridSize<AXIS_Z>();
+						const auto nz = grid.Size[AXIS_Z];
 						bool isValid = false;
 						for(index = neighborIndex; !isValid && (index + 1 < LAST_NEIGHBOR); index++)
 						{

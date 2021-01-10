@@ -2,6 +2,10 @@
 #define COMPUTER_INCLUDED
 #include "defines.hpp"
 
+#include "Particle.hpp"
+#include "Environment.hpp"
+#include "Grid.hpp"
+
 #pragma warning(push, 0)
 #include <vector>
 #include <limits>
@@ -13,6 +17,7 @@
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_sparse.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/multi_array.hpp>
 
 #ifdef USE_VIENNACL
 #include <viennacl/vector.hpp>
@@ -23,10 +28,6 @@
 #pragma clang diagnostic pop
 #endif
 #pragma warning(pop)
-
-#include "Particle.hpp"
-#include "Environment.hpp"
-#include "Grid.hpp"
 
 // iccはC++14の対応が遅れているので
 #ifdef __INTEL_COMPILER
