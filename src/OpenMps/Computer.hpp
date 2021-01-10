@@ -557,10 +557,10 @@ namespace { namespace OpenMps
 #endif
 
 		// 壁の移動
-		const POSITION_WALL positionWall;
+		const POSITION_WALL& positionWall;
 
 		// 壁の移動移動の前処理
-		const POSITION_WALL_PRE positionWallPre;
+		const POSITION_WALL_PRE& positionWallPre;
 
 
 		// 2点間の距離を計算する
@@ -1425,9 +1425,7 @@ namespace { namespace OpenMps
 			if (!isConverged)
 			{
 				// どうしようもないので例外
-				Exception exception;
-				exception.Message = "Conjugate Gradient method couldn't solve Pressure Poison Equation";
-				throw exception;
+				throw Exception{ "Conjugate Gradient method couldn't solve Pressure Poison Equation" };
 			}
 		};
 #endif
@@ -1660,9 +1658,11 @@ namespace { namespace OpenMps
 #endif
 
 	public:
-		struct Exception
+		struct Exception : public std::runtime_error
 		{
-			std::string Message;
+			template<typename... Args>
+			Exception(Args&&... args) : std::runtime_error(std::forward<Args>(args)...)
+			{}
 		};
 
 #ifndef PRESSURE_EXPLICIT
@@ -1675,10 +1675,10 @@ namespace { namespace OpenMps
 #ifndef PRESSURE_EXPLICIT
 			const double allowableResidual,
 #endif
-			const Environment& env,
-			const POSITION_WALL& posWall,
-			const POSITION_WALL_PRE& posWallPre)
-			: environment(env),
+			Environment&& env,
+			POSITION_WALL&& posWall,
+			POSITION_WALL_PRE&& posWallPre)
+			: environment(std::move(env)),
 			grid(env.NeighborLength, env.L_0, env.MinX, env.MaxX),
 			neighbor(),
 			positionWall(posWall),
@@ -1690,28 +1690,7 @@ namespace { namespace OpenMps
 #endif
 		}
 
-		Computer(Computer&& src)
-			: particles(std::move(src.particles)),
-			environment(std::move(src.environment)),
-			grid(std::move(src.grid)),
-			neighbor(src.neighbor),
-#ifndef PRESSURE_EXPLICIT
-			ppe(std::move(src.ppe)),
-#endif
-			du(std::move(src.du)),
-#ifdef MPS_ECS
-			ecs(std::move(src.ecs)),
-#endif
-#ifdef MPS_DS
-			originalX(std::move(src.originalX)),
-#endif
-#ifdef MPS_SPP
-			nWithoutSpp(std::move(src.nWithoutSpp)),
-#endif
-			positionWall(std::move(src.positionWall)),
-			positionWallPre(std::move(src.positionWallPre))
-		{}
-
+		Computer(Computer&& src) = default;
 		Computer(const Computer&) = delete;
 		Computer& operator=(const Computer&) = delete;
 
@@ -1821,16 +1800,16 @@ namespace { namespace OpenMps
 #ifndef PRESSURE_EXPLICIT
 		const double allowableResidual,
 #endif
-		const Environment& env,
-		const POSITION_WALL& posWall,
-		const POSITION_WALL_PRE& posWallPre)
+		Environment&& env,
+		POSITION_WALL&& posWall,
+		POSITION_WALL_PRE&& posWallPre)
 	{
 		return Computer<decltype(posWall), decltype(posWallPre)>(
 #ifndef PRESSURE_EXPLICIT
 			allowableResidual,
 #endif
-			env,
-			posWall, posWallPre);
+			std::move(env),
+			std::forward<POSITION_WALL>(posWall), std::forward<POSITION_WALL_PRE>(posWallPre));
 	}
 }}
 #endif

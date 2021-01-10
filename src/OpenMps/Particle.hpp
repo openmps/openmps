@@ -55,43 +55,10 @@ namespace { namespace OpenMps
 			type(t)
 		{}
 
-		Particle(const Particle& src)
-			: x(src.x),
-			u(src.u),
-			p(src.p),
-			n(src.n),
-			type(src.type)
-		{}
-
-		Particle(Particle&& src)
-			: x(std::move(src.x)),
-			u(std::move(src.u)),
-			p(src.p),
-			n(src.n),
-			type(src.type)
-		{}
-
-		Particle& operator=(const Particle& src)
-		{
-			this->x = src.x;
-			this->u = src.u;
-			this->p = src.p;
-			this->n = src.n;
-			this->type = src.type;
-
-			return *this;
-		}
-
-		Particle& operator=(Particle&& src)
-		{
-			this->x = std::move(src.x);
-			this->u = std::move(src.u);
-			this->p = src.p;
-			this->n = src.n;
-			this->type = src.type;
-
-			return *this;
-		}
+		Particle(const Particle& src) = default;
+		Particle(Particle&& src) = default;
+		Particle& operator=(const Particle& src) = default;
+		Particle& operator=(Particle&& src) = default;
 
 		// 粒子を無効化する
 		void Disable()

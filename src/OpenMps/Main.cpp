@@ -313,22 +313,20 @@ int main(const int argc, const char* const argv[])
 			return particle.X();
 		});
 
-	// 壁は動かさない
-	const auto positionWall = [&initialPosition](auto i, auto, auto)
-	{
-		return initialPosition[i];
-	};
-	const auto positionWallPre = [](auto, auto)
-	{
-	};
-
 	// 計算空間の初期化
 	auto computer = OpenMps::CreateComputer(
 #ifndef PRESSURE_EXPLICIT
 		condition.Eps,
 #endif
-		environment,
-		positionWall, positionWallPre);
+		std::move(environment),
+		// 壁は動かさない
+		[&initialPosition](auto i, auto, auto)
+		{
+			return initialPosition[i];
+		},
+		[](auto, auto)
+		{
+		});
 
 	// 粒子を追加
 	computer.AddParticles(std::move(particles));
@@ -392,7 +390,7 @@ int main(const int argc, const char* const argv[])
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
 				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % (outputCount + outputIterationOffset) << std::endl
-				<< ex.Message << std::endl;
+				<< ex.what() << std::endl;
 			break;
 		}
 	}
