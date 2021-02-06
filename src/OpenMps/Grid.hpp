@@ -511,12 +511,12 @@ namespace { namespace OpenMps
 			{
 				return Iterator(g, x, decltype(index)(0) +
 #ifdef DIM3
-					3 * 3 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
-					    3 * ((g.Block<AXIS_Y>(x) == 0) ? 1 : 0) +
+					MAX_NEIGHBOR_BLOCK1 * MAX_NEIGHBOR_BLOCK1 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
+					                      MAX_NEIGHBOR_BLOCK1 * ((g.Block<AXIS_Y>(x) == 0) ? 1 : 0) +
 #else
-					    3 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
+					                      MAX_NEIGHBOR_BLOCK1 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
 #endif
-					    1 * ((g.Block<AXIS_Z>(x) == 0) ? 1 : 0));
+					                                        1 * ((g.Block<AXIS_Z>(x) == 0) ? 1 : 0));
 			}
 
 			// 末尾イテレーターを作成
