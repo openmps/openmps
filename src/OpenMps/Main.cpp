@@ -234,7 +234,7 @@ namespace
 #endif
 		const double maxZ = xml.get<double>("openmps.environment.maxZ.<xmlattr>.value");
 
-		return OpenMps::Environment(outputInterval / minStepCountPerOutput, courant,
+		return OpenMps::Environment(outputInterval / static_cast<double>(minStepCountPerOutput), courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			tooNearRatio, tooNearCoefficient,
 #endif

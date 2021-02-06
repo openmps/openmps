@@ -22,7 +22,7 @@ namespace
 		auto Time()
 		{
 			const auto end = std::chrono::system_clock::now();
-			return std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()/1000.0;
+			return static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0;
 		}
 	};
 }
