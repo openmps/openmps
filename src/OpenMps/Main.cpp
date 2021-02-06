@@ -390,7 +390,7 @@ int main(const int argc, const char* const argv[])
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
 				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % (outputCount + outputIterationOffset) << std::endl
-				<< ex.Message << std::endl;
+				<< ex.what() << std::endl;
 			break;
 		}
 	}

@@ -6,6 +6,7 @@
 #pragma warning(disable : 4996)
 #include <vector>
 #include <limits>
+#include <stdexcept>
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -1426,9 +1427,7 @@ namespace { namespace OpenMps
 			if (!isConverged)
 			{
 				// どうしようもないので例外
-				Exception exception;
-				exception.Message = "Conjugate Gradient method couldn't solve Pressure Poison Equation";
-				throw exception;
+				throw Exception{ "Conjugate Gradient method couldn't solve Pressure Poison Equation" };
 			}
 		};
 #endif
@@ -1661,9 +1660,12 @@ namespace { namespace OpenMps
 #endif
 
 	public:
-		struct Exception
+		struct Exception : public std::runtime_error
 		{
-			std::string Message;
+			template<typename... T>
+			Exception(T&&... v)
+				: std::runtime_error{ std::forward<T>(v)... }
+			{}
 		};
 
 #ifndef PRESSURE_EXPLICIT
