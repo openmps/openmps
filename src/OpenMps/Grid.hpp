@@ -22,18 +22,51 @@
 
 namespace { namespace OpenMps
 {
+	namespace Detail
+	{
+		namespace Detail
+		{
+			// 整数のべき乗
+			template<std::size_t N, typename T>
+			struct Power
+			{
+				static_assert(std::is_unsigned_v<T>);
+				static constexpr auto Get(const T v)
+				{
+					return v * Power<N - 1, T>::Get(v);
+				}
+			};
+
+			template<typename T>
+			struct Power<0, T>
+			{
+				static_assert(std::is_unsigned_v<T>);
+				static constexpr auto Get(const T)
+				{
+					return 1;
+				}
+			};
+		}
+
+		template<std::size_t N, typename T>
+		constexpr auto Power(const T v)
+		{
+			static_assert(std::is_unsigned_v<T>);
+			return Detail::Power<N, T>::Get(v);
+		}
+	}
+
 	// 近傍粒子探索用グリッド
 	class Grid final
 	{
 	public:
 		using ParticleID = std::size_t;
 
+		// 1辺の探索対象ブロックの総数
+		static constexpr auto MAX_NEIGHBOR_BLOCK1 = std::size_t{ 3 };
+
 		// 探索対象ブロックの総数
-#ifdef DIM3
-		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3 * 3; // 3次元なので
-#else
-		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3; // 2次元なので
-#endif
+		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = Detail::Power<DIM>(MAX_NEIGHBOR_BLOCK1);
 
 	private:
 		// 1ブロックの長さ（影響半径に等しい）
