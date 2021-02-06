@@ -163,5 +163,7 @@ def main():
 	with open("test.xml", "w") as f:
 		f.write(xml)
 
+	print("{0} particles".format(len(particlesCsv)))
+
 if __name__ == "__main__":
 	main()
