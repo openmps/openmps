@@ -1987,7 +1987,7 @@
         <Domain name="bool" id="5911.Emissive.bool"/>
       </Property>
       <Property name="GaussianRadius" id="5911.GaussianRadius" number_of_elements="1">
-        <Element index="0" value="0.0005"/>
+        <Element index="0" value="0.004"/>
         <Domain name="range" id="5911.GaussianRadius.range"/>
       </Property>
       <Property name="GlyphTableIndexArray" id="5911.GlyphTableIndexArray" number_of_elements="1">
