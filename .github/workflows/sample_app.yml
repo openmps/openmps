@@ -12,7 +12,10 @@ jobs:
         submodules: recursive
 
     - name: apt
-      run: sudo apt install libboost-dev clang
+      run: sudo apt install libboost-dev
+
+    - name: clang
+      run: bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 
     - name: make sample
       run: make -j4
