@@ -3,8 +3,10 @@
 #include "defines.hpp"
 
 #pragma warning(push, 0)
+#pragma warning(disable : 4996)
 #include <vector>
 #include <limits>
+#include <stdexcept>
 
 #ifdef __clang__
 #pragma clang diagnostic push
@@ -1425,9 +1427,7 @@ namespace { namespace OpenMps
 			if (!isConverged)
 			{
 				// どうしようもないので例外
-				Exception exception;
-				exception.Message = "Conjugate Gradient method couldn't solve Pressure Poison Equation";
-				throw exception;
+				throw Exception{ "Conjugate Gradient method couldn't solve Pressure Poison Equation" };
 			}
 		};
 #endif
@@ -1660,9 +1660,12 @@ namespace { namespace OpenMps
 #endif
 
 	public:
-		struct Exception
+		struct Exception : public std::runtime_error
 		{
-			std::string Message;
+			template<typename... T>
+			Exception(T&&... v)
+				: std::runtime_error{ std::forward<T>(v)... }
+			{}
 		};
 
 #ifndef PRESSURE_EXPLICIT
@@ -1690,29 +1693,10 @@ namespace { namespace OpenMps
 #endif
 		}
 
-		Computer(Computer&& src)
-			: particles(std::move(src.particles)),
-			environment(std::move(src.environment)),
-			grid(std::move(src.grid)),
-			neighbor(src.neighbor),
-#ifndef PRESSURE_EXPLICIT
-			ppe(std::move(src.ppe)),
-#endif
-			du(std::move(src.du)),
-#ifdef MPS_ECS
-			ecs(std::move(src.ecs)),
-#endif
-#ifdef MPS_DS
-			originalX(std::move(src.originalX)),
-#endif
-#ifdef MPS_SPP
-			nWithoutSpp(std::move(src.nWithoutSpp)),
-#endif
-			positionWall(std::move(src.positionWall)),
-			positionWallPre(std::move(src.positionWallPre))
-		{}
-
+		Computer(Computer&&) noexcept = default;
 		Computer(const Computer&) = delete;
+
+		Computer& operator=(Computer&&) noexcept = delete;
 		Computer& operator=(const Computer&) = delete;
 
 		// 時間を進める

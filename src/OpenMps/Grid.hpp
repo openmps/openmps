@@ -2,6 +2,7 @@
 #define GRID_INCLUDED
 
 #pragma warning(push, 0)
+#pragma warning(disable : 4996)
 #include <iterator>
 #include <array>
 #include <boost/multi_array.hpp>
@@ -21,18 +22,51 @@
 
 namespace { namespace OpenMps
 {
+	namespace Detail
+	{
+		namespace Detail
+		{
+			// 整数のべき乗
+			template<std::size_t N, typename T>
+			struct Power
+			{
+				static_assert(std::is_unsigned_v<T>);
+				static constexpr auto Get(const T v)
+				{
+					return v * Power<N - 1, T>::Get(v);
+				}
+			};
+
+			template<typename T>
+			struct Power<0, T>
+			{
+				static_assert(std::is_unsigned_v<T>);
+				static constexpr auto Get(const T)
+				{
+					return 1;
+				}
+			};
+		}
+
+		template<std::size_t N, typename T>
+		constexpr auto Power(const T v)
+		{
+			static_assert(std::is_unsigned_v<T>);
+			return Detail::Power<N, T>::Get(v);
+		}
+	}
+
 	// 近傍粒子探索用グリッド
 	class Grid final
 	{
 	public:
 		using ParticleID = std::size_t;
 
+		// 1辺の探索対象ブロックの総数
+		static constexpr auto MAX_NEIGHBOR_BLOCK1 = std::size_t{ 3 };
+
 		// 探索対象ブロックの総数
-#ifdef DIM3
-		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3 * 3; // 3次元なので
-#else
-		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = 3 * 3; // 2次元なので
-#endif
+		static constexpr std::size_t MAX_NEIGHBOR_BLOCK = Detail::Power<DIM>(MAX_NEIGHBOR_BLOCK1);
 
 	private:
 		// 1ブロックの長さ（影響半径に等しい）
@@ -182,9 +216,10 @@ namespace { namespace OpenMps
 		}
 #endif
 
-		Grid(Grid&&) = default;
+		Grid(Grid&&) noexcept = default;
 		Grid(const Grid&) = delete;
-		Grid& operator = (const Grid&) = delete;
+		Grid& operator =(Grid&&) noexcept = delete;
+		Grid& operator =(const Grid&) = delete;
 
 		// 全消去（全ブロックの粒子数を0にする）
 		void Clear()
@@ -299,7 +334,7 @@ namespace { namespace OpenMps
 		}
 
 		// 近傍粒子イテレーター
-		struct Iterator final : public std::iterator<std::input_iterator_tag, ParticleID>
+		struct Iterator final
 		{
 		private:
 #ifdef DIM3
@@ -477,12 +512,12 @@ namespace { namespace OpenMps
 			{
 				return Iterator(g, x, decltype(index)(0) +
 #ifdef DIM3
-					3 * 3 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
-					    3 * ((g.Block<AXIS_Y>(x) == 0) ? 1 : 0) +
+					MAX_NEIGHBOR_BLOCK1 * MAX_NEIGHBOR_BLOCK1 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
+					                      MAX_NEIGHBOR_BLOCK1 * ((g.Block<AXIS_Y>(x) == 0) ? 1 : 0) +
 #else
-					    3 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
+					                      MAX_NEIGHBOR_BLOCK1 * ((g.Block<AXIS_X>(x) == 0) ? 1 : 0) +
 #endif
-					    1 * ((g.Block<AXIS_Z>(x) == 0) ? 1 : 0));
+					                                        1 * ((g.Block<AXIS_Z>(x) == 0) ? 1 : 0));
 			}
 
 			// 末尾イテレーターを作成

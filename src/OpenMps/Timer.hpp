@@ -2,6 +2,7 @@
 #define TIMER_INCLUDED
 
 #pragma warning(push, 0)
+#pragma warning(disable : 4996)
 #include <chrono>
 #pragma warning(pop)
 namespace
@@ -21,7 +22,7 @@ namespace
 		auto Time()
 		{
 			const auto end = std::chrono::system_clock::now();
-			return std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()/1000.0;
+			return static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count())/1000.0;
 		}
 	};
 }

@@ -1,4 +1,5 @@
 ﻿#pragma warning(push, 0)
+#pragma warning(disable : 4996)
 #include <iostream>
 #include <fstream>
 #include <ctime>
@@ -188,19 +189,16 @@ namespace
 	inline decltype(auto) LoadParticles(const boost::property_tree::ptree& xml)
 	{
 		// 粒子データの読み込み
-		std::vector<OpenMps::Particle> particles;
-		auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
+		const auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
 		if (type == "csv")
 		{
-			const auto txt = xml.get<std::string>("openmps.particles");
-			particles = InputFromCsv(std::move(txt));
+			auto&& txt = xml.get<std::string>("openmps.particles");
+			return InputFromCsv(txt);
 		}
 		else
 		{
 			throw std::runtime_error("Not Implemented!");
 		}
-
-		return particles;
 	}
 
 	// 計算環境を読み込む
@@ -236,7 +234,7 @@ namespace
 #endif
 		const double maxZ = xml.get<double>("openmps.environment.maxZ.<xmlattr>.value");
 
-		return OpenMps::Environment(outputInterval / minStepCountPerOutput, courant,
+		return OpenMps::Environment(outputInterval / static_cast<double>(minStepCountPerOutput), courant,
 #ifdef ARTIFICIAL_COLLISION_FORCE
 			tooNearRatio, tooNearCoefficient,
 #endif
@@ -392,7 +390,7 @@ int main(const int argc, const char* const argv[])
 			// エラーメッセージを出して止める
 			std::cout << "!!!!ERROR!!!!" << std::endl
 				<< boost::format("#%3%: t=%1% (%2%)") % tComputer % iteration % (outputCount + outputIterationOffset) << std::endl
-				<< ex.Message << std::endl;
+				<< ex.what() << std::endl;
 			break;
 		}
 	}
