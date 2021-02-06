@@ -1,6 +1,6 @@
 COMPILER = g++
-CFLAGS   = -g -MMD -MP -O3 -std=c++14 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
-LDFLAGS= ${CFLAGS} -lgtest -lgtest_main -L../../googletest/lib
+CFLAGS   = -g -MMD -MP -O3 -std=c++17 -Wall -Wextra -Werror -Wfatal-errors -Wno-unknown-pragmas -march=native -mtune=native -fopenmp
+LDFLAGS= ${CFLAGS} -lgtest -lgtest_main -L../../googletest/lib -Xlinker -rpath -Xlinker ../../googletest/lib
 INCLUDE  = -isystem ../../viennacl -isystem ../../googletest/googletest/include
 
 TESTDIR = ./
