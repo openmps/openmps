@@ -189,19 +189,16 @@ namespace
 	inline decltype(auto) LoadParticles(const boost::property_tree::ptree& xml)
 	{
 		// 粒子データの読み込み
-		std::vector<OpenMps::Particle> particles;
-		auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
+		const auto type = xml.get_optional<std::string>("openmps.particles.<xmlattr>.type").get();
 		if (type == "csv")
 		{
-			const auto txt = xml.get<std::string>("openmps.particles");
-			particles = InputFromCsv(std::move(txt));
+			auto&& txt = xml.get<std::string>("openmps.particles");
+			return InputFromCsv(txt);
 		}
 		else
 		{
 			throw std::runtime_error("Not Implemented!");
 		}
-
-		return particles;
 	}
 
 	// 計算環境を読み込む
