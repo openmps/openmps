@@ -215,6 +215,9 @@ namespace { namespace OpenMps
 #endif
 		}
 
+		Environment(Environment&&) = default;
+		Environment(const Environment&) = default;
+
 		// 時刻を進める
 		void SetNextT()
 		{
@@ -247,34 +250,6 @@ namespace { namespace OpenMps
 		}
 #endif
 
-		// 代入演算子
-		// @param src 代入元
-		Environment& operator=(const Environment& src)
-		{
-			this->t = src.t;
-			this->dt = src.dt;
-			this->n0 = src.n0;
-#ifndef MPS_HL
-			this->lambda = src.lambda;
-#endif
-			const_cast<double&>(this->MaxDt) = src.MaxDt;
-			const_cast<double&>(this->MaxDx) = src.MaxDx;
-			const_cast<double&>(this->R_e) = src.R_e;
-			const_cast<Vector&>(this->G) = src.G;
-			const_cast<double&>(this->Rho) = src.Rho;
-			const_cast<double&>(this->Nu) = src.Nu;
-#ifndef MPS_SPP
-			const_cast<double&>(this->SurfaceRatio) = src.SurfaceRatio;
-#endif
-#ifdef ARTIFICIAL_COLLISION_FORCE
-			const_cast<double&>(TooNearLength) = src.TooNearLength;
-			const_cast<double&>(TooNearCoefficient) = src.TooNearCoefficient;
-#endif
-#ifdef PRESSURE_EXPLICIT
-			const_cast<double&>(C) = src.C;
-#endif
-			return *this;
-		}
 	};
 }}
 #endif
