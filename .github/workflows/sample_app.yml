@@ -26,8 +26,12 @@ jobs:
       working-directory: src
 
     - name: build sample
-      run: msbuild OpenMps.sln -p:Configuration=Release
+      run: msbuild OpenMps.sln -p:Configuration=Release -p:OutDir="bin/"
       working-directory: src
+
+    - name: run sample
+      run: ./OpenMps.exe
+      working-directory: src/OpenMps/bin
 
   clang:
     runs-on: ubuntu-latest
@@ -54,4 +58,8 @@ jobs:
         export PATH=/usr/lib/llvm-${LLVM_VERSION}/bin:${PATH}
         export LD_LIBRARY_PATH=/usr/lib/llvm-${LLVM_VERSION}/lib:${LD_LIBRARY_PATH}
         make -j4
+      working-directory: src/OpenMps
+
+    - name: run sample
+      run: ./OpenMps
       working-directory: src/OpenMps
