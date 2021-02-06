@@ -11,12 +11,21 @@ jobs:
       with:
         submodules: recursive
 
-    - name: apt
+    - name: install clang
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        LLVM_VERSION=`egrep ^LLVM_VERSION=[0-9]+ llvm.sh`
+        LLVM_VERSION=${LLVM_VERSION:13}
+        echo "LLVM_VERSION=${LLVM_VERSION}" >> $GITHUB_ENV
+        sudo bash llvm.sh ${LLVM_VERSION}
+        sudo apt install libc++-${LLVM_VERSION}-dev libc++abi-${LLVM_VERSION}-dev libomp5-${LLVM_VERSION} libomp-${LLVM_VERSION}-dev
+
+    - name: install boost
       run: sudo apt install libboost-dev
 
-    - name: clang
-      run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-
     - name: make sample
-      run: make -j4
+      run: |
+        export PATH=/usr/lib/llvm-${LLVM_VERSION}/bin:${PATH}
+        export LD_LIBRARY_PATH=/usr/lib/llvm-${LLVM_VERSION}/lib:${LD_LIBRARY_PATH}
+        make -j4
       working-directory: src/OpenMps
