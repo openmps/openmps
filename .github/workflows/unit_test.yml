@@ -3,7 +3,7 @@ name: Unit test CI
 on: [push]
 
 jobs:
-  visualstudio:
+  unittest_visualstudio:
     runs-on: windows-latest
 
     steps:
@@ -39,7 +39,7 @@ jobs:
       run: ./test.exe
       working-directory: src/OpenMps/test/out
 
-  gcc:
+  unittest_gcc:
     runs-on: ubuntu-latest
     
     steps:

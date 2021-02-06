@@ -3,7 +3,7 @@ name: Sample app CI
 on: [push]
 
 jobs:
-  visualstudio:
+  sampleapp_visualstudio:
     runs-on: windows-latest
 
     steps:
@@ -33,7 +33,7 @@ jobs:
       run: ./OpenMps.exe
       working-directory: src/OpenMps
 
-  clang:
+  sampleapp_clang:
     runs-on: ubuntu-latest
     
     steps:
