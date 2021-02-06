@@ -15,7 +15,7 @@ jobs:
       run: sudo apt install libboost-dev
 
     - name: clang
-      run: bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+      run: sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
 
     - name: make sample
       run: make -j4
