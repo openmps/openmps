@@ -26,12 +26,12 @@ jobs:
       working-directory: src
 
     - name: build sample
-      run: msbuild OpenMps.sln -p:Configuration=Release -p:OutDir="bin/"
+      run: msbuild OpenMps.sln -p:Configuration=Release -p:OutDir="."
       working-directory: src
 
     - name: run sample
       run: ./OpenMps.exe
-      working-directory: src/OpenMps/bin
+      working-directory: src/OpenMps
 
   clang:
     runs-on: ubuntu-latest
