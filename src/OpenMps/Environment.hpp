@@ -218,6 +218,9 @@ namespace { namespace OpenMps
 		Environment(Environment&&) = default;
 		Environment(const Environment&) = default;
 
+		Environment& operator=(const Environment&) = delete;
+		Environment& operator=(Environment&&) = delete;
+
 		// 時刻を進める
 		void SetNextT()
 		{
