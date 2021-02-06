@@ -57,10 +57,10 @@ namespace { namespace OpenMps
 		{}
 
 		Particle(const Particle&) = default;
-		Particle(Particle&&) = default;
+		Particle(Particle&&) noexcept = default;
 
 		Particle& operator=(const Particle&) = default;
-		Particle& operator=(Particle&& src) = default;
+		Particle& operator=(Particle&& src) noexcept = default;
 
 		// 粒子を無効化する
 		void Disable()

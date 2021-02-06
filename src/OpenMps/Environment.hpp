@@ -215,11 +215,11 @@ namespace { namespace OpenMps
 #endif
 		}
 
-		Environment(Environment&&) = default;
+		Environment(Environment&&) noexcept = default;
 		Environment(const Environment&) = default;
 
 		Environment& operator=(const Environment&) = delete;
-		Environment& operator=(Environment&&) = delete;
+		Environment& operator=(Environment&&) noexcept = delete;
 
 		// 時刻を進める
 		void SetNextT()

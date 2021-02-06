@@ -1693,29 +1693,10 @@ namespace { namespace OpenMps
 #endif
 		}
 
-		Computer(Computer&& src)
-			: particles(std::move(src.particles)),
-			environment(std::move(src.environment)),
-			grid(std::move(src.grid)),
-			neighbor(src.neighbor),
-#ifndef PRESSURE_EXPLICIT
-			ppe(std::move(src.ppe)),
-#endif
-			du(std::move(src.du)),
-#ifdef MPS_ECS
-			ecs(std::move(src.ecs)),
-#endif
-#ifdef MPS_DS
-			originalX(std::move(src.originalX)),
-#endif
-#ifdef MPS_SPP
-			nWithoutSpp(std::move(src.nWithoutSpp)),
-#endif
-			positionWall(std::move(src.positionWall)),
-			positionWallPre(std::move(src.positionWallPre))
-		{}
-
+		Computer(Computer&&) noexcept = default;
 		Computer(const Computer&) = delete;
+
+		Computer& operator=(Computer&&) noexcept = delete;
 		Computer& operator=(const Computer&) = delete;
 
 		// 時間を進める

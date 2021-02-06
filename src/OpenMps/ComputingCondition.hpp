@@ -45,9 +45,10 @@ namespace { namespace OpenMps
 			OutputInterval(outputInterval)
 		{}
 
-		ComputingCondition(ComputingCondition&&) = default;
+		ComputingCondition(ComputingCondition&&) noexcept = default;
 		ComputingCondition(const ComputingCondition&) = delete;
-		ComputingCondition& operator = (const ComputingCondition&) = delete;
+		ComputingCondition& operator =(ComputingCondition&&) = delete;
+		ComputingCondition& operator =(const ComputingCondition&) = delete;
 	};
 }}
 #endif
