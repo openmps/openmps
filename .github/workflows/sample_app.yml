@@ -1,0 +1,19 @@
+name: Sample app CI
+
+on: [push]
+
+jobs:
+  clang:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+
+    - name: apt
+      run: sudo apt install libboost-dev clang
+
+    - name: make sample
+      run: make -j4
+      working-directory: src/OpenMps
