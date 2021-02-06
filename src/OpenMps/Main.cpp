@@ -301,7 +301,7 @@ int main(const int argc, const char* const argv[])
 	auto&& environment = LoadEnvironment(*xml, condition.OutputInterval);
 	auto&& particles = LoadParticles(*xml);
 
-	xml.~unique_ptr(); // 読み込んだテキストデータを強制的に廃棄
+	xml.reset(nullptr); // 読み込んだテキストデータを強制的に廃棄
 
 	// 粒子の初期位置を保存
 	auto initialPosition = std::make_unique<OpenMps::Vector[]>(particles.size());
