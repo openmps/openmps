@@ -2,6 +2,7 @@
 #define PARTICLE_INCLUDED
 
 #pragma warning(push, 0)
+#pragma warning(disable : 4996)
 #include <numeric>
 #pragma warning(pop)
 

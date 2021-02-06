@@ -53,6 +53,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\..\googletest\googletest\include;$(SolutionDir)..\..\packages\boost.1.70.0.0\lib\native\include;$(SolutionDir)..\..\viennacl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -70,6 +72,8 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\..\googletest\googletest\include;$(SolutionDir)..\..\packages\boost.1.70.0.0\lib\native\include;$(SolutionDir)..\..\viennacl;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CompileAs>CompileAsCpp</CompileAs>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

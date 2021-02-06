@@ -2,6 +2,7 @@
 #define GRID_INCLUDED
 
 #pragma warning(push, 0)
+#pragma warning(disable : 4996)
 #include <iterator>
 #include <array>
 #include <boost/multi_array.hpp>
@@ -299,7 +300,7 @@ namespace { namespace OpenMps
 		}
 
 		// 近傍粒子イテレーター
-		struct Iterator final : public std::iterator<std::input_iterator_tag, ParticleID>
+		struct Iterator final
 		{
 		private:
 #ifdef DIM3
