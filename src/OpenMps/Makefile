@@ -8,8 +8,8 @@ CFLAGS   = -g -MMD -MP -O3 -std=c++17 -stdlib=libc++ -Wall -Wextra -Werror -Wfat
 ifeq ($(shell uname),Darwin)
 	CFLAGS   += -Xpreprocessor
 endif
-CFLAGS   += -fopenmp
-LDFLAGS  = ${CFLAGS} -lomp
+CFLAGS   += -fopenmp=libomp
+LDFLAGS  = ${CFLAGS}
 
 LIBS     =
 INCLUDE  = -isystem ../viennacl

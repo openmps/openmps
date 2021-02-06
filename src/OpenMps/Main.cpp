@@ -292,7 +292,7 @@ int main(const int argc, const char* const argv[])
 {
 	System("mkdir result");
 
-	const auto filename = (argc == 1) ? "../../Benchmark/DamBreak/Sample.xml" : argv[1];
+	const auto filename = (argc == 1) ? "../../Benchmark/Sample/Sample.xml" : argv[1];
 	std::cout << "Input XML file: " << filename << std::endl;
 	auto xml = std::make_unique<boost::property_tree::ptree>();
 	boost::property_tree::read_xml(filename, *xml);
@@ -301,7 +301,7 @@ int main(const int argc, const char* const argv[])
 	auto&& environment = LoadEnvironment(*xml, condition.OutputInterval);
 	auto&& particles = LoadParticles(*xml);
 
-	xml.~unique_ptr(); // 読み込んだテキストデータを強制的に廃棄
+	xml.reset(nullptr); // 読み込んだテキストデータを強制的に廃棄
 
 	// 粒子の初期位置を保存
 	auto initialPosition = std::make_unique<OpenMps::Vector[]>(particles.size());

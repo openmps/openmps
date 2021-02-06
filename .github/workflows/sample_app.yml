@@ -1,0 +1,65 @@
+name: Sample app CI
+
+on: [push]
+
+jobs:
+  sampleapp_visualstudio:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Setup NuGet.exe
+      uses: NuGet/setup-nuget@v1
+
+    - name: NuGet boost
+      run: |
+        mkdir packages
+        cd packages
+        nuget install boost -Version 1.70.0
+        nuget install boost_serialization-vc142 -Version 1.70.0
+      working-directory: src
+
+    - name: build sample
+      run: msbuild OpenMps.sln -p:Configuration=Release -p:OutDir="."
+      working-directory: src
+
+    - name: run sample
+      run: ./OpenMps.exe
+      working-directory: src/OpenMps
+
+  sampleapp_clang:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+
+    - name: install clang
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        LLVM_VERSION=`egrep ^LLVM_VERSION=[0-9]+ llvm.sh`
+        LLVM_VERSION=${LLVM_VERSION:13}
+        echo "LLVM_VERSION=${LLVM_VERSION}" >> $GITHUB_ENV
+        sudo bash llvm.sh ${LLVM_VERSION}
+        sudo apt install libc++-${LLVM_VERSION}-dev libc++abi-${LLVM_VERSION}-dev libomp5-${LLVM_VERSION} libomp-${LLVM_VERSION}-dev
+
+    - name: install boost
+      run: sudo apt install libboost-dev
+
+    - name: make sample
+      run: |
+        export PATH=/usr/lib/llvm-${LLVM_VERSION}/bin:${PATH}
+        export LD_LIBRARY_PATH=/usr/lib/llvm-${LLVM_VERSION}/lib:${LD_LIBRARY_PATH}
+        make -j4
+      working-directory: src/OpenMps
+
+    - name: run sample
+      run: ./OpenMps
+      working-directory: src/OpenMps
