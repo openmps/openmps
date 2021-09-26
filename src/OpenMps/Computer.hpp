@@ -2,8 +2,6 @@
 #define COMPUTER_INCLUDED
 #include "defines.hpp"
 
-#pragma warning(push, 0)
-#pragma warning(disable : 4996)
 #include <vector>
 #include <limits>
 #include <stdexcept>
@@ -24,7 +22,6 @@
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
-#pragma warning(pop)
 
 #include "Particle.hpp"
 #include "Environment.hpp"

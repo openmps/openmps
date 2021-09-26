@@ -1,12 +1,9 @@
 ﻿#ifndef GRID_INCLUDED
 #define GRID_INCLUDED
 
-#pragma warning(push, 0)
-#pragma warning(disable : 4996)
 #include <iterator>
 #include <array>
 #include <boost/multi_array.hpp>
-#pragma warning(pop)
 
 #include "Vector.hpp"
 
