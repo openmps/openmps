@@ -1,6 +1,4 @@
-﻿#pragma warning(push, 0)
-#pragma warning(disable : 4996)
-#include <iostream>
+﻿#include <iostream>
 #include <fstream>
 #include <ctime>
 #include <type_traits>
@@ -11,7 +9,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#pragma warning(pop)
 
 #include "ComputingCondition.hpp"
 #include "Computer.hpp"
@@ -337,19 +334,26 @@ int main(const int argc, const char* const argv[])
 	boost::format timeFormat("#%3$05d: t=%1$8.4lf (%2$05d), %10$12d particles, @ %4$02d/%5$02d %6$02d:%7$02d:%8$02d (%9$8.2lf)");
 
 	const auto outputIterationOffset = static_cast<std::size_t>(std::ceil(condition.StartTime / condition.OutputInterval));
+
+	// 開始時間を画面表示
+	const auto printTime = [&timeFormat, &timer](const auto tComputer, const auto iteration, const auto outputCount, const auto count)
 	{
-
-		// 初期状態を出力
-		const auto count = OutputToCsv(computer, outputIterationOffset);
-
-		// 開始時間を画面表示
-		const auto tComputer = condition.StartTime;
 		const auto t = std::time(nullptr);
-		const auto tm = std::localtime(&t);
-		std::cout << timeFormat % tComputer % 0 % outputIterationOffset
-			% (tm->tm_mon + 1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
+#ifdef _MSC_VER
+		auto time = tm{};
+		const auto e = ::localtime_s(&time, &t);
+#else
+		const auto time = *std::localtime(&t);
+#endif
+		std::cout << timeFormat % tComputer % iteration % outputCount
+			% (time.tm_mon + 1) % time.tm_mday % time.tm_hour % time.tm_min % time.tm_sec
 			% timer.Time() % count
 			<< std::endl;
+	};
+	{
+		// 初期状態を出力
+		const auto count = OutputToCsv(computer, outputIterationOffset);
+		printTime(condition.StartTime, 0, outputIterationOffset, count);
 	}
 
 	// 計算が終了するまで
@@ -377,12 +381,7 @@ int main(const int argc, const char* const argv[])
 			tComputer += condition.StartTime;
 
 			// 現在時刻を画面表示
-			const auto t = std::time(nullptr);
-			const auto tm = std::localtime(&t);
-			std::cout << timeFormat % tComputer % iteration % (outputCount + outputIterationOffset)
-				% (tm->tm_mon+1) % tm->tm_mday % tm->tm_hour % tm->tm_min % tm->tm_sec
-				% timer.Time() % count
-				<< std::endl;
+			printTime(tComputer, iteration, outputCount + outputIterationOffset, count);
 		}
 		// 計算で例外があったら
 		catch(decltype(computer)::Exception ex)

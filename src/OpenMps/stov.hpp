@@ -1,10 +1,8 @@
 ﻿#ifndef STOV_INCLUDED
 #define STOV_INCLUDED
-#pragma warning(push, 0)
-#pragma warning(disable : 4996)
+
 #include <string>
 #include <type_traits>
-#pragma warning(pop)
 
 namespace
 {
