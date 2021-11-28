@@ -21,8 +21,8 @@ jobs:
       run: |
         mkdir packages
         cd packages
-        nuget install boost -Version 1.70.0
-        nuget install boost_serialization-vc142 -Version 1.70.0
+        nuget install boost -Version 1.77.0
+        nuget install boost_serialization-vc142 -Version 1.77.0
       working-directory: src
 
     - name: build googletest
