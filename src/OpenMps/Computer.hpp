@@ -1012,8 +1012,8 @@ namespace { namespace OpenMps
 				// 壁の位置
 				else
 				{
-					const auto x = positionWall(i, t, dt);
-					const auto u = (particles[i].X() - x) / dt; // 速度は位置から微分
+					const Vector x = positionWall(i, t, dt);
+					const Vector u = (x - particles[i].X()) / dt; // 速度は位置から微分
 					particles[i].X() = x;
 					particles[i].U() = u;
 				}
